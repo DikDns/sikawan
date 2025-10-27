@@ -8,16 +8,16 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.2686 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.2686 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.2686 0 0);
-    --primary: oklch(0.8811 0.2154 126.8049);
-    --primary-foreground: oklch(0.4187 0.1018 129.7473);
-    --secondary: oklch(0.5026 0.1977 292.4405);
-    --secondary-foreground: oklch(0.9708 0.0133 290.7545);
+    --background: oklch(1 0 0); /* white */
+    --foreground: oklch(0.2686 0 0); /* black */
+    --card: oklch(1 0 0); /* white */
+    --card-foreground: oklch(0.2686 0 0); /* black */
+    --popover: oklch(1 0 0); /* white */
+    --popover-foreground: oklch(0.2686 0 0); /* black */
+    --primary: oklch(0.8811 0.2154 126.8049); /* hijau: #B2F02C */
+    --primary-foreground: oklch(0.4187 0.1018 129.7473); /* #3a5710 */
+    --secondary: oklch(0.5026 0.1977 292.4405); /* #6C41C8 */
+    --secondary-foreground: oklch(0.9708 0.0133 290.7545); /* #f5f4fe */
     --muted: oklch(0.9846 0.0017 247.8389);
     --muted-foreground: oklch(0.551 0.0234 264.3637);
     --accent: oklch(0.9753 0.0728 120.1515);
