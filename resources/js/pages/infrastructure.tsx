@@ -255,11 +255,11 @@ export default function Infrastructure() {
             <Head title="Data PSU" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
                 {/* Header */}
-                <div>
+                    <div>
                     <h1 className="text-2xl font-bold">Data PSU</h1>
-                    <p className="text-muted-foreground">
+                        <p className="text-muted-foreground">
                         Kelola data Prasarana, Sarana, dan Utilitas
-                    </p>
+                        </p>
                 </div>
 
                 {/* Statistics Cards */}
@@ -284,7 +284,7 @@ export default function Infrastructure() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
-                                Prasarana
+                                    Prasarana
                             </CardTitle>
                             <Building2 className="h-4 w-4 text-blue-600" />
                         </CardHeader>
@@ -314,7 +314,7 @@ export default function Infrastructure() {
                             </p>
                         </CardContent>
                     </Card>
-                </div>
+                        </div>
 
                 {/* Table Card */}
                 <Card>
@@ -328,7 +328,7 @@ export default function Infrastructure() {
                                         {MOCK_INFRASTRUCTURE_GROUPS.length}{' '}
                                         kelompok PSU
                                     </CardDescription>
-                                </div>
+                    </div>
                                 <Button
                                     onClick={handleAdd}
                                     className="gap-2 sm:w-auto"
@@ -350,7 +350,7 @@ export default function Infrastructure() {
                                         }
                                         className="pl-9"
                                     />
-                                </div>
+                        </div>
                                 <div className="flex gap-2">
                                     <Select
                                         value={filterCategory}
@@ -392,7 +392,7 @@ export default function Infrastructure() {
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
-                                </div>
+                    </div>
                             </div>
                         </div>
                     </CardHeader>
@@ -425,7 +425,7 @@ export default function Infrastructure() {
                                                     <span className="font-medium">
                                                         {group.name}
                                                     </span>
-                                                </div>
+                    </div>
                                             </TableCell>
                                             <TableCell>
                                                 {group.category}
@@ -460,7 +460,7 @@ export default function Infrastructure() {
                                                     <span className="text-xs text-muted-foreground">
                                                         {group.code}
                                                     </span>
-                                                </div>
+                </div>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
@@ -629,11 +629,11 @@ export default function Infrastructure() {
                                                 {group.infrastructure_count}{' '}
                                                 Item
                                             </Badge>
-                                        </div>
+                    </div>
                                     </CardContent>
                                 </Card>
                             ))}
-                        </div>
+                </div>
                     </CardContent>
                 </Card>
             </div>

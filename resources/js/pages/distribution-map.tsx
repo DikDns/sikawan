@@ -538,7 +538,7 @@ export default function DistributionMap() {
                                     <div>Kawasan: {filteredAreas.length}</div>
                                     <div>PSU: {filteredInfra.length}</div>
                                 </div>
-                            </div>
+                        </div>
                         </CardContent>
                     </Card>
 

@@ -317,6 +317,23 @@ Dokumen ini merinci skema basis data yang dinormalisasi, tipe data, relasi, inde
     - created_at, updated_at
     - INDEX: (owner_type, owner_id)
 
+### 7. Laporan (Reports)
+
+- reports
+    - id: INTEGER PK
+    - title: VARCHAR(150) -- Judul laporan
+    - description: TEXT NULLABLE -- Deskripsi laporan
+    - type: VARCHAR(50) CHECK in ('RUMAH','KAWASAN','PSU','UMUM') -- Tipe laporan
+    - category: VARCHAR(50) NULLABLE -- Kategori laporan (mis. 'Kelayakan', 'Infrastruktur', dll)
+    - file_path: VARCHAR(255) NULLABLE -- Path file laporan
+    - generated_by: INTEGER FK → users.id -- Pengguna yang membuat laporan
+    - start_date: DATE NULLABLE -- Tanggal awal periode laporan
+    - end_date: DATE NULLABLE -- Tanggal akhir periode laporan
+    - status: VARCHAR(20) CHECK in ('DRAFT','GENERATED') -- Status laporan
+    - metadata_json: TEXT NULLABLE (cast json) -- Informasi tambahan
+    - created_at, updated_at
+    - INDEX: (type), (category), (generated_by), (status)
+
 ## Relasi Utama
 
 - households 1–1 house_structure_scores, water_accesses, sanitatons, waste_managements, household_non_physicals, household_scores
