@@ -8,37 +8,36 @@ const breadcrumbs: BreadcrumbItem[] = [
         title: 'Dashboard',
         href: '/dashboard',
     },
+    {
+        title: 'Kawasan',
+        href: '/areas',
+    },
 ];
 
-export default function Dashboard() {
+export default function Kawasan() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
+            <Head title="Kawasan" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">
-                            Dashboard SI-KAWAN
-                        </h1>
+                        <h1 className="text-2xl font-bold">Kawasan</h1>
                         <p className="text-muted-foreground">
-                            Sistem Informasi Kawasan dan Hunian
+                            Manajemen data kawasan dan area
                         </p>
                     </div>
                 </div>
 
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                     <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                         <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="text-center">
                                 <h3 className="mb-2 text-lg font-semibold">
-                                    Total Rumah
+                                    Data Kawasan
                                 </h3>
-                                <p className="text-3xl font-bold text-primary">
-                                    1,234
-                                </p>
                                 <p className="text-sm text-muted-foreground">
-                                    Hunian terdaftar
+                                    Area data management
                                 </p>
                             </div>
                         </div>
@@ -48,44 +47,25 @@ export default function Dashboard() {
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="text-center">
                                 <h3 className="mb-2 text-lg font-semibold">
-                                    Kawasan
+                                    Peta Kawasan
                                 </h3>
-                                <p className="text-3xl font-bold text-primary">
-                                    45
-                                </p>
                                 <p className="text-sm text-muted-foreground">
-                                    Area terkelola
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-center">
-                                <h3 className="mb-2 text-lg font-semibold">
-                                    PSU
-                                </h3>
-                                <p className="text-3xl font-bold text-primary">
-                                    89%
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Tingkat kelengkapan
+                                    Area mapping
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="relative min-h-[400px] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
+                <div className="relative min-h-[400px] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                     <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
                             <h3 className="mb-2 text-lg font-semibold">
-                                Overview SI-KAWAN
+                                Detail Kawasan
                             </h3>
                             <p className="text-muted-foreground">
-                                Sistem manajemen kawasan dan hunian terintegrasi
+                                Detailed area information will be displayed here
                             </p>
                         </div>
                     </div>
