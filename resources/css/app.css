@@ -218,3 +218,17 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Force light mode - disable dark mode completely */
+html {
+    color-scheme: light !important;
+}
+
+html.dark {
+    color-scheme: light !important;
+}
+
+/* Ensure dark mode classes are overridden */
+.dark {
+    color-scheme: light !important;
+}

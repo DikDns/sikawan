@@ -1,5 +1,6 @@
 # Skema Basis Data dan Rencana Implementasi (Laravel)
 
+Sistem Informasi Perumahan dan Kawasan Permukiman Kabupaten Muara Enim
 Dokumen ini merinci skema basis data yang dinormalisasi, tipe data, relasi, indeks, serta rencana implementasi migrasi, model, factories, dan seeders. Skema disusun agar kompatibel dengan SQLite (default proyek) namun portable ke MySQL/PostgreSQL.
 
 ## Konvensi Umum

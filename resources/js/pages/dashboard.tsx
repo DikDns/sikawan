@@ -21,7 +21,8 @@ export default function Dashboard() {
                             Dashboard SI-KAWAN
                         </h1>
                         <p className="text-muted-foreground">
-                            Sistem Informasi Kawasan dan Hunian
+                            Sistem Informasi Perumahan dan Kawasan Permukiman
+                            Kabupaten Muara Enim
                         </p>
                     </div>
                 </div>
@@ -85,7 +86,8 @@ export default function Dashboard() {
                                 Overview SI-KAWAN
                             </h3>
                             <p className="text-muted-foreground">
-                                Sistem manajemen kawasan dan hunian terintegrasi
+                                Sistem Informasi Perumahan dan Kawasan
+                                Permukiman Kabupaten Muara Enim
                             </p>
                         </div>
                     </div>

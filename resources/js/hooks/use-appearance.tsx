@@ -41,44 +41,27 @@ const handleSystemThemeChange = () => {
 };
 
 export function initializeTheme() {
-    const savedAppearance =
-        (localStorage.getItem('appearance') as Appearance) || 'system';
+    // Force light mode - ignore saved preferences
+    applyTheme('light');
 
-    applyTheme(savedAppearance);
-
-    // Add the event listener for system theme changes...
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    // Remove event listener for system theme changes since we're forcing light mode
+    // mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
 
 export function useAppearance() {
-    const [appearance, setAppearance] = useState<Appearance>('system');
+    // Always return light mode - disable theme switching
+    const [appearance] = useState<Appearance>('light');
 
     const updateAppearance = useCallback((mode: Appearance) => {
-        setAppearance(mode);
-
-        // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
-
-        // Store in cookie for SSR...
-        setCookie('appearance', mode);
-
-        applyTheme(mode);
+        // Do nothing - theme switching is disabled
+        // Always force light mode
+        applyTheme('light');
     }, []);
 
     useEffect(() => {
-        const savedAppearance = localStorage.getItem(
-            'appearance',
-        ) as Appearance | null;
-
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        updateAppearance(savedAppearance || 'system');
-
-        return () =>
-            mediaQuery()?.removeEventListener(
-                'change',
-                handleSystemThemeChange,
-            );
-    }, [updateAppearance]);
+        // Always apply light theme on mount
+        applyTheme('light');
+    }, []);
 
     return { appearance, updateAppearance } as const;
 }
