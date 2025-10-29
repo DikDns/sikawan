@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('a1_faces_waterbody', 8)->nullable(); // NONE|YES|NO
             $table->string('a1_in_setback', 8)->nullable(); // NONE|YES|NO
             $table->boolean('a1_hazard_area')->default(false);
-            $table->unsignedTinyInteger('skor_a1')->default(0);
+            $table->unsignedTinyInteger('score_a1')->default(0);
 
             // A.2
             $table->decimal('a2_length_m', 8, 2)->nullable();
@@ -47,9 +47,9 @@ return new class extends Migration
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
             $table->string('source', 20); // SR_METERAN|...
             $table->string('distance_to_septic', 6)->nullable(); // GE10M|LT10M
-            $table->unsignedTinyInteger('skor_air')->default(0);
+            $table->unsignedTinyInteger('score_a3_access_water')->default(0);
             $table->string('water_fulfillment', 10); // ALWAYS|SEASONAL|NEVER
-            $table->unsignedTinyInteger('skor_fulfillment')->default(0);
+            $table->unsignedTinyInteger('score_a3_fulfillment')->default(0);
             $table->timestamps();
             $table->unique('household_id');
         });
@@ -59,10 +59,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
             $table->string('defecation_place', 14); // PRIVATE_SHARED|PUBLIC|OPEN
-            $table->unsignedTinyInteger('score_access')->default(0);
+            $table->unsignedTinyInteger('score_a4_access_sanitation')->default(0);
             $table->string('toilet_type', 10); // S_TRAP|NON_S_TRAP
             $table->string('sewage_disposal', 12); // SEPTIC_IPAL|NON_SEPTIC
-            $table->unsignedTinyInteger('score_technical')->default(0);
+            $table->unsignedTinyInteger('score_a4_technical')->default(0);
             $table->timestamps();
             $table->unique('household_id');
         });
@@ -73,7 +73,7 @@ return new class extends Migration
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
             $table->string('disposal_place', 12); // PRIVATE_BIN|COMMUNAL|BURNT|OPENSPACE|WATERBODY
             $table->string('collection_frequency', 12)->nullable(); // GE2X_WEEK|LT1X_WEEK
-            $table->unsignedTinyInteger('score')->default(0);
+            $table->unsignedTinyInteger('score_a5_waste')->default(0);
             $table->timestamps();
             $table->unique('household_id');
         });
@@ -94,15 +94,15 @@ return new class extends Migration
         Schema::create('household_scores', function (Blueprint $table) {
             $table->id();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            $table->unsignedTinyInteger('skor_a1')->default(0);
-            $table->unsignedTinyInteger('skor_a2_floor_area')->default(0);
-            $table->unsignedTinyInteger('skor_a2_roof_wall_floor')->default(0);
-            $table->decimal('skor_a2_total_pct', 5, 2)->nullable();
-            $table->unsignedTinyInteger('skor_a3_access')->default(0);
-            $table->unsignedTinyInteger('skor_a3_fulfillment')->default(0);
-            $table->unsignedTinyInteger('skor_a4_access')->default(0);
-            $table->unsignedTinyInteger('skor_a4_technical')->default(0);
-            $table->unsignedTinyInteger('skor_a5')->default(0);
+            $table->unsignedTinyInteger('score_a1')->default(0);
+            $table->unsignedTinyInteger('score_a2_floor_area')->default(0);
+            $table->unsignedTinyInteger('score_a2_roof_wall_floor')->default(0);
+            $table->decimal('score_a2_total_pct', 5, 2)->nullable();
+            $table->unsignedTinyInteger('score_a3_access_water')->default(0);
+            $table->unsignedTinyInteger('score_a3_fulfillment')->default(0);
+            $table->unsignedTinyInteger('score_a4_access_sanitation')->default(0);
+            $table->unsignedTinyInteger('score_a4_technical')->default(0);
+            $table->unsignedTinyInteger('score_a5_waste')->default(0);
             $table->dateTime('computed_at')->nullable();
             $table->timestamps();
             $table->unique('household_id');

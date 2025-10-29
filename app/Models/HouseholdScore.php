@@ -11,12 +11,12 @@ class HouseholdScore extends Model
     use HasFactory;
 
     protected $fillable = [
-        'household_id','skor_a1','skor_a2_floor_area','skor_a2_roof_wall_floor','skor_a2_total_pct','skor_a3_access','skor_a3_fulfillment','skor_a4_access','skor_a4_technical','skor_a5','computed_at'
+        'household_id','score_a1','score_a2_floor_area','score_a2_roof_wall_floor','score_a2_total_pct','score_a3_access_water','score_a3_fulfillment','score_a4_access_sanitation','score_a4_technical','score_a5_waste','computed_at'
     ];
 
     protected $casts = [
         'computed_at' => 'datetime',
-        'skor_a2_total_pct' => 'decimal:2',
+        'score_a2_total_pct' => 'decimal:2',
     ];
 
     public function household(): BelongsTo { return $this->belongsTo(Household::class); }

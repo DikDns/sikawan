@@ -11,7 +11,7 @@ class WasteManagement extends Model
     use HasFactory;
 
     protected $fillable = [
-        'household_id','disposal_place','collection_frequency','score'
+        'household_id','disposal_place','collection_frequency','score_a5_waste'
     ];
 
     public function household(): BelongsTo { return $this->belongsTo(Household::class); }

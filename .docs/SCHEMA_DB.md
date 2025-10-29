@@ -70,19 +70,19 @@ Dokumen ini merinci skema basis data yang dinormalisasi, tipe data, relasi, inde
     - a1_faces_waterbody: VARCHAR(8) CHECK in ('NONE','YES','NO')
     - a1_in_setback: VARCHAR(8) CHECK in ('NONE','YES','NO')
     - a1_hazard_area: INTEGER (0/1)
-    - skor_a1: TINYINT
+    - score_a1: TINYINT
     - a2_length_m: DECIMAL(8,2)
     - a2_width_m: DECIMAL(8,2)
     - a2_floors: INTEGER
     - a2_area_m2: DECIMAL(10,2)
     - a2_occupants: INTEGER
     - a2_m2_per_person: DECIMAL(10,2)
-    - a2_floor_area_score: TINYINT
+    - score_a2_floor_area: TINYINT
     - a2_roof_condition: VARCHAR(8) CHECK in ('GOOD','LEAK')
     - a2_wall_condition: VARCHAR(8) CHECK in ('GOOD','DAMAGED')
     - a2_floor_type: VARCHAR(10) CHECK in ('NON_SOIL','SOIL')
-    - a2_roof_wall_floor_score: TINYINT
-    - a2_total_score_pct: DECIMAL(5,2)
+    - score_a2_roof_wall_floor: TINYINT
+    - score_a2_total_pct: DECIMAL(5,2)
     - created_at, updated_at
     - UNIQUE: (household_id)
 
@@ -91,9 +91,9 @@ Dokumen ini merinci skema basis data yang dinormalisasi, tipe data, relasi, inde
     - household_id: INTEGER FK → households.id
     - source: VARCHAR(20) CHECK in ('SR_METERAN','SR_NONMETER','SUMUR_BOR','SUMUR_TRL','MATA_AIR_TRL','HUJAN','KEMASAN','SUMUR_TAK_TRL','MATA_AIR_TAK_TRL','SUNGAI','TANGKI_MOBIL')
     - distance_to_septic: VARCHAR(6) NULLABLE CHECK in ('GE10M','LT10M')
-    - skor_air: TINYINT
+    - score_a3_access_water: TINYINT
     - water_fulfillment: VARCHAR(10) CHECK in ('ALWAYS','SEASONAL','NEVER')
-    - skor_fulfillment: TINYINT
+    - score_a3_fulfillment: TINYINT
     - created_at, updated_at
     - UNIQUE: (household_id)
 
@@ -101,10 +101,10 @@ Dokumen ini merinci skema basis data yang dinormalisasi, tipe data, relasi, inde
     - id: INTEGER PK
     - household_id: INTEGER FK → households.id
     - defecation_place: VARCHAR(14) CHECK in ('PRIVATE_SHARED','PUBLIC','OPEN')
-    - score_access: TINYINT
+    - score_a4_access_sanitation: TINYINT
     - toilet_type: VARCHAR(10) CHECK in ('S_TRAP','NON_S_TRAP')
     - sewage_disposal: VARCHAR(12) CHECK in ('SEPTIC_IPAL','NON_SEPTIC')
-    - score_technical: TINYINT
+    - score_a4_technical: TINYINT
     - created_at, updated_at
     - UNIQUE: (household_id)
 
@@ -130,15 +130,15 @@ Dokumen ini merinci skema basis data yang dinormalisasi, tipe data, relasi, inde
 - household_scores (rekap)
     - id: INTEGER PK
     - household_id: INTEGER FK → households.id
-    - skor_a1: TINYINT
-    - skor_a2_floor_area: TINYINT
-    - skor_a2_roof_wall_floor: TINYINT
-    - skor_a2_total_pct: DECIMAL(5,2)
-    - skor_a3_access: TINYINT
-    - skor_a3_fulfillment: TINYINT
-    - skor_a4_access: TINYINT
-    - skor_a4_technical: TINYINT
-    - skor_a5: TINYINT
+    - score_a1: TINYINT
+    - score_a2_floor_area: TINYINT
+    - score_a2_roof_wall_floor: TINYINT
+    - score_a2_total_pct: DECIMAL(5,2)
+    - score_a3_access_water: TINYINT
+    - score_a3_fulfillment: TINYINT
+    - score_a4_access_sanitation: TINYINT
+    - score_a4_technical: TINYINT
+    - score_a5_waste: TINYINT
     - computed_at: DATETIME
     - created_at, updated_at
     - UNIQUE: (household_id)
@@ -386,7 +386,7 @@ Prioritas factories untuk data dummy pengembangan:
 
 - AdminAreaFactory (opsional): membuat hirarki province → regency → district → village
 - HouseholdFactory: generate alamat, lat/long di bounding box Muara Enim, komposisi ART konsisten
-- HouseStructureScoreFactory: hitung luas dan m2/jiwa, set skor sesuai aturan sederhana
+- HouseStructureScoreFactory: hitung luas dan m2/jiwa, set score sesuai aturan sederhana
 - WaterAccessFactory, SanitatonFactory, WasteManagementFactory, HouseholdNonPhysicalFactory, HouseholdScoreFactory
 - RelocationHistoryFactory
 - AreaSurveyFactory: polygon sederhana (GeoJSON) + indikator default pada B.1…B.7

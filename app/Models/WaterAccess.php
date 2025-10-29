@@ -11,7 +11,7 @@ class WaterAccess extends Model
     use HasFactory;
 
     protected $fillable = [
-        'household_id','source','distance_to_septic','skor_air','water_fulfillment','skor_fulfillment'
+        'household_id','source','distance_to_septic','score_a3_access_water','water_fulfillment','score_a3_fulfillment'
     ];
 
     public function household(): BelongsTo { return $this->belongsTo(Household::class); }
