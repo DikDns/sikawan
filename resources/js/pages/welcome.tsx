@@ -63,7 +63,7 @@ export default function Welcome() {
                     <Container className="py-8">
                         <div className="grid max-h-screen grid-cols-1 grid-rows-3 gap-3 lg:grid-cols-3 lg:grid-rows-2 lg:gap-6">
                             {/* Kiri: Card besar untuk judul, highlight, tombol */}
-                            <div className="order-2 col-span-1 flex flex-col justify-center rounded-2xl bg-[#552C91] p-10 shadow-lg lg:col-span-2">
+                            <div className="order-2 col-span-1 flex flex-col justify-center rounded-2xl bg-[#552C91] p-10 shadow-lg lg:order-1 lg:col-span-2">
                                 <div className="mb-6 flex items-center gap-2">
                                     <img
                                         src="/images/sikawan-logo.png"
@@ -104,7 +104,7 @@ export default function Welcome() {
                                 </Button>
                             </div>
                             {/* Kanan atas: 1 gambar besar potrait */}
-                            <div className="col-span-1 row-span-1 overflow-hidden rounded-2xl shadow-lg lg:order-none lg:row-span-2">
+                            <div className="col-span-1 row-span-1 overflow-hidden rounded-2xl shadow-lg lg:order-2 lg:row-span-2">
                                 <img
                                     src="/images/kawasan-3.jpg"
                                     alt="Kawasan besar"
