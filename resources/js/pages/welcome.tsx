@@ -26,7 +26,7 @@ export default function Welcome() {
             <div className="min-h-screen bg-background">
                 {/* Header */}
                 <header className="fixed z-50 w-full">
-                    <div className="bg-secondary text-secondary-foreground">
+                    <div className="bg-secondary/75 text-secondary-foreground backdrop-blur-sm">
                         <Container>
                             <div className="flex h-16 items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -59,18 +59,31 @@ export default function Welcome() {
                 </header>
 
                 {/* Hero Section */}
-                <section className="bg-secondary pt-16">
-                    <Container className="py-16">
-                        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                            <div className="flex flex-col justify-center">
-                                <h1 className="mb-4 text-4xl font-bold text-secondary-foreground lg:text-5xl">
-                                    Membangun Kawasan
-                                    <br />
-                                    yang Lebih Baik.
+                <section className="pt-16">
+                    <Container className="py-8">
+                        <div className="grid max-h-screen grid-cols-1 grid-rows-3 gap-3 lg:grid-cols-3 lg:grid-rows-2 lg:gap-6">
+                            {/* Kiri: Card besar untuk judul, highlight, tombol */}
+                            <div className="order-2 col-span-1 flex flex-col justify-center rounded-2xl bg-[#552C91] p-10 shadow-lg lg:col-span-2">
+                                <div className="mb-6 flex items-center gap-2">
+                                    <img
+                                        src="/images/sikawan-logo.png"
+                                        alt="SI-KAWAN"
+                                        className="h-8 w-8"
+                                    />
+                                    <span className="text-lg font-extrabold tracking-wide text-lime-300">
+                                        SI-KAWAN
+                                    </span>
+                                </div>
+                                <h1 className="mb-4 text-3xl font-bold text-white lg:text-4xl">
+                                    Membangun{' '}
+                                    <span className="text-lime-300">
+                                        Kawasan
+                                    </span>{' '}
+                                    <br /> yang Lebih Baik.
                                 </h1>
                                 <Button
                                     size="lg"
-                                    className="mt-6 w-fit bg-primary text-primary-foreground hover:bg-primary/90"
+                                    className="mt-6 w-fit bg-lime-300 font-semibold text-[#552C91] hover:bg-lime-400 hover:text-[#552C91]"
                                     asChild
                                 >
                                     <Link href="#">
@@ -90,34 +103,30 @@ export default function Welcome() {
                                     </Link>
                                 </Button>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <Card className="overflow-hidden shadow-lg">
-                                    <AspectRatio ratio={1}>
-                                        <img
-                                            src="/images/kawasan-1.jpg"
-                                            alt="Kawasan 1"
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </AspectRatio>
-                                </Card>
-                                <Card className="overflow-hidden shadow-lg">
-                                    <AspectRatio ratio={1}>
-                                        <img
-                                            src="/images/kawasan-2.jpg"
-                                            alt="Kawasan 2"
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </AspectRatio>
-                                </Card>
-                                <Card className="col-span-2 overflow-hidden shadow-lg">
-                                    <AspectRatio ratio={16 / 9}>
-                                        <img
-                                            src="/images/kawasan-3.jpg"
-                                            alt="Kawasan 3"
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </AspectRatio>
-                                </Card>
+                            {/* Kanan atas: 1 gambar besar potrait */}
+                            <div className="col-span-1 row-span-1 overflow-hidden rounded-2xl shadow-lg lg:order-none lg:row-span-2">
+                                <img
+                                    src="/images/kawasan-3.jpg"
+                                    alt="Kawasan besar"
+                                    className="h-full w-full object-cover"
+                                />
+                            </div>
+                            {/* Kanan bawah: 2 gambar landscape kecil */}
+                            <div className="order-3 col-span-1 grid grid-cols-4 gap-4 lg:col-span-2 lg:row-span-1">
+                                <div className="col-span-2 overflow-hidden rounded-2xl shadow-lg">
+                                    <img
+                                        src="/images/kawasan-1.jpg"
+                                        alt="Kawasan 1"
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
+                                <div className="col-span-2 overflow-hidden rounded-2xl shadow-lg">
+                                    <img
+                                        src="/images/kawasan-2.jpg"
+                                        alt="Kawasan 2"
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </Container>
