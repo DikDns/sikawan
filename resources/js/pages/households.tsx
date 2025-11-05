@@ -7,14 +7,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -23,28 +15,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import {
-    Edit,
-    Eye,
-    Home,
-    MapPin,
-    MoreVertical,
-    Plus,
-    Search,
-    Trash2,
-    Users,
-} from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Eye, Home, MapPin, Plus, Search, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -58,28 +32,23 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-// Mock data types based on SCHEMA_DB.md
-// Ref: households table and house_eligibilities table
 interface Household {
     id: number;
-    head_name: string; // households.head_name
-    nik: string | null; // households.nik
-    address_text: string; // households.address_text
-    rt_rw: string; // households.rt_rw
-    status_mbr: 'MBR' | 'NON_MBR'; // households.status_mbr
-    member_total: number; // households.member_total
-    male_count: number; // households.male_count
-    female_count: number; // households.female_count
-    kk_count: number; // households.kk_count
-    // From house_eligibilities
-    habitability_status: 'LAYAK' | 'RLH' | 'RTLH'; // house_eligibilities.habitability_status
-    // From households (added fields)
-    ownership_status_building: 'OWN' | 'RENT' | 'OTHER'; // households.ownership_status_building
+    head_name: string;
+    nik: string | null;
+    address_text: string;
+    rt_rw: string;
+    status_mbr: 'MBR' | 'NON_MBR';
+    member_total: number;
+    male_count: number;
+    female_count: number;
+    kk_count: number;
+    habitability_status: 'RLH' | 'RTLH';
+    ownership_status_building: 'OWN' | 'RENT' | 'OTHER';
     latitude: number | null;
     longitude: number | null;
 }
 
-// Mock data - fully consistent with SCHEMA_DB.md
 const MOCK_HOUSEHOLDS: Household[] = [
     {
         id: 1501341233,
@@ -92,7 +61,7 @@ const MOCK_HOUSEHOLDS: Household[] = [
         male_count: 2,
         female_count: 2,
         kk_count: 1,
-        habitability_status: 'LAYAK',
+        habitability_status: 'RLH',
         ownership_status_building: 'OWN',
         latitude: -3.0627,
         longitude: 104.7429,
@@ -125,7 +94,7 @@ const MOCK_HOUSEHOLDS: Household[] = [
         male_count: 3,
         female_count: 2,
         kk_count: 1,
-        habitability_status: 'LAYAK',
+        habitability_status: 'RLH',
         ownership_status_building: 'RENT',
         latitude: -3.065,
         longitude: 104.7445,
@@ -158,7 +127,7 @@ const MOCK_HOUSEHOLDS: Household[] = [
         male_count: 2,
         female_count: 2,
         kk_count: 1,
-        habitability_status: 'LAYAK',
+        habitability_status: 'RLH',
         ownership_status_building: 'OWN',
         latitude: -3.068,
         longitude: 104.7455,
@@ -224,60 +193,18 @@ const MOCK_HOUSEHOLDS: Household[] = [
         male_count: 2,
         female_count: 1,
         kk_count: 1,
-        habitability_status: 'LAYAK',
+        habitability_status: 'RLH',
         ownership_status_building: 'OWN',
         latitude: -3.0638,
         longitude: 104.7432,
     },
-    {
-        id: 4693691121,
-        head_name: 'Rato Tangela',
-        nik: '1671234567891012',
-        address_text: 'Jl. Dipa Mulya No. 321, Kel. Wijaya Kusuma, Kec. Mawar',
-        rt_rw: '002/010',
-        status_mbr: 'MBR',
-        member_total: 4,
-        male_count: 2,
-        female_count: 2,
-        kk_count: 1,
-        habitability_status: 'RLH',
-        ownership_status_building: 'OWN',
-        latitude: -3.0648,
-        longitude: 104.7438,
-    },
 ];
-
 export default function Households() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('all');
 
-    // Action handlers
-    const handleView = (id: number) => {
-        console.log('View household:', id);
-        // TODO: Navigate to detail page or open modal
-    };
-
-    const handleEdit = (id: number) => {
-        console.log('Edit household:', id);
-        // TODO: Navigate to edit page or open edit modal
-    };
-
-    const handleDelete = (id: number) => {
-        console.log('Delete household:', id);
-        // TODO: Show confirmation dialog and delete
-    };
-
-    const handleAdd = () => {
-        console.log('Add new household');
-        // TODO: Navigate to add page or open add modal
-    };
-
-    // Calculate statistics
     const stats = useMemo(() => {
         const total = MOCK_HOUSEHOLDS.length;
-        const layak = MOCK_HOUSEHOLDS.filter(
-            (h) => h.habitability_status === 'LAYAK',
-        ).length;
         const rlh = MOCK_HOUSEHOLDS.filter(
             (h) => h.habitability_status === 'RLH',
         ).length;
@@ -285,10 +212,9 @@ export default function Households() {
             (h) => h.habitability_status === 'RTLH',
         ).length;
 
-        return { total, layak, rlh, rtlh };
+        return { total, rlh, rtlh };
     }, []);
 
-    // Filter and search
     const filteredHouseholds = useMemo(() => {
         return MOCK_HOUSEHOLDS.filter((household) => {
             const matchesSearch =
@@ -298,8 +224,7 @@ export default function Households() {
                 household.address_text
                     .toLowerCase()
                     .includes(searchQuery.toLowerCase()) ||
-                household.id.toString().includes(searchQuery) ||
-                (household.nik && household.nik.includes(searchQuery));
+                household.id.toString().includes(searchQuery);
 
             const matchesFilter =
                 filterStatus === 'all' ||
@@ -309,394 +234,225 @@ export default function Households() {
         });
     }, [searchQuery, filterStatus]);
 
+    const getStatusColor = (status: string) => {
+        if (status === 'RTLH') return 'text-destructive bg-accent';
+        if (status === 'RLH') return 'text-primary bg-primary';
+        return 'text-secondary bg-secondary';
+    };
+
+    // const getStatusLabel = (status: string) => {
+    //     if (status === 'RTLH') return 'Rumah Tidak Layak Huni';
+    //     if (status === 'RLH') return 'Rumah Layak Huni';
+    //     return 'Rumah Layak Huni (Perlu Perbaikan)';
+    // };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Data Rumah" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-background p-4">
                 {/* Header */}
-                <div>
-                    <h1 className="text-2xl font-bold">Data Rumah</h1>
-                    <p className="text-muted-foreground">
-                        Kelola data rumah dan hunian
-                    </p>
+                <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold text-foreground">
+                            Data Rumah
+                        </h1>
+                        <p className="mt-1 text-muted-foreground">
+                            Kelola dan pantau data hunian di wilayah Anda
+                        </p>
+                    </div>
+                    <Button
+                        size="lg"
+                        className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Tambah Data
+                    </Button>
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Rumah
-                            </CardTitle>
-                            <Home className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.total.toLocaleString()}
+                <div className="mb-8 grid gap-4 md:grid-cols-3">
+                    <Card className="justify-center border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+                        <CardContent className="flex items-center justify-between pb-0">
+                            <div className="flex flex-col gap-2">
+                                <div className="text-lg font-medium text-foreground">
+                                    Rumah
+                                </div>
+                                <div className="text-3xl font-bold text-secondary">
+                                    {stats.total.toLocaleString('id-ID')}
+                                </div>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                Total rumah terdaftar
-                            </p>
+                            <div className="flex items-center justify-center">
+                                <div className="flex items-center justify-center rounded bg-secondary/25 p-4">
+                                    <Home className="h-10 w-10 text-secondary" />
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                RLH
-                            </CardTitle>
-                            <Home className="h-4 w-4 text-blue-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.rlh.toLocaleString()}
+                    <Card className="border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+                        <CardContent className="flex items-center justify-between pb-0">
+                            <div className="flex flex-col gap-2">
+                                <div className="text-lg font-medium text-foreground">
+                                    RLH
+                                </div>
+                                <div className="text-3xl font-bold text-secondary">
+                                    {stats.rlh.toLocaleString('id-ID')}
+                                </div>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                Rumah Layak Huni (perlu perbaikan)
-                            </p>
+                            <div className="flex items-center justify-center">
+                                <div className="flex items-center justify-center rounded bg-primary/25 p-4">
+                                    <Home className="h-10 w-10 text-primary/75" />
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                RTLH
-                            </CardTitle>
-                            <Home className="h-4 w-4 text-red-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.rtlh.toLocaleString()}
+                    <Card className="border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+                        <CardContent className="flex items-center justify-between pb-0">
+                            <div className="flex flex-col gap-2">
+                                <div className="text-lg font-medium text-foreground">
+                                    RTLH
+                                </div>
+                                <div className="text-3xl font-bold text-secondary">
+                                    {stats.rtlh.toLocaleString('id-ID')}
+                                </div>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                Rumah Tidak Layak Huni
-                            </p>
+                            <div className="flex items-center justify-center">
+                                <div className="flex items-center justify-center rounded bg-destructive/25 p-4">
+                                    <Home className="h-10 w-10 text-destructive" />
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Table Card */}
-                <Card>
+                {/* Search and Filter */}
+                <Card className="mb-6 border-border bg-card shadow-sm">
                     <CardHeader>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                <div>
-                                    <CardTitle>Daftar Rumah</CardTitle>
-                                    <CardDescription>
-                                        Menampilkan {filteredHouseholds.length}{' '}
-                                        dari {MOCK_HOUSEHOLDS.length} rumah
-                                    </CardDescription>
-                                </div>
-                                <Button
-                                    onClick={handleAdd}
-                                    className="gap-2 sm:w-auto"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    <span>Tambah Rumah</span>
-                                </Button>
-                            </div>
-                            {/* Search and Filter */}
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="relative flex-1">
-                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        type="text"
-                                        placeholder="Cari berdasarkan nama, alamat, atau NIK..."
-                                        value={searchQuery}
-                                        onChange={(e) =>
-                                            setSearchQuery(e.target.value)
-                                        }
-                                        className="pl-9"
-                                    />
-                                </div>
-                                <Select
-                                    value={filterStatus}
-                                    onValueChange={setFilterStatus}
-                                >
-                                    <SelectTrigger className="w-full sm:w-[200px]">
-                                        <SelectValue placeholder="Status Kepemilikan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            Semua Status
-                                        </SelectItem>
-                                        <SelectItem value="OWN">
-                                            Milik Sendiri
-                                        </SelectItem>
-                                        <SelectItem value="RENT">
-                                            Sewa
-                                        </SelectItem>
-                                        <SelectItem value="OTHER">
-                                            Lainnya
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
+                        <CardTitle>Cari Rumah</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {/* Desktop Table View */}
-                        <div className="hidden overflow-x-auto md:block">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Id Rumah</TableHead>
-                                        <TableHead>
-                                            Nama Kepala Keluarga
-                                        </TableHead>
-                                        <TableHead>Alamat</TableHead>
-                                        <TableHead>Kelayakan</TableHead>
-                                        <TableHead>
-                                            Status Kepemilikan
-                                        </TableHead>
-                                        <TableHead className="text-right">
-                                            Aksi
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredHouseholds.map((household) => (
-                                        <TableRow key={household.id}>
-                                            <TableCell className="font-medium">
-                                                {household.id}
-                                            </TableCell>
-                                            <TableCell>
-                                                {household.head_name}
-                                            </TableCell>
-                                            <TableCell className="max-w-xs">
-                                                <div className="flex items-start gap-2">
-                                                    <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                                                    <span className="line-clamp-2 text-sm">
-                                                        {household.address_text}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        household.habitability_status ===
-                                                        'RTLH'
-                                                            ? 'destructive'
-                                                            : household.habitability_status ===
-                                                                'LAYAK'
-                                                              ? 'default'
-                                                              : 'secondary'
-                                                    }
-                                                >
-                                                    {
-                                                        household.habitability_status
-                                                    }
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        household.ownership_status_building ===
-                                                        'OWN'
-                                                            ? 'default'
-                                                            : 'secondary'
-                                                    }
-                                                >
-                                                    {household.ownership_status_building ===
-                                                    'OWN'
-                                                        ? 'Milik Sendiri'
-                                                        : household.ownership_status_building ===
-                                                            'RENT'
-                                                          ? 'Sewa'
-                                                          : 'Lainnya'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                        >
-                                                            <MoreVertical className="h-4 w-4" />
-                                                            <span className="sr-only">
-                                                                Open menu
-                                                            </span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>
-                                                            Aksi
-                                                        </DropdownMenuLabel>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleView(
-                                                                    household.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Lihat Detail
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    household.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    household.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Hapus
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        {/* Mobile Card View */}
-                        <div className="space-y-4 md:hidden">
-                            {filteredHouseholds.map((household) => (
-                                <Card key={household.id}>
-                                    <CardHeader className="pb-3">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex-1">
-                                                <CardTitle className="text-base">
-                                                    {household.head_name}
-                                                </CardTitle>
-                                                <CardDescription className="mt-1 text-xs">
-                                                    ID: {household.id} • RT/RW:{' '}
-                                                    {household.rt_rw}
-                                                </CardDescription>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <MoreVertical className="h-4 w-4" />
-                                                        <span className="sr-only">
-                                                            Open menu
-                                                        </span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>
-                                                        Aksi
-                                                    </DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleView(
-                                                                household.id,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        Lihat Detail
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleEdit(
-                                                                household.id,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                household.id,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Hapus
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        <div className="flex items-start gap-2 text-sm">
-                                            <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                                            <span className="text-muted-foreground">
-                                                {household.address_text}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <Users className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-muted-foreground">
-                                                {household.member_total} jiwa (
-                                                {household.male_count} L,{' '}
-                                                {household.female_count} P) •{' '}
-                                                {household.kk_count} KK
-                                            </span>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <Badge
-                                                variant={
-                                                    household.habitability_status ===
-                                                    'RTLH'
-                                                        ? 'destructive'
-                                                        : household.habitability_status ===
-                                                            'LAYAK'
-                                                          ? 'default'
-                                                          : 'secondary'
-                                                }
-                                            >
-                                                {household.habitability_status}
-                                            </Badge>
-                                            <Badge
-                                                variant={
-                                                    household.ownership_status_building ===
-                                                    'OWN'
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {household.ownership_status_building ===
-                                                'OWN'
-                                                    ? 'Milik Sendiri'
-                                                    : household.ownership_status_building ===
-                                                        'RENT'
-                                                      ? 'Sewa'
-                                                      : 'Lainnya'}
-                                            </Badge>
-                                            <Badge variant="outline">
-                                                {household.status_mbr}
-                                            </Badge>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <div className="relative flex-1">
+                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    type="text"
+                                    placeholder="Cari nama, alamat, atau ID rumah..."
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    className="border-border pl-10"
+                                />
+                            </div>
+                            <Select
+                                value={filterStatus}
+                                onValueChange={setFilterStatus}
+                            >
+                                <SelectTrigger className="w-full border-border sm:w-[200px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        Semua Status
+                                    </SelectItem>
+                                    <SelectItem value="OWN">
+                                        Milik Sendiri
+                                    </SelectItem>
+                                    <SelectItem value="RENT">Sewa</SelectItem>
+                                    <SelectItem value="OTHER">
+                                        Lainnya
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Household Cards Grid */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredHouseholds.map((household) => (
+                        <Card
+                            key={household.id}
+                            className="group cursor-pointer overflow-hidden border-border bg-card shadow-sm transition-all hover:shadow-lg"
+                            onClick={() => {
+                                router.visit('/households/' + household.id);
+                            }}
+                        >
+                            <CardHeader className="border-b border-border pb-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1">
+                                        <CardTitle className="text-base font-semibold text-foreground">
+                                            {household.head_name}
+                                        </CardTitle>
+                                        <CardDescription className="mt-1 text-xs text-muted-foreground">
+                                            ID: {household.id}
+                                        </CardDescription>
+                                    </div>
+                                    <Badge
+                                        variant="outline"
+                                        className={`${getStatusColor(household.habitability_status)} border-0 text-xs font-medium`}
+                                    >
+                                        {household.habitability_status}
+                                    </Badge>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3 pt-4">
+                                <div className="flex items-start gap-2 text-sm">
+                                    <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                    <span className="line-clamp-2 text-foreground">
+                                        {household.address_text}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-foreground">
+                                        {household.member_total} jiwa •{' '}
+                                        {household.kk_count} KK
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    <Badge
+                                        variant="secondary"
+                                        className="text-xs"
+                                    >
+                                        {household.ownership_status_building ===
+                                        'OWN'
+                                            ? 'Milik Sendiri'
+                                            : household.ownership_status_building ===
+                                                'RENT'
+                                              ? 'Sewa'
+                                              : 'Lainnya'}
+                                    </Badge>
+                                    <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                    >
+                                        {household.status_mbr}
+                                    </Badge>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="mt-4 w-full gap-2 group-hover:bg-muted"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                    Lihat Detail
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                {filteredHouseholds.length === 0 && (
+                    <Card className="border-border bg-card shadow-sm">
+                        <CardContent className="py-12 text-center">
+                            <p className="text-muted-foreground">
+                                Tidak ada data rumah yang ditemukan
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </AppLayout>
     );
