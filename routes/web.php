@@ -19,9 +19,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('distribution-map');
     })->name('distribution-map');
 
-    Route::get('households', function () {
-        return Inertia::render('households');
-    })->name('households');
+    // Households Routes
+    Route::get('households', [App\Http\Controllers\HouseholdController::class, 'index'])->name('households.index');
+    Route::get('households/create', [App\Http\Controllers\HouseholdController::class, 'create'])->name('households.create');
+    Route::get('households/{id}', [App\Http\Controllers\HouseholdController::class, 'show'])->name('households.show');
+    Route::get('households/{id}/edit', [App\Http\Controllers\HouseholdController::class, 'edit'])->name('households.edit');
+    Route::post('households', [App\Http\Controllers\HouseholdController::class, 'store'])->name('households.store');
+    Route::put('households/{id}', [App\Http\Controllers\HouseholdController::class, 'update'])->name('households.update');
+    Route::delete('households/{id}', [App\Http\Controllers\HouseholdController::class, 'destroy'])->name('households.destroy');
 
     Route::get('areas', function () {
         return Inertia::render('areas');

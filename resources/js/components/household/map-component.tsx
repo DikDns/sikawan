@@ -52,7 +52,7 @@ export default function MapComponent({
                     <p class="font-semibold text-foreground">${householdName}</p>
                     <p class="text-sm text-muted-foreground">${address}</p>
                     <p class="text-xs text-muted-foreground mt-1">
-                        Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}
+                        Lat: ${latitude}, Lng: ${longitude}
                     </p>
                 </div>`,
                 );

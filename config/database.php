@@ -112,6 +112,13 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'wilayah' => [
+            'driver' => 'sqlite',
+            'database' => base_path('vendor/maftuhichsan/sqlite-wilayah-indonesia/database/records.sqlite'),
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ],
+
     ],
 
     /*

@@ -24,5 +24,10 @@ class DatabaseSeeder extends Seeder
                 'role' => 'superadmin',
             ]
         );
+
+        // Seed households and related data
+        $this->call([
+            HouseholdSeeder::class,
+        ]);
     }
 }
