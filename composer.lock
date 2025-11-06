@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fda2738d59fade9320638be36e9ae642",
+    "content-hash": "d7f472f8cbfde220f284f71a148eb0d3",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -2310,6 +2310,41 @@
                 }
             ],
             "time": "2024-12-08T08:18:47+00:00"
+        },
+        {
+            "name": "maftuhichsan/sqlite-wilayah-indonesia",
+            "version": "v1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/maftuh23/sqllite-api-wilayah-indonesia.git",
+                "reference": "74216f608f1f36f78417a0c54bcf10a3483a5763"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/maftuh23/sqllite-api-wilayah-indonesia/zipball/74216f608f1f36f78417a0c54bcf10a3483a5763",
+                "reference": "74216f608f1f36f78417a0c54bcf10a3483a5763",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Database SQLite wilayah Indonesia (provinsi, kabupaten, kecamatan, desa) berdasarkan BPS (Badan Pusat Statistik).",
+            "support": {
+                "issues": "https://github.com/maftuh23/sqllite-api-wilayah-indonesia/issues",
+                "source": "https://github.com/maftuh23/sqllite-api-wilayah-indonesia/tree/v1.1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/maftuh23",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-08-21T02:30:08+00:00"
         },
         {
             "name": "monolog/monolog",

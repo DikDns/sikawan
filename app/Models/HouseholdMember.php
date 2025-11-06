@@ -6,27 +6,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class HouseAssistance extends Model
+class HouseholdMember extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'household_id',
-        'assistance_type',
-        'program',
-        'funding_source',
-        'status',
-        'started_at',
-        'completed_at',
-        'cost_amount_idr',
-        'description',
-        'document_path',
+        'name',
+        'nik',
+        'relationship',
+        'gender',
+        'is_disabled',
+        'birth_date',
+        'occupation',
     ];
 
     protected $casts = [
-        'started_at' => 'date',
-        'completed_at' => 'date',
-        'cost_amount_idr' => 'integer',
+        'is_disabled' => 'boolean',
+        'birth_date' => 'date',
     ];
 
     public function household(): BelongsTo
