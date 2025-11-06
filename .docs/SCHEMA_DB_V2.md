@@ -419,49 +419,8 @@ total_score = (
 ) / 100
 
 habitability_status:
-- 'LAYAK' jika total_score >= 80
-- 'RLH' jika total_score >= 60 dan < 80
+- 'RLH' jika total_score >= 60
 - 'RTLH' jika total_score < 60
 ```
 
-**Catatan**: Bobot di atas adalah contoh. Sesuaikan dengan kebutuhan regulasi yang berlaku.
-
----
-
-## Rencana Implementasi (Laravel)
-
-### 1. Migrasi
-
-Urutan migrasi:
-
-1. `create_households_table` (dengan semua kolom baru)
-2. `create_household_technical_data_table`
-3. `create_household_members_table`
-4. `create_household_scores_table`
-5. `create_house_assistances_table`
-6. `create_household_photos_table`
-
-### 2. Model
-
-- `Household`: `hasOne` TechnicalData, Score; `hasMany` Members, Assistances, Photos
-- `HouseholdTechnicalData`: `belongsTo` Household
-- `HouseholdMember`: `belongsTo` Household
-- `HouseholdScore`: `belongsTo` Household
-- `HouseAssistance`: `belongsTo` Household
-- `HouseholdPhoto`: `belongsTo` Household
-
-### 3. Service/Helper untuk Kalkulasi Skor
-
-Buat service class `HouseholdScoreCalculator` yang:
-
-- Membaca data dari `household_technical_data`
-- Menghitung skor A.1 sampai A.5 sesuai logika di atas
-- Menyimpan hasil ke `household_scores`
-- Update `habitability_status` dan `eligibility_score_total` di `households`
-
-### 4. Event/Observer
-
-Gunakan Laravel Observer atau Event untuk:
-
-- Auto-calculate score ketika `household_technical_data` di-update
-- Update `households.habitability_status` dan `eligibility_score_total` ketika score berubah
+**Catatan**: Bobot masih asumsi
