@@ -5,10 +5,17 @@ import {
     type HouseholdDraftData,
 } from '@/hooks/use-household-draft';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 type PhotoFile = HouseholdDraftData['photos'][number];
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Rumah', href: '/households' },
+    { title: 'Tambah Rumah', href: '/households/create' },
+];
 
 interface Props {
     draft?: {
@@ -125,8 +132,8 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
     };
 
     return (
-        <AppLayout>
-            <Head title="Tambah Data Rumah" />
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Tambah Rumah" />
             <MultiStepForm
                 title="Tambah Data Rumah"
                 steps={STEPS}

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface Step {
@@ -39,7 +39,7 @@ export default function MultiStepForm({
 
     return (
         <div className="min-h-screen bg-background p-4 md:p-6">
-            <Card className="mx-auto max-w-4xl">
+            <Card className="">
                 <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
                     <div className="flex items-center gap-4">
                         <Button
@@ -56,30 +56,37 @@ export default function MultiStepForm({
 
                 {/* Step Indicator */}
                 <CardContent className="border-b py-6">
-                    <div className="flex items-center justify-between gap-2 md:gap-4">
+                    <div className="flex items-center justify-between">
                         {steps.map((step, index) => (
                             <div
                                 key={step.id}
-                                className="flex flex-1 items-center"
+                                className={cn(
+                                    'relative flex items-center',
+                                    index < steps.length - 1 && 'flex-1',
+                                )}
                             >
-                                <div className="flex flex-col items-center gap-2">
+                                <div className="relative z-10 flex flex-shrink-0 flex-col items-center gap-2">
                                     <div
                                         className={cn(
-                                            'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all',
+                                            'relative flex h-10 w-10 items-center justify-center rounded-full border-2 bg-background text-sm font-semibold transition-all',
                                             index === currentStepIndex
-                                                ? 'border-primary bg-primary text-primary-foreground'
+                                                ? 'border-secondary bg-secondary text-secondary-foreground'
                                                 : index < currentStepIndex
-                                                  ? 'border-primary bg-primary/10 text-primary'
+                                                  ? 'border-secondary bg-secondary text-secondary-foreground'
                                                   : 'border-muted-foreground/30 bg-muted text-muted-foreground',
                                         )}
                                     >
-                                        {step.number}
+                                        {index < currentStepIndex ? (
+                                            <Check className="h-5 w-5" />
+                                        ) : (
+                                            step.number
+                                        )}
                                     </div>
                                     <span
                                         className={cn(
                                             'hidden text-xs font-medium md:block',
                                             index === currentStepIndex
-                                                ? 'text-foreground'
+                                                ? 'font-semibold text-foreground'
                                                 : 'text-muted-foreground',
                                         )}
                                     >
@@ -89,11 +96,15 @@ export default function MultiStepForm({
                                 {index < steps.length - 1 && (
                                     <div
                                         className={cn(
-                                            'h-0.5 flex-1 border-t-2 border-dashed transition-colors',
+                                            'absolute top-5 left-10 h-[1px] w-full border-t transition-colors',
                                             index < currentStepIndex
-                                                ? 'border-primary'
-                                                : 'border-muted-foreground/30',
+                                                ? 'border-solid border-secondary'
+                                                : 'border-dotted border-muted-foreground/30',
                                         )}
+                                        style={{
+                                            borderTopWidth: '2px',
+                                            transform: 'translateY(-50%)',
+                                        }}
                                     />
                                 )}
                             </div>

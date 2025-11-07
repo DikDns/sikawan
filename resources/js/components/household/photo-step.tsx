@@ -1,5 +1,7 @@
+import { Button } from '@/components/ui/button';
+import Image from '@/components/ui/image';
 import { cn } from '@/lib/utils';
-import { Plus, Upload, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 
@@ -50,7 +52,7 @@ export default function PhotoStep({ photos, onPhotosChange }: PhotoStepProps) {
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                <h3 className="mb-2 text-lg font-semibold text-secondary">
                     Foto Rumah
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -86,31 +88,31 @@ export default function PhotoStep({ photos, onPhotosChange }: PhotoStepProps) {
                         key={photo.id}
                         className="group relative h-48 overflow-hidden rounded-lg border bg-muted"
                     >
-                        <img
+                        <Image
                             src={photo.preview}
                             alt={`Preview ${photo.id}`}
                             className="h-full w-full object-cover"
                         />
-                        <button
+                        <Button
                             type="button"
-                            onClick={() => removePhoto(photo.id)}
-                            className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                            variant="destructive"
+                            size="icon"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                removePhoto(photo.id);
+                            }}
+                            className={cn(
+                                'absolute top-2 right-2 shadow-md transition-opacity',
+                                'h-9 w-9 md:h-8 md:w-8',
+                                'opacity-100 md:opacity-0 md:group-hover:opacity-100',
+                            )}
+                            aria-label="Hapus foto"
                         >
-                            <X className="h-4 w-4" />
-                        </button>
+                            <X className="h-5 w-5 md:h-4 md:w-4" />
+                        </Button>
                     </div>
                 ))}
             </div>
-
-            {photos.length === 0 && (
-                <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-8 text-center">
-                    <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                        Belum ada foto yang diupload. Klik area di atas untuk
-                        menambah foto.
-                    </p>
-                </div>
-            )}
         </div>
     );
 }
