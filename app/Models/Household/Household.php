@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Household;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -68,26 +67,26 @@ class Household extends Model
     // V2 Relationships
     public function technicalData(): HasOne
     {
-        return $this->hasOne(HouseholdTechnicalData::class);
+        return $this->hasOne(TechnicalData::class);
     }
 
     public function members(): HasMany
     {
-        return $this->hasMany(HouseholdMember::class);
+        return $this->hasMany(Member::class);
     }
 
     public function score(): HasOne
     {
-        return $this->hasOne(HouseholdScore::class);
+        return $this->hasOne(Score::class);
     }
 
     public function assistances(): HasMany
     {
-        return $this->hasMany(HouseAssistance::class);
+        return $this->hasMany(Assistance::class);
     }
 
     public function photos(): HasMany
     {
-        return $this->hasMany(HouseholdPhoto::class);
+        return $this->hasMany(Photo::class);
     }
 }

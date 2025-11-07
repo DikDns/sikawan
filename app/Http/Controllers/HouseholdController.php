@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Household;
+use App\Models\Household\Household;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Household\Household;
+use App\Models\Household\Assistance;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,5 +31,5 @@ class RelocationAssessment extends Model
     ];
 
     public function household(): BelongsTo { return $this->belongsTo(Household::class); }
-    public function houseAssistance(): BelongsTo { return $this->belongsTo(HouseAssistance::class); }
+    public function houseAssistance(): BelongsTo { return $this->belongsTo(Assistance::class); }
 }

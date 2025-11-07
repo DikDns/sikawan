@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Household;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class HouseholdScore extends Model
+class Score extends Model
 {
     use HasFactory;
+
+    protected $table = 'household_scores';
 
     protected $fillable = [
         'household_id',

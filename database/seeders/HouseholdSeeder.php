@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Household;
-use App\Models\HouseholdMember;
-use App\Models\HouseholdTechnicalData;
-use App\Models\HouseholdScore;
-use App\Models\HouseAssistance;
-use App\Models\HouseholdPhoto;
+use App\Models\Household\Household;
+use App\Models\Household\Member;
+use App\Models\Household\TechnicalData;
+use App\Models\Household\Score;
+use App\Models\Household\Assistance;
+use App\Models\Household\Photo;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -174,7 +174,7 @@ class HouseholdSeeder extends Seeder
                 $buildingArea = $buildingLength * $buildingWidth;
                 $areaPerPerson = $buildingArea / $memberTotal;
 
-                HouseholdTechnicalData::create([
+                TechnicalData::create([
                     'household_id' => $household->id,
 
                     // A.1 Keteraturan Bangunan
@@ -241,7 +241,7 @@ class HouseholdSeeder extends Seeder
                 // Create Household Members
                 $relationships = ['HEAD', 'SPOUSE', 'CHILD', 'CHILD', 'OTHER'];
                 for ($j = 0; $j < min($memberTotal, 5); $j++) {
-                    HouseholdMember::create([
+                    Member::create([
                         'household_id' => $household->id,
                         'name' => $j === 0 ? $household->head_name : $names[rand(0, count($names) - 1)],
                         'nik' => '31710' . str_pad(($i * 10 + $j + 1), 11, '0', STR_PAD_LEFT),
@@ -254,7 +254,7 @@ class HouseholdSeeder extends Seeder
                 }
 
                 // Create Household Score
-                HouseholdScore::create([
+                Score::create([
                     'household_id' => $household->id,
                     'score_a1' => rand(0, 1),
                     'score_a2_floor_area' => rand(0, 1),
@@ -278,7 +278,7 @@ class HouseholdSeeder extends Seeder
                         $startDate = now()->subMonths(rand(1, 24));
                         $isCompleted = rand(0, 1);
 
-                        HouseAssistance::create([
+                        Assistance::create([
                             'household_id' => $household->id,
                             'assistance_type' => ['RELOKASI', 'REHABILITASI', 'BSPS', 'LAINNYA'][rand(0, 3)],
                             'program' => ['Peningkatan Kualitas', 'Bantuan Stimulan Perumahan', 'Rehab Berat', 'Rehab Sedang'][rand(0, 3)],
@@ -297,7 +297,7 @@ class HouseholdSeeder extends Seeder
                 if (rand(0, 1)) {
                     $photoCount = rand(2, 5);
                     for ($m = 0; $m < $photoCount; $m++) {
-                        HouseholdPhoto::create([
+                        Photo::create([
                             'household_id' => $household->id,
                             'file_path' => $household->photo_folder . '/photo_' . ($m + 1) . '.jpg',
                             'caption' => ['Tampak Depan', 'Tampak Samping', 'Ruang Tamu', 'Kamar Tidur', 'Dapur', 'Kamar Mandi'][$m % 6],
