@@ -22,6 +22,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Households Routes
     Route::get('households', [App\Http\Controllers\HouseholdController::class, 'index'])->name('households.index');
     Route::get('households/create', [App\Http\Controllers\HouseholdController::class, 'create'])->name('households.create');
+
+    // Draft Routes (must be before {id} route to avoid route conflict)
+    Route::post('households/draft', [App\Http\Controllers\HouseholdController::class, 'saveDraft'])->name('households.draft.save');
+    Route::get('households/draft', [App\Http\Controllers\HouseholdController::class, 'getDraft'])->name('households.draft.get');
+
     Route::get('households/{id}', [App\Http\Controllers\HouseholdController::class, 'show'])->name('households.show');
     Route::get('households/{id}/edit', [App\Http\Controllers\HouseholdController::class, 'edit'])->name('households.edit');
     Route::post('households', [App\Http\Controllers\HouseholdController::class, 'store'])->name('households.store');

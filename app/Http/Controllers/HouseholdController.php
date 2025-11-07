@@ -4,14 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Household\Household;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class HouseholdController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $households = Household::with(['score'])
-            ->orderBy('created_at', 'desc')
+        $user = $request->user();
+
+        $query = Household::with(['score'])
+            ->where('is_draft', false);
+
+        $households = $query->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($household) {
                 return [
@@ -36,10 +41,11 @@ class HouseholdController extends Controller
                 ];
             });
 
+        $statsQuery = Household::where('is_draft', false);
         $stats = [
-            'total' => Household::count(),
-            'rlh' => Household::where('habitability_status', 'RLH')->count(),
-            'rtlh' => Household::where('habitability_status', 'RTLH')->count(),
+            'total' => $statsQuery->count(),
+            'rlh' => (clone $statsQuery)->where('habitability_status', 'RLH')->count(),
+            'rtlh' => (clone $statsQuery)->where('habitability_status', 'RTLH')->count(),
         ];
 
         return Inertia::render('households', [
@@ -48,8 +54,10 @@ class HouseholdController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
+        $user = $request->user();
+
         $household = Household::with([
             'technicalData',
             'members',
@@ -57,6 +65,12 @@ class HouseholdController extends Controller
             'assistances',
             'photos',
         ])->findOrFail($id);
+
+        // Check if user has access to this household
+        // Admin can see all, regular users only see their own
+        if ($user->role !== 'admin' && $household->created_by !== $user->id) {
+            abort(403, 'Unauthorized access to this household');
+        }
 
         return Inertia::render('households/detail-households', [
             'household' => [
@@ -197,9 +211,47 @@ class HouseholdController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return Inertia::render('households/create-household');
+        $user = $request->user();
+
+        // Check if draft data is passed from redirect (after save)
+        $redirectDraft = $request->session()->get('draft');
+        $redirectHouseholdId = $request->session()->get('householdId');
+
+        if ($redirectDraft && $redirectHouseholdId) {
+            // Use draft data from redirect
+            $draft = $redirectDraft;
+            $draft['householdId'] = $redirectHouseholdId;
+
+            // Clear session data
+            $request->session()->forget(['draft', 'householdId']);
+
+            return Inertia::render('households/create-household', [
+                'draft' => $draft,
+            ]);
+        }
+
+        // Load last draft if exists (only for current user)
+        $lastDraft = Household::where('is_draft', true)
+            ->where('created_by', $user->id)
+            ->orderBy('updated_at', 'desc')
+            ->first();
+
+        return Inertia::render('households/create-household', [
+            'draft' => $lastDraft ? [
+                'householdId' => $lastDraft->id,
+                'photos' => $lastDraft->photos->map(function ($photo) {
+                    return [
+                        'id' => $photo->id,
+                        'path' => $photo->file_path,
+                        'preview' => asset('storage/' . $photo->file_path),
+                        'uploaded' => true,
+                    ];
+                })->toArray(),
+                'lastSaved' => $lastDraft->updated_at->toISOString(),
+            ] : null,
+        ]);
     }
 
     public function store(Request $request)
@@ -208,9 +260,153 @@ class HouseholdController extends Controller
         // Will be implemented later
     }
 
-    public function edit($id)
+    public function saveDraft(Request $request)
     {
+        $user = $request->user();
+
+        $request->validate([
+            'household_id' => 'nullable|exists:households,id',
+            'photos' => 'nullable|string', // JSON string of photos metadata
+            'photo_files' => 'nullable|array',
+            'photo_files.*' => 'image|max:5120', // 5MB max per file
+        ]);
+
+        $photosData = json_decode($request->input('photos', '[]'), true);
+
+        // If household_id exists, update existing draft (only if owned by current user)
+        if ($request->has('household_id') && $request->household_id) {
+            $household = Household::where('id', $request->household_id)
+                ->where('created_by', $user->id)
+                ->where('is_draft', true)
+                ->firstOrFail();
+        } else {
+            // Create new draft household
+            $household = Household::create([
+                'created_by' => $user->id,
+                'head_name' => 'Draft',
+                'status_mbr' => 'NON_MBR',
+                'is_draft' => true,
+            ]);
+        }
+
+        // Handle photo deletions - remove photos that are not in the metadata
+        if ($household->id) {
+            $existingPhotoIds = $household->photos()->pluck('id')->toArray();
+            $submittedPhotoIds = array_filter(
+                array_column($photosData, 'id'),
+                fn($id) => !empty($id) && is_numeric($id)
+            );
+
+            // Find photos to delete (exist in DB but not in submitted metadata)
+            $photosToDelete = array_diff($existingPhotoIds, $submittedPhotoIds);
+
+            if (!empty($photosToDelete)) {
+                $photosToDeleteModels = $household->photos()
+                    ->whereIn('id', $photosToDelete)
+                    ->get();
+
+                // Delete files from storage
+                foreach ($photosToDeleteModels as $photo) {
+                    if ($photo->file_path && Storage::disk('public')->exists($photo->file_path)) {
+                        Storage::disk('public')->delete($photo->file_path);
+                    }
+                }
+
+                // Delete photo records from database
+                $household->photos()->whereIn('id', $photosToDelete)->delete();
+            }
+        }
+
+        // Handle photo uploads (new files)
+        if ($request->hasFile('photo_files')) {
+            $photoFolder = 'households/' . date('Y/m') . '/' . $household->id;
+
+            foreach ($request->file('photo_files') as $index => $file) {
+                $path = $file->store($photoFolder, 'public');
+
+                // Get existing photo count to set order_index
+                $existingCount = $household->photos()->count();
+
+                $household->photos()->create([
+                    'file_path' => $path,
+                    'order_index' => $existingCount + $index + 1,
+                ]);
+            }
+        }
+
+        // Update order_index for remaining photos based on metadata order
+        if (!empty($photosData)) {
+            foreach ($photosData as $index => $photoData) {
+                if (!empty($photoData['id']) && is_numeric($photoData['id'])) {
+                    $household->photos()
+                        ->where('id', $photoData['id'])
+                        ->update(['order_index' => $index + 1]);
+                }
+            }
+        }
+
+        // Reload household with photos for response
+        $household->load('photos');
+
+        // Redirect back to create page with draft data
+        // Inertia will automatically pass this data to the component props
+        return redirect()->route('households.create')->with([
+            'householdId' => $household->id,
+            'draft' => [
+                'householdId' => $household->id,
+                'photos' => $household->photos->map(function ($photo) {
+                    return [
+                        'id' => $photo->id,
+                        'path' => $photo->file_path,
+                        'preview' => asset('storage/' . $photo->file_path),
+                        'uploaded' => true,
+                    ];
+                })->toArray(),
+                'lastSaved' => $household->updated_at->toISOString(),
+            ],
+        ]);
+    }
+
+    public function getDraft(Request $request)
+    {
+        $user = $request->user();
+
+        // Only get draft for current user
+        $lastDraft = Household::where('is_draft', true)
+            ->where('created_by', $user->id)
+            ->with('photos')
+            ->orderBy('updated_at', 'desc')
+            ->first();
+
+        // Return JSON response for API endpoint
+        // This is called via router.get() from frontend, not a page navigation
+        return response()->json([
+            'draft' => $lastDraft ? [
+                'householdId' => $lastDraft->id,
+                'photos' => $lastDraft->photos->map(function ($photo) {
+                    return [
+                        'id' => $photo->id,
+                        'path' => $photo->file_path,
+                        'preview' => asset('storage/' . $photo->file_path),
+                        'uploaded' => true,
+                    ];
+                })->toArray(),
+                'lastSaved' => $lastDraft->updated_at->toISOString(),
+            ] : null,
+        ]);
+    }
+
+    public function edit(Request $request, $id)
+    {
+        $user = $request->user();
+
         $household = Household::with(['technicalData', 'members'])->findOrFail($id);
+
+        // Check if user has access to edit this household
+        // Admin can edit all, regular users only edit their own
+        if (($user->role !== 'admin' && $user->role !== 'superadmin') && $household->created_by !== $user->id) {
+            abort(403, 'Unauthorized access to edit this household');
+        }
 
         return Inertia::render('households/edit-household', [
             'household' => $household,
@@ -219,13 +415,32 @@ class HouseholdController extends Controller
 
     public function update(Request $request, $id)
     {
+        $user = $request->user();
+
+        $household = Household::findOrFail($id);
+
+        // Check if user has access to update this household
+        // Admin can update all, regular users only update their own
+        if (($user->role !== 'admin' && $user->role !== 'superadmin') && $household->created_by !== $user->id) {
+            abort(403, 'Unauthorized access to update this household');
+        }
+
         // Validation and update logic
         // Will be implemented later
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $user = $request->user();
+
         $household = Household::findOrFail($id);
+
+        // Check if user has access to delete this household
+        // Admin can delete all, regular users only delete their own
+        if (($user->role !== 'admin' && $user->role !== 'superadmin') && $household->created_by !== $user->id) {
+            abort(403, 'Unauthorized access to delete this household');
+        }
+
         $household->delete();
 
         return redirect()->route('households.index')

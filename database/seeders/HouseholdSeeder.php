@@ -8,6 +8,7 @@ use App\Models\Household\TechnicalData;
 use App\Models\Household\Score;
 use App\Models\Household\Assistance;
 use App\Models\Household\Photo;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +22,12 @@ class HouseholdSeeder extends Seeder
         DB::beginTransaction();
 
         try {
+            // Get first user (superadmin) as creator for seeded households
+            $creator = User::first();
+            if (!$creator) {
+                throw new \Exception('No user found. Please run DatabaseSeeder first to create a user.');
+            }
+
             // Data wilayah Indonesia (contoh)
             $locations = [
                 [
@@ -124,6 +131,8 @@ class HouseholdSeeder extends Seeder
 
                 // Create Household
                 $household = Household::create([
+                    'created_by' => $creator->id,
+                    'is_draft' => false, // Seeded households are final, not drafts
                     'province_id' => $location['province_id'],
                     'province_name' => $location['province_name'],
                     'regency_id' => $location['regency_id'],

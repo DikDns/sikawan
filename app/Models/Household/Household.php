@@ -2,8 +2,10 @@
 
 namespace App\Models\Household;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -12,6 +14,7 @@ class Household extends Model
     use HasFactory;
 
     protected $fillable = [
+        'created_by', // User yang membuat household ini
         // Data Wilayah (dari package SQLite: maftuhichsan/sqlite-wilayah-indonesia)
         // province_id = province_code, regency_id = city_code, district_id = sub_district_code, village_id = village_code
         'province_id',
@@ -48,6 +51,7 @@ class Household extends Model
         'habitability_status',
         'eligibility_score_total',
         'eligibility_computed_at',
+        'is_draft',
     ];
 
     protected $casts = [
@@ -62,6 +66,7 @@ class Household extends Model
         'disabled_count' => 'integer',
         'eligibility_score_total' => 'decimal:2',
         'eligibility_computed_at' => 'datetime',
+        'is_draft' => 'boolean',
     ];
 
     // V2 Relationships
@@ -88,5 +93,10 @@ class Household extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(Photo::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }
