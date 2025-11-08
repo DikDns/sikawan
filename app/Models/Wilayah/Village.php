@@ -2,13 +2,10 @@
 
 namespace App\Models\Wilayah;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Village extends Model
 {
-    use HasFactory;
-
     protected $connection = 'wilayah';
     protected $table = 'villages';
     protected $primaryKey = 'village_code';
@@ -16,6 +13,8 @@ class Village extends Model
     protected $keyType = 'string';
 
     protected $fillable = ['village_code', 'village_name', 'village_sub_district_code'];
+
+    public $timestamps = false;
 
     public function subDistrict()
     {

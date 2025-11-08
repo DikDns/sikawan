@@ -123,7 +123,7 @@ export default function HouseholdDetail({ household }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Detail Rumah - ${household.head_name}`} />
+            <Head title={`Rumah ${household.head_name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 bg-background p-6">
                 {/* Header */}
                 <Button

@@ -52,6 +52,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users', function () {
         return Inertia::render('users');
     })->name('users');
+
+    // Wilayah API Routes (for cascading select)
+    Route::prefix('api/wilayah')->group(function () {
+        Route::get('provinces', [App\Http\Controllers\WilayahController::class, 'provinces'])->name('api.wilayah.provinces');
+        Route::get('cities/{provinceId}', [App\Http\Controllers\WilayahController::class, 'cities'])->name('api.wilayah.cities');
+        Route::get('sub-districts/{cityId}', [App\Http\Controllers\WilayahController::class, 'subDistricts'])->name('api.wilayah.sub-districts');
+        Route::get('villages/{subDistrictId}', [App\Http\Controllers\WilayahController::class, 'villages'])->name('api.wilayah.villages');
+    });
 });
 
 require __DIR__.'/settings.php';

@@ -114,7 +114,7 @@ return [
 
         'wilayah' => [
             'driver' => 'sqlite',
-            'database' => base_path('vendor/maftuhichsan/sqlite-wilayah-indonesia/database/records.sqlite'),
+            'database' => base_path('vendor/maftuhichsan/sqlite-wilayah-indonesia/records.sqlite'),
             'prefix' => '',
             'foreign_key_constraints' => true,
         ],

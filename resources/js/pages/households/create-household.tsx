@@ -1,3 +1,4 @@
+import GeneralInfoStep from '@/components/household/general-info-step';
 import MultiStepForm from '@/components/household/multi-step-form';
 import PhotoStep from '@/components/household/photo-step';
 import {
@@ -119,7 +120,15 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
                     />
                 );
             case 2:
-                return <div>Informasi Umum (Coming Soon)</div>;
+                return (
+                    <GeneralInfoStep
+                        data={{}}
+                        onChange={(data) => {
+                            // Update draft with general info data
+                            updateDraft({ generalInfo: data });
+                        }}
+                    />
+                );
             case 3:
                 return <div>Data Teknis (Coming Soon)</div>;
             case 4:

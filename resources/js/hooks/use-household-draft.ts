@@ -13,7 +13,31 @@ export interface HouseholdDraftData {
         path?: string;
     }>;
 
-    // Step 2: General Info (will be added later)
+    // Step 2: General Info
+    generalInfo?: {
+        houseId?: string;
+        dataCollectionDate?: string; // ISO date string for serialization
+        address?: string;
+        province?: string;
+        city?: string;
+        village?: string;
+        district?: string;
+        buildingOccupancyStatus?: string;
+        landOccupancyStatus?: string;
+        buildingLegality?: string;
+        landLegality?: string;
+        nik?: string;
+        headOfHouseholdName?: string;
+        mainOccupation?: string;
+        income?: string;
+        householdStatus?: string;
+        numberOfHouseholds?: number;
+        maleMembers?: number;
+        femaleMembers?: number;
+        disabledMembers?: number;
+        totalMembers?: number;
+    };
+
     // Step 3: Technical Data (will be added later)
     // Step 4: Map Location (will be added later)
     // Step 5: Assistance (will be added later)
