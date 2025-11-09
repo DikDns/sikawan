@@ -27,6 +27,7 @@ interface Props {
             preview: string;
             uploaded: boolean;
         }>;
+        generalInfo?: HouseholdDraftData['generalInfo'];
         lastSaved: string;
     } | null;
 }
@@ -41,7 +42,7 @@ const STEPS = [
 
 export default function CreateHousehold({ draft: initialDraft }: Props) {
     const [currentStep, setCurrentStep] = useState(1);
-    const { updateDraft, saveDraft, isSaving } = useHouseholdDraft();
+    const { updateDraft, saveDraft, isSaving, draftData } = useHouseholdDraft();
     const [photos, setPhotos] = useState<PhotoFile[]>(() => {
         // Initialize photos from initialDraft if available
         if (initialDraft) {
@@ -68,6 +69,7 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             );
             updateDraft({
                 photos: draftPhotos,
+                generalInfo: initialDraft.generalInfo,
                 householdId: initialDraft.householdId,
                 lastSaved: initialDraft.lastSaved,
             });
@@ -82,6 +84,15 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
     }, [photos]);
 
     const handleNext = async () => {
+        console.log('🚀 handleNext called', {
+            currentStep,
+            draftData: {
+                photos: draftData.photos.length,
+                generalInfo: draftData.generalInfo,
+                householdId: draftData.householdId,
+            },
+        });
+
         try {
             // Save draft before moving to next step
             await saveDraft();
@@ -91,7 +102,7 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             }
         } catch (error) {
             // Error saving draft - show error message or prevent navigation
-            console.error('Failed to save draft:', error);
+            console.error('❌ Failed to save draft:', error);
             // Optionally: show toast notification or error message to user
         }
     };
@@ -122,8 +133,12 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             case 2:
                 return (
                     <GeneralInfoStep
-                        data={{}}
+                        data={draftData.generalInfo || {}}
                         onChange={(data) => {
+                            console.log(
+                                '📝 GeneralInfoStep onChange called',
+                                data,
+                            );
                             // Update draft with general info data
                             updateDraft({ generalInfo: data });
                         }}

@@ -15,17 +15,20 @@ export interface HouseholdDraftData {
 
     // Step 2: General Info
     generalInfo?: {
-        houseId?: string;
-        dataCollectionDate?: string; // ISO date string for serialization
+        dataCollectionDate?: string;
         address?: string;
-        province?: string;
-        city?: string;
-        village?: string;
-        district?: string;
-        buildingOccupancyStatus?: string;
-        landOccupancyStatus?: string;
-        buildingLegality?: string;
-        landLegality?: string;
+        provinceId?: string;
+        provinceName?: string;
+        regencyId?: string;
+        regencyName?: string;
+        districtId?: string;
+        districtName?: string;
+        villageId?: string;
+        villageName?: string;
+        ownershipStatusBuilding?: string;
+        ownershipStatusLand?: string;
+        buildingLegalStatus?: string;
+        landLegalStatus?: string;
         nik?: string;
         headOfHouseholdName?: string;
         mainOccupation?: string;
@@ -77,33 +80,47 @@ export function useHouseholdDraft() {
     // Returns a Promise that resolves when save is complete
     const saveDraft = useCallback((): Promise<void> => {
         return new Promise((resolve, reject) => {
-            // Create a serializable version for comparison
+            // Create a serializable version for comparison (include generalInfo!)
             const serializableData = {
                 photos: draftData.photos.map((photo) => ({
                     id: photo.id,
                     uploaded: photo.uploaded || false,
                     path: photo.path,
                 })),
+                generalInfo: draftData.generalInfo,
                 householdId: draftData.householdId,
             };
             const dataString = JSON.stringify(serializableData);
 
             // Skip if data hasn't changed since last save
             if (lastSavedDraft === dataString) {
+                console.log('⏭️ Skipping save - no changes detected');
                 resolve();
                 return;
             }
 
-            // Only save if there are new files to upload OR if we have an existing household
+            // Check if there's any data to save
             const hasNewFiles = draftData.photos.some(
                 (photo) => photo.file && !photo.uploaded,
             );
+            const hasGeneralInfo =
+                draftData.generalInfo &&
+                Object.keys(draftData.generalInfo).length > 0;
+            const hasExistingHousehold = !!draftData.householdId;
 
-            if (!hasNewFiles && !draftData.householdId) {
-                // No new files and no existing household, skip save
+            // Skip if there's nothing to save
+            if (!hasNewFiles && !hasGeneralInfo && !hasExistingHousehold) {
+                console.log('⏭️ Skipping save - no data to save');
                 resolve();
                 return;
             }
+
+            console.log('💾 Saving draft...', {
+                hasNewFiles,
+                hasGeneralInfo,
+                hasExistingHousehold,
+                generalInfo: draftData.generalInfo,
+            });
 
             setIsSaving(true);
             try {
@@ -143,6 +160,14 @@ export function useHouseholdDraft() {
                     );
                 }
 
+                // Add general info data
+                if (draftData.generalInfo) {
+                    formData.append(
+                        'general_info',
+                        JSON.stringify(draftData.generalInfo),
+                    );
+                }
+
                 // Use router.post with redirect - Inertia will handle the redirect
                 router.post('/households/draft', formData, {
                     preserveState: true,
@@ -160,6 +185,7 @@ export function useHouseholdDraft() {
                                     preview: string;
                                     uploaded: boolean;
                                 }>;
+                                generalInfo?: HouseholdDraftData['generalInfo'];
                                 lastSaved: string;
                             };
                         };
@@ -187,6 +213,9 @@ export function useHouseholdDraft() {
                                         path: photo.path,
                                     }),
                                 ),
+                                generalInfo:
+                                    props.draft.generalInfo ||
+                                    draftData.generalInfo,
                             };
 
                             setDraftData(updatedData);
@@ -204,11 +233,13 @@ export function useHouseholdDraft() {
                                         path: photo.path,
                                     }),
                                 ),
+                                generalInfo: updatedData.generalInfo,
                                 householdId: updatedData.householdId,
                             };
                             setLastSavedDraft(
                                 JSON.stringify(updatedSerializable),
                             );
+                            console.log('✅ Draft saved successfully!');
                         }
                         setIsSaving(false);
                         resolve();
@@ -282,6 +313,7 @@ export function useHouseholdDraft() {
                             path: photo.path,
                         }),
                     ),
+                    generalInfo: data.draft.generalInfo,
                     householdId: data.draft.householdId,
                     lastSaved: data.draft.lastSaved,
                 };
@@ -294,6 +326,7 @@ export function useHouseholdDraft() {
                         uploaded: photo.uploaded || false,
                         path: photo.path,
                     })),
+                    generalInfo: draftData.generalInfo,
                     householdId: draftData.householdId,
                 };
                 setLastSavedDraft(JSON.stringify(serializableData));

@@ -9,6 +9,50 @@ use Inertia\Inertia;
 
 class HouseholdController extends Controller
 {
+    /**
+     * Map income string from frontend to integer for database
+     *
+     * @param string|null $incomeString
+     * @return int|null
+     */
+    private function mapIncomeStringToInt(?string $incomeString): ?int
+    {
+        if (empty($incomeString)) {
+            return null;
+        }
+
+        $mapping = [
+            '<1jt' => 1,
+            '1-3jt' => 2,
+            '3-5jt' => 3,
+            '>5jt' => 4,
+        ];
+
+        return $mapping[$incomeString] ?? null;
+    }
+
+    /**
+     * Map income integer from database to string for frontend
+     *
+     * @param int|null $incomeInt
+     * @return string|null
+     */
+    private function mapIncomeIntToString(?int $incomeInt): ?string
+    {
+        if ($incomeInt === null) {
+            return null;
+        }
+
+        $mapping = [
+            1 => '<1jt',
+            2 => '1-3jt',
+            3 => '3-5jt',
+            4 => '>5jt',
+        ];
+
+        return $mapping[$incomeInt] ?? null;
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -108,7 +152,7 @@ class HouseholdController extends Controller
 
                 // Non-Physical Data
                 'main_occupation' => $household->main_occupation,
-                'monthly_income_idr' => $household->monthly_income_idr,
+                'monthly_income_idr' => $this->mapIncomeIntToString($household->monthly_income_idr),
                 'health_facility_used' => $household->health_facility_used,
                 'health_facility_location' => $household->health_facility_location,
                 'education_facility_location' => $household->education_facility_location,
@@ -238,8 +282,36 @@ class HouseholdController extends Controller
             ->orderBy('updated_at', 'desc')
             ->first();
 
-        return Inertia::render('households/create-household', [
-            'draft' => $lastDraft ? [
+        $draftData = null;
+        if ($lastDraft) {
+            $generalInfo = [
+                'dataCollectionDate' => $lastDraft->survey_date,
+                'address' => $lastDraft->address_text,
+                'provinceId' => $lastDraft->province_id,
+                'provinceName' => $lastDraft->province_name,
+                'regencyId' => $lastDraft->regency_id,
+                'regencyName' => $lastDraft->regency_name,
+                'districtId' => $lastDraft->district_id,
+                'districtName' => $lastDraft->district_name,
+                'villageId' => $lastDraft->village_id,
+                'villageName' => $lastDraft->village_name,
+                'ownershipStatusBuilding' => $lastDraft->ownership_status_building,
+                'ownershipStatusLand' => $lastDraft->ownership_status_land,
+                'buildingLegalStatus' => $lastDraft->building_legal_status,
+                'landLegalStatus' => $lastDraft->land_legal_status,
+                'nik' => $lastDraft->nik,
+                'headOfHouseholdName' => $lastDraft->head_name !== 'Draft' ? $lastDraft->head_name : null,
+                'mainOccupation' => $lastDraft->main_occupation,
+                'income' => $this->mapIncomeIntToString($lastDraft->monthly_income_idr),
+                'householdStatus' => $lastDraft->status_mbr,
+                'numberOfHouseholds' => $lastDraft->kk_count,
+                'maleMembers' => $lastDraft->male_count,
+                'femaleMembers' => $lastDraft->female_count,
+                'disabledMembers' => $lastDraft->disabled_count,
+                'totalMembers' => $lastDraft->member_total,
+            ];
+
+            $draftData = [
                 'householdId' => $lastDraft->id,
                 'photos' => $lastDraft->photos->map(function ($photo) {
                     return [
@@ -249,8 +321,13 @@ class HouseholdController extends Controller
                         'uploaded' => true,
                     ];
                 })->toArray(),
+                'generalInfo' => $generalInfo,
                 'lastSaved' => $lastDraft->updated_at->toISOString(),
-            ] : null,
+            ];
+        }
+
+        return Inertia::render('households/create-household', [
+            'draft' => $draftData,
         ]);
     }
 
@@ -269,9 +346,11 @@ class HouseholdController extends Controller
             'photos' => 'nullable|string', // JSON string of photos metadata
             'photo_files' => 'nullable|array',
             'photo_files.*' => 'image|max:5120', // 5MB max per file
+            'general_info' => 'nullable|string', // JSON string of general info data
         ]);
 
         $photosData = json_decode($request->input('photos', '[]'), true);
+        $generalInfoData = json_decode($request->input('general_info', '{}'), true);
 
         // If household_id exists, update existing draft (only if owned by current user)
         if ($request->has('household_id') && $request->household_id) {
@@ -286,6 +365,36 @@ class HouseholdController extends Controller
                 'head_name' => 'Draft',
                 'status_mbr' => 'NON_MBR',
                 'is_draft' => true,
+            ]);
+        }
+
+        // Update household with general info data if provided
+        if (!empty($generalInfoData)) {
+            $household->update([
+                'survey_date' => $generalInfoData['dataCollectionDate'] ?? null,
+                'address_text' => $generalInfoData['address'] ?? null,
+                'province_id' => $generalInfoData['provinceId'] ?? null,
+                'province_name' => $generalInfoData['provinceName'] ?? null,
+                'regency_id' => $generalInfoData['regencyId'] ?? null,
+                'regency_name' => $generalInfoData['regencyName'] ?? null,
+                'district_id' => $generalInfoData['districtId'] ?? null,
+                'district_name' => $generalInfoData['districtName'] ?? null,
+                'village_id' => $generalInfoData['villageId'] ?? null,
+                'village_name' => $generalInfoData['villageName'] ?? null,
+                'ownership_status_building' => $generalInfoData['ownershipStatusBuilding'] ?? null,
+                'ownership_status_land' => $generalInfoData['ownershipStatusLand'] ?? null,
+                'building_legal_status' => $generalInfoData['buildingLegalStatus'] ?? null,
+                'land_legal_status' => $generalInfoData['landLegalStatus'] ?? null,
+                'nik' => $generalInfoData['nik'] ?? null,
+                'head_name' => $generalInfoData['headOfHouseholdName'] ?? 'Draft',
+                'main_occupation' => $generalInfoData['mainOccupation'] ?? null,
+                'monthly_income_idr' => $this->mapIncomeStringToInt($generalInfoData['income'] ?? null),
+                'status_mbr' => $generalInfoData['householdStatus'] ?? 'NON_MBR',
+                'kk_count' => $generalInfoData['numberOfHouseholds'] ?? null,
+                'male_count' => $generalInfoData['maleMembers'] ?? null,
+                'female_count' => $generalInfoData['femaleMembers'] ?? null,
+                'disabled_count' => $generalInfoData['disabledMembers'] ?? null,
+                'member_total' => $generalInfoData['totalMembers'] ?? null,
             ]);
         }
 
@@ -348,6 +457,34 @@ class HouseholdController extends Controller
         // Reload household with photos for response
         $household->load('photos');
 
+        // Prepare general info data for response
+        $generalInfo = [
+            'dataCollectionDate' => $household->survey_date,
+            'address' => $household->address_text,
+            'provinceId' => $household->province_id,
+            'provinceName' => $household->province_name,
+            'regencyId' => $household->regency_id,
+            'regencyName' => $household->regency_name,
+            'districtId' => $household->district_id,
+            'districtName' => $household->district_name,
+            'villageId' => $household->village_id,
+            'villageName' => $household->village_name,
+            'ownershipStatusBuilding' => $household->ownership_status_building,
+            'ownershipStatusLand' => $household->ownership_status_land,
+            'buildingLegalStatus' => $household->building_legal_status,
+            'landLegalStatus' => $household->land_legal_status,
+            'nik' => $household->nik,
+            'headOfHouseholdName' => $household->head_name !== 'Draft' ? $household->head_name : null,
+            'mainOccupation' => $household->main_occupation,
+            'income' => $this->mapIncomeIntToString($household->monthly_income_idr),
+            'householdStatus' => $household->status_mbr,
+            'numberOfHouseholds' => $household->kk_count,
+            'maleMembers' => $household->male_count,
+            'femaleMembers' => $household->female_count,
+            'disabledMembers' => $household->disabled_count,
+            'totalMembers' => $household->member_total,
+        ];
+
         // Redirect back to create page with draft data
         // Inertia will automatically pass this data to the component props
         return redirect()->route('households.create')->with([
@@ -362,6 +499,7 @@ class HouseholdController extends Controller
                         'uploaded' => true,
                     ];
                 })->toArray(),
+                'generalInfo' => $generalInfo,
                 'lastSaved' => $household->updated_at->toISOString(),
             ],
         ]);
@@ -378,10 +516,36 @@ class HouseholdController extends Controller
             ->orderBy('updated_at', 'desc')
             ->first();
 
-        // Return JSON response for API endpoint
-        // This is called via router.get() from frontend, not a page navigation
-        return response()->json([
-            'draft' => $lastDraft ? [
+        $draftData = null;
+        if ($lastDraft) {
+            $generalInfo = [
+                'dataCollectionDate' => $lastDraft->survey_date,
+                'address' => $lastDraft->address_text,
+                'provinceId' => $lastDraft->province_id,
+                'provinceName' => $lastDraft->province_name,
+                'regencyId' => $lastDraft->regency_id,
+                'regencyName' => $lastDraft->regency_name,
+                'districtId' => $lastDraft->district_id,
+                'districtName' => $lastDraft->district_name,
+                'villageId' => $lastDraft->village_id,
+                'villageName' => $lastDraft->village_name,
+                'ownershipStatusBuilding' => $lastDraft->ownership_status_building,
+                'ownershipStatusLand' => $lastDraft->ownership_status_land,
+                'buildingLegalStatus' => $lastDraft->building_legal_status,
+                'landLegalStatus' => $lastDraft->land_legal_status,
+                'nik' => $lastDraft->nik,
+                'headOfHouseholdName' => $lastDraft->head_name !== 'Draft' ? $lastDraft->head_name : null,
+                'mainOccupation' => $lastDraft->main_occupation,
+                'income' => $this->mapIncomeIntToString($lastDraft->monthly_income_idr),
+                'householdStatus' => $lastDraft->status_mbr,
+                'numberOfHouseholds' => $lastDraft->kk_count,
+                'maleMembers' => $lastDraft->male_count,
+                'femaleMembers' => $lastDraft->female_count,
+                'disabledMembers' => $lastDraft->disabled_count,
+                'totalMembers' => $lastDraft->member_total,
+            ];
+
+            $draftData = [
                 'householdId' => $lastDraft->id,
                 'photos' => $lastDraft->photos->map(function ($photo) {
                     return [
@@ -391,8 +555,15 @@ class HouseholdController extends Controller
                         'uploaded' => true,
                     ];
                 })->toArray(),
+                'generalInfo' => $generalInfo,
                 'lastSaved' => $lastDraft->updated_at->toISOString(),
-            ] : null,
+            ];
+        }
+
+        // Return JSON response for API endpoint
+        // This is called via router.get() from frontend, not a page navigation
+        return response()->json([
+            'draft' => $draftData,
         ]);
     }
 
