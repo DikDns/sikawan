@@ -1,4 +1,5 @@
 import GeneralInfoStep from '@/components/household/general-info-step';
+import MapLocationStep from '@/components/household/map-location-step';
 import MultiStepForm from '@/components/household/multi-step-form';
 import PhotoStep from '@/components/household/photo-step';
 import TechnicalDataStep from '@/components/household/technical-data-step';
@@ -9,7 +10,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type PhotoFile = HouseholdDraftData['photos'][number];
 
@@ -30,6 +31,7 @@ interface Props {
         }>;
         generalInfo?: HouseholdDraftData['generalInfo'];
         technicalData?: HouseholdDraftData['technicalData'];
+        mapLocation?: HouseholdDraftData['mapLocation'];
         lastSaved: string;
     } | null;
 }
@@ -73,6 +75,7 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
                 photos: draftPhotos,
                 generalInfo: initialDraft.generalInfo,
                 technicalData: initialDraft.technicalData,
+                mapLocation: initialDraft.mapLocation,
                 householdId: initialDraft.householdId,
                 lastSaved: initialDraft.lastSaved,
             });
@@ -124,6 +127,15 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
         setPhotos(newPhotos);
     };
 
+    const handleMapLocationChange = useCallback(
+        (data: HouseholdDraftData['mapLocation']) => {
+            console.log('📝 MapLocationStep onChange called', data);
+            // Update draft with map location
+            updateDraft({ mapLocation: data });
+        },
+        [updateDraft],
+    );
+
     const renderStepContent = () => {
         switch (currentStep) {
             case 1:
@@ -162,7 +174,20 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
                     />
                 );
             case 4:
-                return <div>Lokasi Peta (Coming Soon)</div>;
+                return (
+                    <MapLocationStep
+                        data={draftData.mapLocation || {}}
+                        onChange={handleMapLocationChange}
+                        provinceId={draftData.generalInfo?.provinceId}
+                        provinceName={draftData.generalInfo?.provinceName}
+                        regencyId={draftData.generalInfo?.regencyId}
+                        regencyName={draftData.generalInfo?.regencyName}
+                        districtId={draftData.generalInfo?.districtId}
+                        districtName={draftData.generalInfo?.districtName}
+                        villageId={draftData.generalInfo?.villageId}
+                        villageName={draftData.generalInfo?.villageName}
+                    />
+                );
             case 5:
                 return <div>Bantuan (Coming Soon)</div>;
             default:

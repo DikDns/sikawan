@@ -86,7 +86,12 @@ export interface HouseholdDraftData {
         electricityConnected?: boolean;
     };
 
-    // Step 4: Map Location (will be added later)
+    // Step 4: Map Location
+    mapLocation?: {
+        latitude?: number;
+        longitude?: number;
+    };
+
     // Step 5: Assistance (will be added later)
 
     // Metadata
@@ -124,7 +129,7 @@ export function useHouseholdDraft() {
     // Returns a Promise that resolves when save is complete
     const saveDraft = useCallback((): Promise<void> => {
         return new Promise((resolve, reject) => {
-            // Create a serializable version for comparison (include generalInfo and technicalData!)
+            // Create a serializable version for comparison (include generalInfo, technicalData, and mapLocation!)
             const serializableData = {
                 photos: draftData.photos.map((photo) => ({
                     id: photo.id,
@@ -133,6 +138,7 @@ export function useHouseholdDraft() {
                 })),
                 generalInfo: draftData.generalInfo,
                 technicalData: draftData.technicalData,
+                mapLocation: draftData.mapLocation,
                 householdId: draftData.householdId,
             };
             const dataString = JSON.stringify(serializableData);
@@ -154,6 +160,9 @@ export function useHouseholdDraft() {
             const hasTechnicalData =
                 draftData.technicalData &&
                 Object.keys(draftData.technicalData).length > 0;
+            const hasMapLocation =
+                draftData.mapLocation &&
+                Object.keys(draftData.mapLocation).length > 0;
             const hasExistingHousehold = !!draftData.householdId;
 
             // Skip if there's nothing to save
@@ -161,6 +170,7 @@ export function useHouseholdDraft() {
                 !hasNewFiles &&
                 !hasGeneralInfo &&
                 !hasTechnicalData &&
+                !hasMapLocation &&
                 !hasExistingHousehold
             ) {
                 console.log('⏭️ Skipping save - no data to save');
@@ -172,9 +182,11 @@ export function useHouseholdDraft() {
                 hasNewFiles,
                 hasGeneralInfo,
                 hasTechnicalData,
+                hasMapLocation,
                 hasExistingHousehold,
                 generalInfo: draftData.generalInfo,
                 technicalData: draftData.technicalData,
+                mapLocation: draftData.mapLocation,
             });
 
             setIsSaving(true);
@@ -231,6 +243,14 @@ export function useHouseholdDraft() {
                     );
                 }
 
+                // Add map location data
+                if (draftData.mapLocation) {
+                    formData.append(
+                        'map_location',
+                        JSON.stringify(draftData.mapLocation),
+                    );
+                }
+
                 // Use router.post with redirect - Inertia will handle the redirect
                 router.post('/households/draft', formData, {
                     preserveState: true,
@@ -250,6 +270,7 @@ export function useHouseholdDraft() {
                                 }>;
                                 generalInfo?: HouseholdDraftData['generalInfo'];
                                 technicalData?: HouseholdDraftData['technicalData'];
+                                mapLocation?: HouseholdDraftData['mapLocation'];
                                 lastSaved: string;
                             };
                         };
@@ -283,6 +304,9 @@ export function useHouseholdDraft() {
                                 technicalData:
                                     props.draft.technicalData ||
                                     draftData.technicalData,
+                                mapLocation:
+                                    props.draft.mapLocation ||
+                                    draftData.mapLocation,
                             };
 
                             setDraftData(updatedData);
@@ -302,6 +326,7 @@ export function useHouseholdDraft() {
                                 ),
                                 generalInfo: updatedData.generalInfo,
                                 technicalData: updatedData.technicalData,
+                                mapLocation: updatedData.mapLocation,
                                 householdId: updatedData.householdId,
                             };
                             setLastSavedDraft(
@@ -383,6 +408,7 @@ export function useHouseholdDraft() {
                     ),
                     generalInfo: data.draft.generalInfo,
                     technicalData: data.draft.technicalData,
+                    mapLocation: data.draft.mapLocation,
                     householdId: data.draft.householdId,
                     lastSaved: data.draft.lastSaved,
                 };
@@ -397,6 +423,7 @@ export function useHouseholdDraft() {
                     })),
                     generalInfo: draftData.generalInfo,
                     technicalData: draftData.technicalData,
+                    mapLocation: draftData.mapLocation,
                     householdId: draftData.householdId,
                 };
                 setLastSavedDraft(JSON.stringify(serializableData));

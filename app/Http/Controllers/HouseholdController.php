@@ -362,6 +362,14 @@ class HouseholdController extends Controller
                 'totalMembers' => $lastDraft->member_total,
             ];
 
+            $mapLocation = null;
+            if ($lastDraft->latitude !== null || $lastDraft->longitude !== null) {
+                $mapLocation = [
+                    'latitude' => $lastDraft->latitude,
+                    'longitude' => $lastDraft->longitude,
+                ];
+            }
+
             $draftData = [
                 'householdId' => $lastDraft->id,
                 'photos' => $lastDraft->photos->map(function ($photo) {
@@ -374,6 +382,7 @@ class HouseholdController extends Controller
                 })->toArray(),
                 'generalInfo' => $generalInfo,
                 'technicalData' => $this->formatTechnicalDataForFrontend($lastDraft->technicalData),
+                'mapLocation' => $mapLocation,
                 'lastSaved' => $lastDraft->updated_at->toISOString(),
             ];
         }
@@ -400,11 +409,13 @@ class HouseholdController extends Controller
             'photo_files.*' => 'image|max:5120', // 5MB max per file
             'general_info' => 'nullable|string', // JSON string of general info data
             'technical_data' => 'nullable|string', // JSON string of technical data
+            'map_location' => 'nullable|string', // JSON string of map location data
         ]);
 
         $photosData = json_decode($request->input('photos', '[]'), true);
         $generalInfoData = json_decode($request->input('general_info', '{}'), true);
         $technicalDataInput = json_decode($request->input('technical_data', '{}'), true);
+        $mapLocationData = json_decode($request->input('map_location', '{}'), true);
 
         // If household_id exists, update existing draft (only if owned by current user)
         if ($request->has('household_id') && $request->household_id) {
@@ -505,6 +516,14 @@ class HouseholdController extends Controller
                     'electricity_connected' => $technicalDataInput['electricityConnected'] ?? null,
                 ]
             );
+        }
+
+        // Update map location if provided
+        if (!empty($mapLocationData)) {
+            $household->update([
+                'latitude' => $mapLocationData['latitude'] ?? null,
+                'longitude' => $mapLocationData['longitude'] ?? null,
+            ]);
         }
 
         // Handle photo deletions - remove photos that are not in the metadata
@@ -655,6 +674,14 @@ class HouseholdController extends Controller
                 'totalMembers' => $lastDraft->member_total,
             ];
 
+            $mapLocation = null;
+            if ($lastDraft->latitude !== null || $lastDraft->longitude !== null) {
+                $mapLocation = [
+                    'latitude' => $lastDraft->latitude,
+                    'longitude' => $lastDraft->longitude,
+                ];
+            }
+
             $draftData = [
                 'householdId' => $lastDraft->id,
                 'photos' => $lastDraft->photos->map(function ($photo) {
@@ -667,6 +694,7 @@ class HouseholdController extends Controller
                 })->toArray(),
                 'generalInfo' => $generalInfo,
                 'technicalData' => $this->formatTechnicalDataForFrontend($lastDraft->technicalData),
+                'mapLocation' => $mapLocation,
                 'lastSaved' => $lastDraft->updated_at->toISOString(),
             ];
         }
