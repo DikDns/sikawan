@@ -1,3 +1,4 @@
+import AssistanceStep from '@/components/household/assistance-step';
 import GeneralInfoStep from '@/components/household/general-info-step';
 import MapLocationStep from '@/components/household/map-location-step';
 import MultiStepForm from '@/components/household/multi-step-form';
@@ -189,7 +190,7 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
                     />
                 );
             case 5:
-                return <div>Bantuan (Coming Soon)</div>;
+                return <AssistanceStep householdId={draftData.householdId} />;
             default:
                 return null;
         }

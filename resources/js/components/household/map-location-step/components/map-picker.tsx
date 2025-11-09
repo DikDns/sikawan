@@ -85,7 +85,14 @@ export function MapPicker({
     const [mapZoom, setMapZoom] = useState<number>(10);
     const [markerPosition, setMarkerPosition] = useState<
         [number, number] | null
-    >(data.latitude && data.longitude ? [data.latitude, data.longitude] : null);
+    >(
+        data.latitude && data.longitude
+            ? [
+                  parseFloat(data.latitude.toString()),
+                  parseFloat(data.longitude.toString()),
+              ]
+            : null,
+    );
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -262,11 +269,17 @@ export function MapPicker({
 
                     // Check if there's existing marker data (latitude/longitude)
                     if (data.latitude && data.longitude) {
-                        setMarkerPosition([data.latitude, data.longitude]);
+                        setMarkerPosition([
+                            parseFloat(data.latitude.toString()),
+                            parseFloat(data.longitude.toString()),
+                        ]);
 
                         // Only center on marker if coordinates changed externally
                         if (coordsChangedExternally) {
-                            setMapCenter([data.latitude, data.longitude]);
+                            setMapCenter([
+                                parseFloat(data.latitude.toString()),
+                                parseFloat(data.longitude.toString()),
+                            ]);
                         }
 
                         console.log('✅ Using existing marker:', [

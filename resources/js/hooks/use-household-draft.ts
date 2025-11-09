@@ -88,8 +88,8 @@ export interface HouseholdDraftData {
 
     // Step 4: Map Location
     mapLocation?: {
-        latitude?: number;
-        longitude?: number;
+        latitude?: number | string;
+        longitude?: number | string;
     };
 
     // Step 5: Assistance (will be added later)
@@ -408,7 +408,14 @@ export function useHouseholdDraft() {
                     ),
                     generalInfo: data.draft.generalInfo,
                     technicalData: data.draft.technicalData,
-                    mapLocation: data.draft.mapLocation,
+                    mapLocation: {
+                        latitude: parseFloat(
+                            data.draft.mapLocation.latitude.toString(),
+                        ),
+                        longitude: parseFloat(
+                            data.draft.mapLocation.longitude.toString(),
+                        ),
+                    },
                     householdId: data.draft.householdId,
                     lastSaved: data.draft.lastSaved,
                 };
