@@ -93,7 +93,7 @@ export function BuildingRegularitySection({
 
                 <Field className="w-full">
                     <FieldLabel>
-                        Daerah Limbah/ Dibawah Jalur Listrik Tegangan Tinggi
+                        Daerah Limbah / Dibawah Jalur Listrik Tegangan Tinggi
                     </FieldLabel>
                     <FieldContent>
                         <Select

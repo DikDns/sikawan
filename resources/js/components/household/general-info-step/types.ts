@@ -14,6 +14,7 @@ export interface GeneralInfoData {
     districtName?: string;
     villageId?: string;
     villageName?: string;
+    rtRw?: string;
 
     // Penguasaan Bangunan & Lahan
     ownershipStatusBuilding?: string;

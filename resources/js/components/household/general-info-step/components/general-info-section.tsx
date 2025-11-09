@@ -4,6 +4,7 @@
 
 import { DatePicker } from '@/components/household/date-picker';
 import { Field, FieldContent, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Textarea } from '@/components/ui/textarea';
 import type { useWilayah } from '@/hooks/use-wilayah';
@@ -148,6 +149,19 @@ export function GeneralInfoSection({
                                 !formData.districtId || wilayah.loadingVillages
                             }
                             clearable={true}
+                        />
+                    </FieldContent>
+                </Field>
+
+                <Field className="w-full">
+                    <FieldLabel>RT/RW</FieldLabel>
+                    <FieldContent>
+                        <Input
+                            placeholder="Contoh: 001/002"
+                            value={formData.rtRw || ''}
+                            onChange={(e) =>
+                                updateField('rtRw', e.target.value)
+                            }
                         />
                     </FieldContent>
                 </Field>

@@ -130,6 +130,24 @@ export function BuildingFeasibilitySection({
                             />
                         </FieldContent>
                     </Field>
+
+                    <Field className="w-full">
+                        <FieldLabel>Luas Lantai Bangunan/jiwa</FieldLabel>
+                        <FieldContent>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={
+                                    formData.areaPerPersonM2
+                                        ? formData.areaPerPersonM2.toFixed(2)
+                                        : ''
+                                }
+                                readOnly
+                                className="bg-muted"
+                                placeholder="Akan dihitung otomatis"
+                            />
+                        </FieldContent>
+                    </Field>
                 </div>
             </div>
 

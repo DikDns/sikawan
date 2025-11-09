@@ -16,6 +16,7 @@ export interface TechnicalData {
     buildingWidthM?: number;
     floorCount?: number;
     floorHeightM?: number;
+    areaPerPersonM2?: number; // Calculated field, read-only
 
     // Material & Kondisi
     roofMaterial?: string;

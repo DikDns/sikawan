@@ -32,6 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('households', [App\Http\Controllers\HouseholdController::class, 'store'])->name('households.store');
     Route::put('households/{id}', [App\Http\Controllers\HouseholdController::class, 'update'])->name('households.update');
     Route::delete('households/{id}', [App\Http\Controllers\HouseholdController::class, 'destroy'])->name('households.destroy');
+    Route::post('households/{id}/finalize', [App\Http\Controllers\HouseholdController::class, 'finalize'])->name('households.finalize');
 
     // Assistance Routes
     Route::get('households/{householdId}/assistances', [App\Http\Controllers\AssistanceController::class, 'index'])->name('assistances.index');

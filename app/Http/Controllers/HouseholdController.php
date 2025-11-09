@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Household\Household;
+use App\Services\HouseholdScoreCalculator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -79,6 +81,7 @@ class HouseholdController extends Controller
             'buildingWidthM' => $technicalData->building_width_m,
             'floorCount' => $technicalData->floor_count,
             'floorHeightM' => $technicalData->floor_height_m,
+            'areaPerPersonM2' => $technicalData->area_per_person_m2,
 
             // Material & Kondisi
             'roofMaterial' => $technicalData->roof_material,
@@ -247,11 +250,13 @@ class HouseholdController extends Controller
                     // A.3 Akses Air
                     'water_source' => $household->technicalData->water_source,
                     'water_distance_to_septic_m' => $household->technicalData->water_distance_to_septic_m,
+                    'water_distance_category' => $household->technicalData->water_distance_category,
                     'water_fulfillment' => $household->technicalData->water_fulfillment,
 
                     // Listrik
                     'electricity_source' => $household->technicalData->electricity_source,
                     'electricity_power_watt' => $household->technicalData->electricity_power_watt,
+                    'electricity_connected' => $household->technicalData->electricity_connected,
 
                     // A.4 Sanitasi
                     'defecation_place' => $household->technicalData->defecation_place,
@@ -285,10 +290,11 @@ class HouseholdController extends Controller
                         'program' => $assistance->program,
                         'funding_source' => $assistance->funding_source,
                         'status' => $assistance->status,
-                        'started_at' => $assistance->started_at?->format('d F Y'),
-                        'completed_at' => $assistance->completed_at?->format('d F Y'),
+                        'started_at' => $assistance->started_at?->toISOString(),
+                        'completed_at' => $assistance->completed_at?->toISOString(),
                         'cost_amount_idr' => $assistance->cost_amount_idr,
                         'description' => $assistance->description,
+                        'document_path' => $assistance->document_path,
                     ];
                 }),
 
@@ -346,6 +352,7 @@ class HouseholdController extends Controller
                 'districtName' => $lastDraft->district_name,
                 'villageId' => $lastDraft->village_id,
                 'villageName' => $lastDraft->village_name,
+                'rtRw' => $lastDraft->rt_rw,
                 'ownershipStatusBuilding' => $lastDraft->ownership_status_building,
                 'ownershipStatusLand' => $lastDraft->ownership_status_land,
                 'buildingLegalStatus' => $lastDraft->building_legal_status,
@@ -446,6 +453,7 @@ class HouseholdController extends Controller
                 'district_name' => $generalInfoData['districtName'] ?? null,
                 'village_id' => $generalInfoData['villageId'] ?? null,
                 'village_name' => $generalInfoData['villageName'] ?? null,
+                'rt_rw' => $generalInfoData['rtRw'] ?? null,
                 'ownership_status_building' => $generalInfoData['ownershipStatusBuilding'] ?? null,
                 'ownership_status_land' => $generalInfoData['ownershipStatusLand'] ?? null,
                 'building_legal_status' => $generalInfoData['buildingLegalStatus'] ?? null,
@@ -463,8 +471,23 @@ class HouseholdController extends Controller
             ]);
         }
 
+        // Reload household to get updated member_total
+        $household->refresh();
+
         // Update or create technical data if provided
         if (!empty($technicalDataInput)) {
+            // Calculate building area
+            $buildingArea = null;
+            if (isset($technicalDataInput['buildingLengthM']) && isset($technicalDataInput['buildingWidthM']) && isset($technicalDataInput['floorCount'])) {
+                $buildingArea = $technicalDataInput['buildingLengthM'] * $technicalDataInput['buildingWidthM'] * $technicalDataInput['floorCount'];
+            }
+
+            // Calculate area per person (building_area_m2 / member_total)
+            $areaPerPerson = null;
+            if ($buildingArea !== null && $household->member_total && $household->member_total > 0) {
+                $areaPerPerson = $buildingArea / $household->member_total;
+            }
+
             $household->technicalData()->updateOrCreate(
                 ['household_id' => $household->id],
                 [
@@ -481,11 +504,8 @@ class HouseholdController extends Controller
                     'building_width_m' => $technicalDataInput['buildingWidthM'] ?? null,
                     'floor_count' => $technicalDataInput['floorCount'] ?? null,
                     'floor_height_m' => $technicalDataInput['floorHeightM'] ?? null,
-
-                    // Calculate building area
-                    'building_area_m2' => isset($technicalDataInput['buildingLengthM']) && isset($technicalDataInput['buildingWidthM']) && isset($technicalDataInput['floorCount'])
-                        ? $technicalDataInput['buildingLengthM'] * $technicalDataInput['buildingWidthM'] * $technicalDataInput['floorCount']
-                        : null,
+                    'building_area_m2' => $buildingArea,
+                    'area_per_person_m2' => $areaPerPerson,
 
                     // Material & Kondisi
                     'roof_material' => $technicalDataInput['roofMaterial'] ?? null,
@@ -597,6 +617,7 @@ class HouseholdController extends Controller
             'districtName' => $household->district_name,
             'villageId' => $household->village_id,
             'villageName' => $household->village_name,
+            'rtRw' => $household->rt_rw,
             'ownershipStatusBuilding' => $household->ownership_status_building,
             'ownershipStatusLand' => $household->ownership_status_land,
             'buildingLegalStatus' => $household->building_legal_status,
@@ -658,6 +679,7 @@ class HouseholdController extends Controller
                 'districtName' => $lastDraft->district_name,
                 'villageId' => $lastDraft->village_id,
                 'villageName' => $lastDraft->village_name,
+                'rtRw' => $lastDraft->rt_rw,
                 'ownershipStatusBuilding' => $lastDraft->ownership_status_building,
                 'ownershipStatusLand' => $lastDraft->ownership_status_land,
                 'buildingLegalStatus' => $lastDraft->building_legal_status,
@@ -755,5 +777,61 @@ class HouseholdController extends Controller
 
         return redirect()->route('households.index')
             ->with('success', 'Data rumah berhasil dihapus');
+    }
+
+    /**
+     * Finalize household - calculate scores and set is_draft to false
+     * Can be called multiple times to recalculate scores on update
+     */
+    public function finalize(Request $request, $id)
+    {
+        $user = $request->user();
+
+        // Find household
+        $household = Household::where('id', $id)
+            ->where('created_by', $user->id)
+            ->firstOrFail();
+
+        // Check if technical data exists
+        if (!$household->technicalData) {
+            return response()->json([
+                'message' => 'Data teknis belum lengkap. Mohon lengkapi data teknis terlebih dahulu.',
+            ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Calculate scores (recalculate if already finalized for updates)
+            $calculator = new HouseholdScoreCalculator();
+            $result = $calculator->calculateAndSave($household);
+
+            // Set is_draft to false (or keep it false if already finalized)
+            $household->update([
+                'is_draft' => false,
+            ]);
+
+            DB::commit();
+
+            $message = $household->wasChanged('is_draft')
+                ? 'Pendataan rumah berhasil disimpan'
+                : 'Perubahan data berhasil disimpan';
+
+            return response()->json([
+                'message' => $message,
+                'data' => [
+                    'household_id' => $household->id,
+                    'habitability_status' => $result['habitability_status'],
+                    'total_score' => $result['total_score'],
+                    'scores' => $result['scores'],
+                ],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
