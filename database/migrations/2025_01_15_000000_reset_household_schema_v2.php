@@ -106,13 +106,6 @@ return new class extends Migration
             $table->decimal('area_per_person_m2', 10, 2)->nullable(); // Luas Lantai/jiwa (calculated)
             $table->unsignedTinyInteger('score_a2_floor_area')->nullable(); // Skor luas lantai (0 atau 1)
 
-            // Struktur Bangunan (A.2)
-            $table->boolean('has_foundation')->default(false); // Pondasi
-            $table->boolean('has_sloof')->default(false); // Sloof
-            $table->boolean('has_ring_beam')->default(false); // Ring Balok
-            $table->boolean('has_roof_structure')->default(false); // Struktur Atap
-            $table->boolean('has_columns')->default(false); // Tiang Kolom
-
             // Material & Kondisi (A.2)
             $table->string('roof_material', 30)->nullable(); // Material Atap (SENG, GENTENG, ASBES, dll)
             $table->string('roof_condition', 12)->nullable(); // GOOD|LEAK|RINGAN|SEDANG|BERAT

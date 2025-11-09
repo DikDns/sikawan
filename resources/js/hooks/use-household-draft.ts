@@ -41,7 +41,51 @@ export interface HouseholdDraftData {
         totalMembers?: number;
     };
 
-    // Step 3: Technical Data (will be added later)
+    // Step 3: Technical Data
+    technicalData?: {
+        // A.1 KETERATURAN BANGUNAN HUNIAN
+        hasRoadAccess?: boolean;
+        roadWidthCategory?: string;
+        facadeFacesRoad?: boolean;
+        facesWaterbody?: boolean | 'NONE';
+        inSetbackArea?: boolean | 'NONE';
+        inHazardArea?: boolean;
+
+        // A.2 KELAYAKAN BANGUNAN HUNIAN
+        buildingLengthM?: number;
+        buildingWidthM?: number;
+        floorCount?: number;
+        floorHeightM?: number;
+
+        // Material & Kondisi
+        roofMaterial?: string;
+        roofCondition?: string;
+        wallMaterial?: string;
+        wallCondition?: string;
+        floorMaterial?: string;
+        floorCondition?: string;
+
+        // A.3 AKSES AIR MINUM
+        waterSource?: string;
+        waterDistanceToSepticM?: number;
+        waterDistanceCategory?: string;
+        waterFulfillment?: string;
+
+        // A.4 PENGELOLAAN SANITASI
+        defecationPlace?: string;
+        toiletType?: string;
+        sewageDisposal?: string;
+
+        // A.5 PENGELOLAAN SAMPAH
+        wasteDisposalPlace?: string;
+        wasteCollectionFrequency?: string;
+
+        // SUMBER LISTRIK
+        electricitySource?: string;
+        electricityPowerWatt?: number;
+        electricityConnected?: boolean;
+    };
+
     // Step 4: Map Location (will be added later)
     // Step 5: Assistance (will be added later)
 
@@ -80,7 +124,7 @@ export function useHouseholdDraft() {
     // Returns a Promise that resolves when save is complete
     const saveDraft = useCallback((): Promise<void> => {
         return new Promise((resolve, reject) => {
-            // Create a serializable version for comparison (include generalInfo!)
+            // Create a serializable version for comparison (include generalInfo and technicalData!)
             const serializableData = {
                 photos: draftData.photos.map((photo) => ({
                     id: photo.id,
@@ -88,6 +132,7 @@ export function useHouseholdDraft() {
                     path: photo.path,
                 })),
                 generalInfo: draftData.generalInfo,
+                technicalData: draftData.technicalData,
                 householdId: draftData.householdId,
             };
             const dataString = JSON.stringify(serializableData);
@@ -106,10 +151,18 @@ export function useHouseholdDraft() {
             const hasGeneralInfo =
                 draftData.generalInfo &&
                 Object.keys(draftData.generalInfo).length > 0;
+            const hasTechnicalData =
+                draftData.technicalData &&
+                Object.keys(draftData.technicalData).length > 0;
             const hasExistingHousehold = !!draftData.householdId;
 
             // Skip if there's nothing to save
-            if (!hasNewFiles && !hasGeneralInfo && !hasExistingHousehold) {
+            if (
+                !hasNewFiles &&
+                !hasGeneralInfo &&
+                !hasTechnicalData &&
+                !hasExistingHousehold
+            ) {
                 console.log('⏭️ Skipping save - no data to save');
                 resolve();
                 return;
@@ -118,8 +171,10 @@ export function useHouseholdDraft() {
             console.log('💾 Saving draft...', {
                 hasNewFiles,
                 hasGeneralInfo,
+                hasTechnicalData,
                 hasExistingHousehold,
                 generalInfo: draftData.generalInfo,
+                technicalData: draftData.technicalData,
             });
 
             setIsSaving(true);
@@ -168,6 +223,14 @@ export function useHouseholdDraft() {
                     );
                 }
 
+                // Add technical data
+                if (draftData.technicalData) {
+                    formData.append(
+                        'technical_data',
+                        JSON.stringify(draftData.technicalData),
+                    );
+                }
+
                 // Use router.post with redirect - Inertia will handle the redirect
                 router.post('/households/draft', formData, {
                     preserveState: true,
@@ -186,6 +249,7 @@ export function useHouseholdDraft() {
                                     uploaded: boolean;
                                 }>;
                                 generalInfo?: HouseholdDraftData['generalInfo'];
+                                technicalData?: HouseholdDraftData['technicalData'];
                                 lastSaved: string;
                             };
                         };
@@ -216,6 +280,9 @@ export function useHouseholdDraft() {
                                 generalInfo:
                                     props.draft.generalInfo ||
                                     draftData.generalInfo,
+                                technicalData:
+                                    props.draft.technicalData ||
+                                    draftData.technicalData,
                             };
 
                             setDraftData(updatedData);
@@ -234,6 +301,7 @@ export function useHouseholdDraft() {
                                     }),
                                 ),
                                 generalInfo: updatedData.generalInfo,
+                                technicalData: updatedData.technicalData,
                                 householdId: updatedData.householdId,
                             };
                             setLastSavedDraft(
@@ -314,6 +382,7 @@ export function useHouseholdDraft() {
                         }),
                     ),
                     generalInfo: data.draft.generalInfo,
+                    technicalData: data.draft.technicalData,
                     householdId: data.draft.householdId,
                     lastSaved: data.draft.lastSaved,
                 };
@@ -327,6 +396,7 @@ export function useHouseholdDraft() {
                         path: photo.path,
                     })),
                     generalInfo: draftData.generalInfo,
+                    technicalData: draftData.technicalData,
                     householdId: draftData.householdId,
                 };
                 setLastSavedDraft(JSON.stringify(serializableData));

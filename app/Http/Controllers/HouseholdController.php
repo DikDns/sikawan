@@ -53,6 +53,63 @@ class HouseholdController extends Controller
         return $mapping[$incomeInt] ?? null;
     }
 
+    /**
+     * Convert TechnicalData model to frontend format
+     *
+     * @param \App\Models\Household\TechnicalData|null $technicalData
+     * @return array|null
+     */
+    private function formatTechnicalDataForFrontend($technicalData): ?array
+    {
+        if (!$technicalData) {
+            return null;
+        }
+
+        return [
+            // A.1 KETERATURAN BANGUNAN HUNIAN
+            'hasRoadAccess' => $technicalData->has_road_access,
+            'roadWidthCategory' => $technicalData->road_width_category,
+            'facadeFacesRoad' => $technicalData->facade_faces_road,
+            'facesWaterbody' => $technicalData->faces_waterbody,
+            'inSetbackArea' => $technicalData->in_setback_area,
+            'inHazardArea' => $technicalData->in_hazard_area,
+
+            // A.2 KELAYAKAN BANGUNAN HUNIAN
+            'buildingLengthM' => $technicalData->building_length_m,
+            'buildingWidthM' => $technicalData->building_width_m,
+            'floorCount' => $technicalData->floor_count,
+            'floorHeightM' => $technicalData->floor_height_m,
+
+            // Material & Kondisi
+            'roofMaterial' => $technicalData->roof_material,
+            'roofCondition' => $technicalData->roof_condition,
+            'wallMaterial' => $technicalData->wall_material,
+            'wallCondition' => $technicalData->wall_condition,
+            'floorMaterial' => $technicalData->floor_material,
+            'floorCondition' => $technicalData->floor_condition,
+
+            // A.3 AKSES AIR MINUM
+            'waterSource' => $technicalData->water_source,
+            'waterDistanceToSepticM' => $technicalData->water_distance_to_septic_m,
+            'waterDistanceCategory' => $technicalData->water_distance_category,
+            'waterFulfillment' => $technicalData->water_fulfillment,
+
+            // A.4 PENGELOLAAN SANITASI
+            'defecationPlace' => $technicalData->defecation_place,
+            'toiletType' => $technicalData->toilet_type,
+            'sewageDisposal' => $technicalData->sewage_disposal,
+
+            // A.5 PENGELOLAAN SAMPAH
+            'wasteDisposalPlace' => $technicalData->waste_disposal_place,
+            'wasteCollectionFrequency' => $technicalData->waste_collection_frequency,
+
+            // SUMBER LISTRIK
+            'electricitySource' => $technicalData->electricity_source,
+            'electricityPowerWatt' => $technicalData->electricity_power_watt,
+            'electricityConnected' => $technicalData->electricity_connected,
+        ];
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -179,13 +236,6 @@ class HouseholdController extends Controller
                     'building_area_m2' => $household->technicalData->building_area_m2,
                     'area_per_person_m2' => $household->technicalData->area_per_person_m2,
 
-                    // Struktur
-                    'has_foundation' => $household->technicalData->has_foundation,
-                    'has_sloof' => $household->technicalData->has_sloof,
-                    'has_ring_beam' => $household->technicalData->has_ring_beam,
-                    'has_roof_structure' => $household->technicalData->has_roof_structure,
-                    'has_columns' => $household->technicalData->has_columns,
-
                     // Material & Kondisi
                     'roof_material' => $household->technicalData->roof_material,
                     'roof_condition' => $household->technicalData->roof_condition,
@@ -279,6 +329,7 @@ class HouseholdController extends Controller
         // Load last draft if exists (only for current user)
         $lastDraft = Household::where('is_draft', true)
             ->where('created_by', $user->id)
+            ->with(['photos', 'technicalData'])
             ->orderBy('updated_at', 'desc')
             ->first();
 
@@ -322,6 +373,7 @@ class HouseholdController extends Controller
                     ];
                 })->toArray(),
                 'generalInfo' => $generalInfo,
+                'technicalData' => $this->formatTechnicalDataForFrontend($lastDraft->technicalData),
                 'lastSaved' => $lastDraft->updated_at->toISOString(),
             ];
         }
@@ -347,10 +399,12 @@ class HouseholdController extends Controller
             'photo_files' => 'nullable|array',
             'photo_files.*' => 'image|max:5120', // 5MB max per file
             'general_info' => 'nullable|string', // JSON string of general info data
+            'technical_data' => 'nullable|string', // JSON string of technical data
         ]);
 
         $photosData = json_decode($request->input('photos', '[]'), true);
         $generalInfoData = json_decode($request->input('general_info', '{}'), true);
+        $technicalDataInput = json_decode($request->input('technical_data', '{}'), true);
 
         // If household_id exists, update existing draft (only if owned by current user)
         if ($request->has('household_id') && $request->household_id) {
@@ -396,6 +450,61 @@ class HouseholdController extends Controller
                 'disabled_count' => $generalInfoData['disabledMembers'] ?? null,
                 'member_total' => $generalInfoData['totalMembers'] ?? null,
             ]);
+        }
+
+        // Update or create technical data if provided
+        if (!empty($technicalDataInput)) {
+            $household->technicalData()->updateOrCreate(
+                ['household_id' => $household->id],
+                [
+                    // A.1 KETERATURAN BANGUNAN HUNIAN
+                    'has_road_access' => $technicalDataInput['hasRoadAccess'] ?? null,
+                    'road_width_category' => $technicalDataInput['roadWidthCategory'] ?? null,
+                    'facade_faces_road' => $technicalDataInput['facadeFacesRoad'] ?? null,
+                    'faces_waterbody' => $technicalDataInput['facesWaterbody'] === 'NONE' ? null : ($technicalDataInput['facesWaterbody'] ?? null),
+                    'in_setback_area' => $technicalDataInput['inSetbackArea'] === 'NONE' ? null : ($technicalDataInput['inSetbackArea'] ?? null),
+                    'in_hazard_area' => $technicalDataInput['inHazardArea'] ?? null,
+
+                    // A.2 KELAYAKAN BANGUNAN HUNIAN
+                    'building_length_m' => $technicalDataInput['buildingLengthM'] ?? null,
+                    'building_width_m' => $technicalDataInput['buildingWidthM'] ?? null,
+                    'floor_count' => $technicalDataInput['floorCount'] ?? null,
+                    'floor_height_m' => $technicalDataInput['floorHeightM'] ?? null,
+
+                    // Calculate building area
+                    'building_area_m2' => isset($technicalDataInput['buildingLengthM']) && isset($technicalDataInput['buildingWidthM']) && isset($technicalDataInput['floorCount'])
+                        ? $technicalDataInput['buildingLengthM'] * $technicalDataInput['buildingWidthM'] * $technicalDataInput['floorCount']
+                        : null,
+
+                    // Material & Kondisi
+                    'roof_material' => $technicalDataInput['roofMaterial'] ?? null,
+                    'roof_condition' => $technicalDataInput['roofCondition'] ?? null,
+                    'wall_material' => $technicalDataInput['wallMaterial'] ?? null,
+                    'wall_condition' => $technicalDataInput['wallCondition'] ?? null,
+                    'floor_material' => $technicalDataInput['floorMaterial'] ?? null,
+                    'floor_condition' => $technicalDataInput['floorCondition'] ?? null,
+
+                    // A.3 AKSES AIR MINUM
+                    'water_source' => $technicalDataInput['waterSource'] ?? null,
+                    'water_distance_to_septic_m' => $technicalDataInput['waterDistanceToSepticM'] ?? null,
+                    'water_distance_category' => $technicalDataInput['waterDistanceCategory'] ?? null,
+                    'water_fulfillment' => $technicalDataInput['waterFulfillment'] ?? null,
+
+                    // A.4 PENGELOLAAN SANITASI
+                    'defecation_place' => $technicalDataInput['defecationPlace'] ?? null,
+                    'toilet_type' => $technicalDataInput['toiletType'] ?? null,
+                    'sewage_disposal' => $technicalDataInput['sewageDisposal'] ?? null,
+
+                    // A.5 PENGELOLAAN SAMPAH
+                    'waste_disposal_place' => $technicalDataInput['wasteDisposalPlace'] ?? null,
+                    'waste_collection_frequency' => $technicalDataInput['wasteCollectionFrequency'] ?? null,
+
+                    // SUMBER LISTRIK
+                    'electricity_source' => $technicalDataInput['electricitySource'] ?? null,
+                    'electricity_power_watt' => $technicalDataInput['electricityPowerWatt'] ?? null,
+                    'electricity_connected' => $technicalDataInput['electricityConnected'] ?? null,
+                ]
+            );
         }
 
         // Handle photo deletions - remove photos that are not in the metadata
@@ -454,8 +563,8 @@ class HouseholdController extends Controller
             }
         }
 
-        // Reload household with photos for response
-        $household->load('photos');
+        // Reload household with photos and technical data for response
+        $household->load(['photos', 'technicalData']);
 
         // Prepare general info data for response
         $generalInfo = [
@@ -500,6 +609,7 @@ class HouseholdController extends Controller
                     ];
                 })->toArray(),
                 'generalInfo' => $generalInfo,
+                'technicalData' => $this->formatTechnicalDataForFrontend($household->technicalData),
                 'lastSaved' => $household->updated_at->toISOString(),
             ],
         ]);
@@ -512,7 +622,7 @@ class HouseholdController extends Controller
         // Only get draft for current user
         $lastDraft = Household::where('is_draft', true)
             ->where('created_by', $user->id)
-            ->with('photos')
+            ->with(['photos', 'technicalData'])
             ->orderBy('updated_at', 'desc')
             ->first();
 
@@ -556,6 +666,7 @@ class HouseholdController extends Controller
                     ];
                 })->toArray(),
                 'generalInfo' => $generalInfo,
+                'technicalData' => $this->formatTechnicalDataForFrontend($lastDraft->technicalData),
                 'lastSaved' => $lastDraft->updated_at->toISOString(),
             ];
         }

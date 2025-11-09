@@ -1,6 +1,7 @@
 import GeneralInfoStep from '@/components/household/general-info-step';
 import MultiStepForm from '@/components/household/multi-step-form';
 import PhotoStep from '@/components/household/photo-step';
+import TechnicalDataStep from '@/components/household/technical-data-step';
 import {
     useHouseholdDraft,
     type HouseholdDraftData,
@@ -28,6 +29,7 @@ interface Props {
             uploaded: boolean;
         }>;
         generalInfo?: HouseholdDraftData['generalInfo'];
+        technicalData?: HouseholdDraftData['technicalData'];
         lastSaved: string;
     } | null;
 }
@@ -70,6 +72,7 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             updateDraft({
                 photos: draftPhotos,
                 generalInfo: initialDraft.generalInfo,
+                technicalData: initialDraft.technicalData,
                 householdId: initialDraft.householdId,
                 lastSaved: initialDraft.lastSaved,
             });
@@ -145,7 +148,19 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
                     />
                 );
             case 3:
-                return <div>Data Teknis (Coming Soon)</div>;
+                return (
+                    <TechnicalDataStep
+                        data={draftData.technicalData || {}}
+                        onChange={(data) => {
+                            console.log(
+                                '📝 TechnicalDataStep onChange called',
+                                data,
+                            );
+                            // Update draft with technical data
+                            updateDraft({ technicalData: data });
+                        }}
+                    />
+                );
             case 4:
                 return <div>Lokasi Peta (Coming Soon)</div>;
             case 5:

@@ -30,12 +30,6 @@ class TechnicalData extends Model
         'building_area_m2',
         'area_per_person_m2',
         'score_a2_floor_area',
-        // Struktur Bangunan
-        'has_foundation',
-        'has_sloof',
-        'has_ring_beam',
-        'has_roof_structure',
-        'has_columns',
         // Material & Kondisi
         'roof_material',
         'roof_condition',
@@ -84,12 +78,7 @@ class TechnicalData extends Model
         'building_area_m2' => 'decimal:2',
         'area_per_person_m2' => 'decimal:2',
         'score_a2_floor_area' => 'integer',
-        // Struktur
-        'has_foundation' => 'boolean',
-        'has_sloof' => 'boolean',
-        'has_ring_beam' => 'boolean',
-        'has_roof_structure' => 'boolean',
-        'has_columns' => 'boolean',
+        // Material & Kondisi
         'score_a2_structure' => 'integer',
         'score_a2_total_pct' => 'decimal:2',
         // A.3

@@ -106,13 +106,6 @@ household_technical_data
 - area_per_person_m2: DECIMAL(10,2) NULLABLE -- Luas Lantai/jiwa (calculated)
 - score_a2_floor_area: TINYINT NULLABLE -- Skor luas lantai (0 atau 1)
 
--- Struktur Bangunan (A.2)
-- has_foundation: INTEGER (0/1) -- Pondasi
-- has_sloof: INTEGER (0/1) -- Sloof
-- has_ring_beam: INTEGER (0/1) -- Ring Balok
-- has_roof_structure: INTEGER (0/1) -- Struktur Atap
-- has_columns: INTEGER (0/1) -- Tiang Kolom
-
 -- Material & Kondisi (A.2)
 - roof_material: VARCHAR(30) NULLABLE -- Material Atap (SENG, GENTENG, ASBES, dll)
 - roof_condition: VARCHAR(12) NULLABLE CHECK in ('GOOD','LEAK','RINGAN','SEDANG','BERAT') -- Kondisi Atap
