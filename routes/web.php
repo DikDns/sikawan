@@ -30,7 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('households/{id}', [App\Http\Controllers\HouseholdController::class, 'show'])->name('households.show');
     Route::get('households/{id}/edit', [App\Http\Controllers\HouseholdController::class, 'edit'])->name('households.edit');
     Route::post('households', [App\Http\Controllers\HouseholdController::class, 'store'])->name('households.store');
-    Route::put('households/{id}', [App\Http\Controllers\HouseholdController::class, 'update'])->name('households.update');
+    Route::match(['put', 'patch', 'post'], 'households/{id}', [App\Http\Controllers\HouseholdController::class, 'update'])->name('households.update');
     Route::delete('households/{id}', [App\Http\Controllers\HouseholdController::class, 'destroy'])->name('households.destroy');
     Route::post('households/{id}/finalize', [App\Http\Controllers\HouseholdController::class, 'finalize'])->name('households.finalize');
 

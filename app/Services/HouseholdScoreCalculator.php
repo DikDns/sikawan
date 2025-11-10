@@ -41,7 +41,7 @@ class HouseholdScoreCalculator
             $scoreA4Access * 15 +
             $scoreA4Technical * 10 +
             $scoreA5 * 10
-        ) / 100;
+        );
 
         // Determine habitability status
         $habitabilityStatus = $totalScore >= 60 ? 'RLH' : 'RTLH';

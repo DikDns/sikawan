@@ -6,6 +6,7 @@ use App\Models\Household\Household;
 use App\Services\HouseholdScoreCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -732,7 +733,8 @@ class HouseholdController extends Controller
     {
         $user = $request->user();
 
-        $household = Household::with(['technicalData', 'members'])->findOrFail($id);
+        $household = Household::with(['technicalData', 'members', 'photos'])
+            ->findOrFail($id);
 
         // Check if user has access to edit this household
         // Admin can edit all, regular users only edit their own
@@ -740,13 +742,113 @@ class HouseholdController extends Controller
             abort(403, 'Unauthorized access to edit this household');
         }
 
+        // Format data for edit page (similar to show but with different structure)
         return Inertia::render('households/edit-household', [
-            'household' => $household,
+            'household' => [
+                'id' => $household->id,
+                'head_name' => $household->head_name,
+                'nik' => $household->nik,
+                'survey_date' => $household->survey_date?->format('Y-m-d'),
+                'address_text' => $household->address_text,
+                'province_id' => $household->province_id,
+                'province_name' => $household->province_name,
+                'regency_id' => $household->regency_id,
+                'regency_name' => $household->regency_name,
+                'district_id' => $household->district_id,
+                'district_name' => $household->district_name,
+                'village_id' => $household->village_id,
+                'village_name' => $household->village_name,
+                'rt_rw' => $household->rt_rw,
+                'latitude' => $household->latitude,
+                'longitude' => $household->longitude,
+
+                // Ownership
+                'ownership_status_building' => $household->ownership_status_building,
+                'ownership_status_land' => $household->ownership_status_land,
+                'building_legal_status' => $household->building_legal_status,
+                'land_legal_status' => $household->land_legal_status,
+
+                // Household Members
+                'status_mbr' => $household->status_mbr,
+                'kk_count' => $household->kk_count,
+                'member_total' => $household->member_total,
+                'male_count' => $household->male_count,
+                'female_count' => $household->female_count,
+                'disabled_count' => $household->disabled_count,
+
+                // Non-Physical Data
+                'main_occupation' => $household->main_occupation,
+                'monthly_income_idr' => $this->mapIncomeIntToString($household->monthly_income_idr),
+                'health_facility_used' => $household->health_facility_used,
+                'health_facility_location' => $household->health_facility_location,
+                'education_facility_location' => $household->education_facility_location,
+
+                // Technical Data
+                'technical_data' => $household->technicalData ? [
+                    'has_road_access' => $household->technicalData->has_road_access,
+                    'road_width_category' => $household->technicalData->road_width_category,
+                    'facade_faces_road' => $household->technicalData->facade_faces_road,
+                    'faces_waterbody' => $household->technicalData->faces_waterbody,
+                    'in_setback_area' => $household->technicalData->in_setback_area,
+                    'in_hazard_area' => $household->technicalData->in_hazard_area,
+                    'building_length_m' => $household->technicalData->building_length_m,
+                    'building_width_m' => $household->technicalData->building_width_m,
+                    'floor_count' => $household->technicalData->floor_count,
+                    'floor_height_m' => $household->technicalData->floor_height_m,
+                    'roof_material' => $household->technicalData->roof_material,
+                    'roof_condition' => $household->technicalData->roof_condition,
+                    'wall_material' => $household->technicalData->wall_material,
+                    'wall_condition' => $household->technicalData->wall_condition,
+                    'floor_material' => $household->technicalData->floor_material,
+                    'floor_condition' => $household->technicalData->floor_condition,
+                    'water_source' => $household->technicalData->water_source,
+                    'water_distance_to_septic_m' => $household->technicalData->water_distance_to_septic_m,
+                    'water_distance_category' => $household->technicalData->water_distance_category,
+                    'water_fulfillment' => $household->technicalData->water_fulfillment,
+                    'defecation_place' => $household->technicalData->defecation_place,
+                    'toilet_type' => $household->technicalData->toilet_type,
+                    'sewage_disposal' => $household->technicalData->sewage_disposal,
+                    'waste_disposal_place' => $household->technicalData->waste_disposal_place,
+                    'waste_collection_frequency' => $household->technicalData->waste_collection_frequency,
+                    'electricity_source' => $household->technicalData->electricity_source,
+                    'electricity_power_watt' => $household->technicalData->electricity_power_watt,
+                    'electricity_connected' => $household->technicalData->electricity_connected,
+                ] : null,
+
+                // Photos
+                'photos' => $household->photos->sortBy('order_index')->map(function ($photo) {
+                    return [
+                        'id' => $photo->id,
+                        'file_path' => $photo->file_path,
+                        'caption' => $photo->caption,
+                        'order_index' => $photo->order_index,
+                    ];
+                })->values()->toArray(),
+            ],
         ]);
     }
 
     public function update(Request $request, $id)
     {
+        // Log immediately at the start
+        // Check all input methods to see what's available
+        Log::info('Household Update Request - START', [
+            'household_id' => $id,
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'content_type' => $request->header('Content-Type'),
+            'has_general_info' => $request->has('general_info'),
+            'has_technical_data' => $request->has('technical_data'),
+            'has_map_location' => $request->has('map_location'),
+            'has_photos' => $request->has('photos'),
+            'has_photo_files' => $request->hasFile('photo_files'),
+            'all_input_keys' => array_keys($request->all()),
+            'input_general_info' => $request->input('general_info'),
+            'input_technical_data' => $request->input('technical_data'),
+            'input_map_location' => $request->input('map_location'),
+            'input_photos' => $request->input('photos'),
+        ]);
+
         $user = $request->user();
 
         $household = Household::findOrFail($id);
@@ -754,11 +856,245 @@ class HouseholdController extends Controller
         // Check if user has access to update this household
         // Admin can update all, regular users only update their own
         if (($user->role !== 'admin' && $user->role !== 'superadmin') && $household->created_by !== $user->id) {
+            Log::warning('Household Update - Unauthorized', ['household_id' => $id, 'user_id' => $user->id]);
             abort(403, 'Unauthorized access to update this household');
         }
 
-        // Validation and update logic
-        // Will be implemented later
+        $request->validate([
+            'photos' => 'nullable|string', // JSON string of photos metadata
+            'photo_files' => 'nullable|array',
+            'photo_files.*' => 'image|max:5120', // 5MB max per file
+            'general_info' => 'nullable|string', // JSON string of general info data
+            'technical_data' => 'nullable|string', // JSON string of technical data
+            'map_location' => 'nullable|string', // JSON string of map location data
+        ]);
+
+        $photosData = json_decode($request->input('photos', '[]'), true) ?? [];
+        $generalInfoData = json_decode($request->input('general_info', '{}'), true) ?? [];
+        $technicalDataInput = json_decode($request->input('technical_data', '{}'), true) ?? [];
+        $mapLocationData = json_decode($request->input('map_location', '{}'), true) ?? [];
+
+        // Debug logging after parsing
+        Log::info('Household Update Request - Data Parsed', [
+            'household_id' => $id,
+            'photos_count' => count($photosData),
+            'general_info_keys' => array_keys($generalInfoData ?? []),
+            'technical_data_keys' => array_keys($technicalDataInput ?? []),
+            'map_location' => $mapLocationData,
+            'general_info_raw' => $request->input('general_info'),
+            'technical_data_raw' => $request->input('technical_data'),
+            'map_location_raw' => $request->input('map_location'),
+        ]);
+
+        // Store raw inputs for logging
+        $generalInfoInput = $request->input('general_info');
+        $technicalDataInputRaw = $request->input('technical_data');
+        $mapLocationInputRaw = $request->input('map_location');
+
+        DB::beginTransaction();
+
+        try {
+            // Always update household with general info data if provided
+            // Use input() instead of has() because has() may not work with FormData in PUT requests
+            if ($generalInfoInput !== null && $generalInfoInput !== '') {
+                $household->update([
+                    'survey_date' => $generalInfoData['dataCollectionDate'] ?? null,
+                    'address_text' => $generalInfoData['address'] ?? null,
+                    'province_id' => $generalInfoData['provinceId'] ?? null,
+                    'province_name' => $generalInfoData['provinceName'] ?? null,
+                    'regency_id' => $generalInfoData['regencyId'] ?? null,
+                    'regency_name' => $generalInfoData['regencyName'] ?? null,
+                    'district_id' => $generalInfoData['districtId'] ?? null,
+                    'district_name' => $generalInfoData['districtName'] ?? null,
+                    'village_id' => $generalInfoData['villageId'] ?? null,
+                    'village_name' => $generalInfoData['villageName'] ?? null,
+                    'rt_rw' => $generalInfoData['rtRw'] ?? null,
+                    'ownership_status_building' => $generalInfoData['ownershipStatusBuilding'] ?? null,
+                    'ownership_status_land' => $generalInfoData['ownershipStatusLand'] ?? null,
+                    'building_legal_status' => $generalInfoData['buildingLegalStatus'] ?? null,
+                    'land_legal_status' => $generalInfoData['landLegalStatus'] ?? null,
+                    'nik' => $generalInfoData['nik'] ?? null,
+                    'head_name' => $generalInfoData['headOfHouseholdName'] ?? $household->head_name,
+                    'main_occupation' => $generalInfoData['mainOccupation'] ?? null,
+                    'monthly_income_idr' => $this->mapIncomeStringToInt($generalInfoData['income'] ?? null),
+                    'status_mbr' => $generalInfoData['householdStatus'] ?? $household->status_mbr,
+                    'kk_count' => $generalInfoData['numberOfHouseholds'] ?? null,
+                    'male_count' => $generalInfoData['maleMembers'] ?? null,
+                    'female_count' => $generalInfoData['femaleMembers'] ?? null,
+                    'disabled_count' => $generalInfoData['disabledMembers'] ?? null,
+                    'member_total' => $generalInfoData['totalMembers'] ?? null,
+                ]);
+            }
+
+            // Reload household to get updated member_total
+            $household->refresh();
+
+            // Always update or create technical data if provided
+            if ($technicalDataInputRaw !== null && $technicalDataInputRaw !== '') {
+                // Calculate building area
+                $buildingArea = null;
+                if (isset($technicalDataInput['buildingLengthM']) && isset($technicalDataInput['buildingWidthM']) && isset($technicalDataInput['floorCount'])) {
+                    $buildingArea = $technicalDataInput['buildingLengthM'] * $technicalDataInput['buildingWidthM'] * $technicalDataInput['floorCount'];
+                }
+
+                // Calculate area per person (building_area_m2 / member_total)
+                $areaPerPerson = null;
+                if ($buildingArea !== null && $household->member_total && $household->member_total > 0) {
+                    $areaPerPerson = $buildingArea / $household->member_total;
+                }
+
+                $household->technicalData()->updateOrCreate(
+                    ['household_id' => $household->id],
+                    [
+                        // A.1 KETERATURAN BANGUNAN HUNIAN
+                        'has_road_access' => $technicalDataInput['hasRoadAccess'] ?? null,
+                        'road_width_category' => $technicalDataInput['roadWidthCategory'] ?? null,
+                        'facade_faces_road' => $technicalDataInput['facadeFacesRoad'] ?? null,
+                        'faces_waterbody' => $technicalDataInput['facesWaterbody'] === 'NONE' ? null : ($technicalDataInput['facesWaterbody'] ?? null),
+                        'in_setback_area' => $technicalDataInput['inSetbackArea'] === 'NONE' ? null : ($technicalDataInput['inSetbackArea'] ?? null),
+                        'in_hazard_area' => $technicalDataInput['inHazardArea'] ?? null,
+
+                        // A.2 KELAYAKAN BANGUNAN HUNIAN
+                        'building_length_m' => $technicalDataInput['buildingLengthM'] ?? null,
+                        'building_width_m' => $technicalDataInput['buildingWidthM'] ?? null,
+                        'floor_count' => $technicalDataInput['floorCount'] ?? null,
+                        'floor_height_m' => $technicalDataInput['floorHeightM'] ?? null,
+                        'building_area_m2' => $buildingArea,
+                        'area_per_person_m2' => $areaPerPerson,
+
+                        // Material & Kondisi
+                        'roof_material' => $technicalDataInput['roofMaterial'] ?? null,
+                        'roof_condition' => $technicalDataInput['roofCondition'] ?? null,
+                        'wall_material' => $technicalDataInput['wallMaterial'] ?? null,
+                        'wall_condition' => $technicalDataInput['wallCondition'] ?? null,
+                        'floor_material' => $technicalDataInput['floorMaterial'] ?? null,
+                        'floor_condition' => $technicalDataInput['floorCondition'] ?? null,
+
+                        // A.3 AKSES AIR MINUM
+                        'water_source' => $technicalDataInput['waterSource'] ?? null,
+                        'water_distance_to_septic_m' => $technicalDataInput['waterDistanceToSepticM'] ?? null,
+                        'water_distance_category' => $technicalDataInput['waterDistanceCategory'] ?? null,
+                        'water_fulfillment' => $technicalDataInput['waterFulfillment'] ?? null,
+
+                        // A.4 PENGELOLAAN SANITASI
+                        'defecation_place' => $technicalDataInput['defecationPlace'] ?? null,
+                        'toilet_type' => $technicalDataInput['toiletType'] ?? null,
+                        'sewage_disposal' => $technicalDataInput['sewageDisposal'] ?? null,
+
+                        // A.5 PENGELOLAAN SAMPAH
+                        'waste_disposal_place' => $technicalDataInput['wasteDisposalPlace'] ?? null,
+                        'waste_collection_frequency' => $technicalDataInput['wasteCollectionFrequency'] ?? null,
+
+                        // SUMBER LISTRIK
+                        'electricity_source' => $technicalDataInput['electricitySource'] ?? null,
+                        'electricity_power_watt' => $technicalDataInput['electricityPowerWatt'] ?? null,
+                        'electricity_connected' => $technicalDataInput['electricityConnected'] ?? null,
+                    ]
+                );
+            }
+
+            // Always update map location if provided
+            if ($mapLocationInputRaw !== null && $mapLocationInputRaw !== '') {
+                $household->update([
+                    'latitude' => $mapLocationData['latitude'] ?? null,
+                    'longitude' => $mapLocationData['longitude'] ?? null,
+                ]);
+            }
+
+            // Handle photo deletions - remove photos that are not in the metadata
+            $existingPhotoIds = $household->photos()->pluck('id')->toArray();
+            $submittedPhotoIds = array_filter(
+                array_column($photosData, 'id'),
+                fn($id) => !empty($id) && is_numeric($id)
+            );
+
+            // Find photos to delete (exist in DB but not in submitted metadata)
+            $photosToDelete = array_diff($existingPhotoIds, $submittedPhotoIds);
+
+            if (!empty($photosToDelete)) {
+                $photosToDeleteModels = $household->photos()
+                    ->whereIn('id', $photosToDelete)
+                    ->get();
+
+                // Delete files from storage
+                foreach ($photosToDeleteModels as $photo) {
+                    if ($photo->file_path && Storage::disk('public')->exists($photo->file_path)) {
+                        Storage::disk('public')->delete($photo->file_path);
+                    }
+                }
+
+                // Delete photo records from database
+                $household->photos()->whereIn('id', $photosToDelete)->delete();
+            }
+
+            // Handle photo uploads (new files)
+            if ($request->hasFile('photo_files')) {
+                $photoFolder = 'households/' . date('Y/m') . '/' . $household->id;
+
+                foreach ($request->file('photo_files') as $index => $file) {
+                    $path = $file->store($photoFolder, 'public');
+
+                    // Get existing photo count to set order_index
+                    $existingCount = $household->photos()->count();
+
+                    $household->photos()->create([
+                        'file_path' => $path,
+                        'order_index' => $existingCount + $index + 1,
+                    ]);
+                }
+            }
+
+            // Update order_index for remaining photos based on metadata order
+            if (!empty($photosData)) {
+                foreach ($photosData as $index => $photoData) {
+                    if (!empty($photoData['id']) && is_numeric($photoData['id'])) {
+                        $household->photos()
+                            ->where('id', $photoData['id'])
+                            ->update(['order_index' => $index + 1]);
+                    }
+                }
+            }
+
+            // Recalculate scores after update
+            if ($household->technicalData) {
+                $calculator = new HouseholdScoreCalculator();
+                $calculator->calculateAndSave($household);
+            }
+
+            DB::commit();
+
+            Log::info('Household Update - Success', [
+                'household_id' => $id,
+                'updated_fields' => [
+                    'general_info' => $generalInfoInput !== null && $generalInfoInput !== '',
+                    'technical_data' => $technicalDataInputRaw !== null && $technicalDataInputRaw !== '',
+                    'map_location' => $mapLocationInputRaw !== null && $mapLocationInputRaw !== '',
+                    'photos' => $request->has('photos') || $request->hasFile('photo_files'),
+                ],
+            ]);
+
+            // Reload household with all relationships for response
+            $household->refresh();
+            $household->load(['photos', 'technicalData', 'members']);
+
+            // Use back() for Inertia - 303 See Other is normal for redirects
+            // Inertia will handle it properly with preserveState: true
+            // The log should appear in Laravel log file (storage/logs/laravel.log)
+            return back()->with('success', 'Data rumah berhasil diperbarui');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Household Update - Error', [
+                'household_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->route('households.edit', $household->id)
+                ->withErrors([
+                    'message' => 'Gagal memperbarui data: ' . $e->getMessage(),
+                ]);
+        }
     }
 
     public function destroy(Request $request, $id)

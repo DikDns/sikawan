@@ -145,7 +145,7 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             // Redirect to household list after 1.5 seconds
             setTimeout(() => {
                 router.visit('/households');
-            }, 1500);
+            }, 500);
         } catch (error) {
             console.error('Error finalizing household:', error);
             const errorMessage =
