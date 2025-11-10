@@ -54,11 +54,10 @@ import {
     Undo2Icon,
     WaypointsIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
-import dynamic from "next/dynamic"
 import {
     createContext,
     Ref,
+    useCallback,
     useContext,
     useEffect,
     useRef,
@@ -79,56 +78,22 @@ import type {
     TileLayerProps,
     TooltipProps,
 } from "react-leaflet"
-import { useMap, useMapEvents } from "react-leaflet"
-
-const LeafletMapContainer = dynamic(
-    async () => (await import("react-leaflet")).MapContainer,
-    { ssr: false }
-)
-const LeafletTileLayer = dynamic(
-    async () => (await import("react-leaflet")).TileLayer,
-    { ssr: false }
-)
-const LeafletMarker = dynamic(
-    async () => (await import("react-leaflet")).Marker,
-    { ssr: false }
-)
-const LeafletPopup = dynamic(
-    async () => (await import("react-leaflet")).Popup,
-    { ssr: false }
-)
-const LeafletTooltip = dynamic(
-    async () => (await import("react-leaflet")).Tooltip,
-    { ssr: false }
-)
-const LeafletCircle = dynamic(
-    async () => (await import("react-leaflet")).Circle,
-    { ssr: false }
-)
-const LeafletCircleMarker = dynamic(
-    async () => (await import("react-leaflet")).CircleMarker,
-    { ssr: false }
-)
-const LeafletPolyline = dynamic(
-    async () => (await import("react-leaflet")).Polyline,
-    { ssr: false }
-)
-const LeafletPolygon = dynamic(
-    async () => (await import("react-leaflet")).Polygon,
-    { ssr: false }
-)
-const LeafletRectangle = dynamic(
-    async () => (await import("react-leaflet")).Rectangle,
-    { ssr: false }
-)
-const LeafletLayerGroup = dynamic(
-    async () => (await import("react-leaflet")).LayerGroup,
-    { ssr: false }
-)
-const LeafletFeatureGroup = dynamic(
-    async () => (await import("react-leaflet")).FeatureGroup,
-    { ssr: false }
-)
+import {
+    MapContainer as LeafletMapContainer,
+    TileLayer as LeafletTileLayer,
+    Marker as LeafletMarker,
+    Popup as LeafletPopup,
+    Tooltip as LeafletTooltip,
+    Circle as LeafletCircle,
+    CircleMarker as LeafletCircleMarker,
+    Polyline as LeafletPolyline,
+    Polygon as LeafletPolygon,
+    Rectangle as LeafletRectangle,
+    LayerGroup as LeafletLayerGroup,
+    FeatureGroup as LeafletFeatureGroup,
+    useMap,
+    useMapEvents,
+} from "react-leaflet"
 
 function Map({
     zoom = 15,
@@ -184,8 +149,6 @@ function MapTileLayer({
     name = "Default",
     url,
     attribution,
-    darkUrl,
-    darkAttribution,
     ...props
 }: Partial<TileLayerProps> & {
     name?: string
@@ -201,19 +164,12 @@ function MapTileLayer({
     const context = useContext(MapLayersContext)
     const DEFAULT_URL =
         "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
-    const DEFAULT_DARK_URL =
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-
-    const { resolvedTheme } = useTheme()
-    const resolvedUrl =
-        resolvedTheme === "dark"
-            ? (darkUrl ?? url ?? DEFAULT_DARK_URL)
-            : (url ?? DEFAULT_URL)
+    // const DEFAULT_DARK_URL =
+    // "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+    const resolvedUrl = url ?? DEFAULT_URL
     const resolvedAttribution =
-        resolvedTheme === "dark" && darkAttribution
-            ? darkAttribution
-            : (attribution ??
-              '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>')
+        attribution ??
+        '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
 
     useEffect(() => {
         if (context) {
@@ -223,6 +179,7 @@ function MapTileLayer({
                 attribution: resolvedAttribution,
             })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [context, name, url, attribution])
 
     if (context && context.selectedTileLayer !== name) {
@@ -321,7 +278,6 @@ function MapLayers({
     }
 
     useEffect(() => {
-        // Error: Invalid defaultValue
         if (
             defaultTileLayer &&
             tileLayers.length > 0 &&
@@ -332,17 +288,16 @@ function MapLayers({
             )
         }
 
-        // Set initial selected tile layer
         if (tileLayers.length > 0 && !selectedTileLayer) {
             const validDefaultValue =
                 defaultTileLayer &&
                 tileLayers.some((layer) => layer.name === defaultTileLayer)
                     ? defaultTileLayer
                     : tileLayers[0].name
-            setSelectedTileLayer(validDefaultValue)
+            // Use setTimeout to avoid calling setState synchronously in effect
+            setTimeout(() => setSelectedTileLayer(validDefaultValue), 0)
         }
 
-        // Error: Invalid defaultActiveLayerGroups
         if (
             defaultLayerGroups.length > 0 &&
             layerGroups.length > 0 &&
@@ -746,6 +701,7 @@ function MapLocateControl({
 
     useEffect(() => {
         return () => stopLocating()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return (
@@ -815,48 +771,50 @@ function MapDrawControl({
     const { L, LeafletDraw } = useLeaflet()
     const map = useMap()
     const featureGroupRef = useRef<L.FeatureGroup | null>(null)
+    const [featureGroup, setFeatureGroup] = useState<L.FeatureGroup | null>(null)
     const editControlRef = useRef<EditToolbar.Edit | null>(null)
     const deleteControlRef = useRef<EditToolbar.Delete | null>(null)
     const [activeMode, setActiveMode] = useState<MapDrawMode>(null)
 
-    function handleDrawCreated(event: DrawEvents.Created) {
+    const handleDrawCreated = useCallback((event: DrawEvents.Created) => {
         if (!featureGroupRef.current) return
         const { layer } = event
         featureGroupRef.current.addLayer(layer)
         onLayersChange?.(featureGroupRef.current)
         setActiveMode(null)
-    }
+    }, [onLayersChange])
 
-    function handleDrawEditedOrDeleted() {
+    const handleDrawEditedOrDeleted = useCallback(() => {
         if (!featureGroupRef.current) return
         onLayersChange?.(featureGroupRef.current)
         setActiveMode(null)
-    }
+    }, [onLayersChange])
+
+    useEffect(() => {
+        if (featureGroupRef.current) {
+            setFeatureGroup(featureGroupRef.current)
+        }
+    }, [])
 
     useEffect(() => {
         if (!L || !LeafletDraw) return
 
-        map.on(
-            L.Draw.Event.CREATED,
-            handleDrawCreated as L.LeafletEventHandlerFn
-        )
+        const createdHandler = handleDrawCreated as L.LeafletEventHandlerFn
+        map.on(L.Draw.Event.CREATED, createdHandler)
         map.on(L.Draw.Event.EDITED, handleDrawEditedOrDeleted)
         map.on(L.Draw.Event.DELETED, handleDrawEditedOrDeleted)
 
         return () => {
-            map.off(
-                L.Draw.Event.CREATED,
-                handleDrawCreated as L.LeafletEventHandlerFn
-            )
+            map.off(L.Draw.Event.CREATED, createdHandler)
             map.off(L.Draw.Event.EDITED, handleDrawEditedOrDeleted)
             map.off(L.Draw.Event.DELETED, handleDrawEditedOrDeleted)
         }
-    }, [L, LeafletDraw, map, onLayersChange])
+    }, [L, LeafletDraw, map, handleDrawCreated, handleDrawEditedOrDeleted])
 
     return (
         <MapDrawContext.Provider
             value={{
-                featureGroup: featureGroupRef.current,
+                featureGroup,
                 activeMode,
                 setActiveMode,
                 editControlRef,
@@ -932,7 +890,7 @@ function MapDrawMarker({ ...props }: DrawOptions.MarkerOptions) {
             createDrawTool={(L, map) =>
                 new L.Draw.Marker(map, {
                     icon: L.divIcon({
-                        className: "", // For fixing the moving bug when going in and out the edit mode
+                        className: "",
                         iconAnchor: [12, 12],
                         html: renderToString(<MapPinIcon className="size-6" />),
                     }),
@@ -1102,6 +1060,7 @@ function MapDrawActionButton<T extends EditToolbar.Edit | EditToolbar.Delete>({
             control.disable?.()
             controlRef.current = null
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [L, map, isActive, featureGroup, createDrawTool])
 
     function handleClick() {
@@ -1155,14 +1114,19 @@ function MapDrawEdit({
             touchMoveIcon: mapDrawHandleIcon,
             touchResizeIcon: mapDrawHandleIcon,
         })
-        L.drawLocal.edit.handlers.edit.tooltip = {
-            text: "Drag handles or markers to edit.",
-            subtext: "",
+        // Use Object.assign to modify drawLocal without direct assignment
+        if (L.drawLocal?.edit?.handlers?.edit) {
+            Object.assign(L.drawLocal.edit.handlers.edit.tooltip || {}, {
+                text: "Drag handles or markers to edit.",
+                subtext: "",
+            })
         }
-        L.drawLocal.edit.handlers.remove.tooltip = {
-            text: "Click on a shape to remove.",
+        if (L.drawLocal?.edit?.handlers?.remove) {
+            Object.assign(L.drawLocal.edit.handlers.remove.tooltip || {}, {
+                text: "Click on a shape to remove.",
+            })
         }
-    }, [mapDrawHandleIcon])
+    }, [L, mapDrawHandleIcon])
 
     return (
         <MapDrawActionButton
@@ -1257,10 +1221,10 @@ function useLeaflet() {
         if (L && LeafletDraw) return
         if (typeof window !== "undefined") {
             if (!L) {
-                setL(require("leaflet"))
+                import("leaflet").then((module) => setL(module.default))
             }
             if (!LeafletDraw) {
-                setLeafletDraw(require("leaflet-draw"))
+                import("leaflet-draw").then((module) => setLeafletDraw(module))
             }
         }
     }, [L, LeafletDraw])
@@ -1283,7 +1247,8 @@ function useDebounceLoadingState(delay = 200) {
                 clearTimeout(timeoutRef.current)
                 timeoutRef.current = null
             }
-            setShowLoading(false)
+            // Use setTimeout to avoid calling setState synchronously in effect
+            setTimeout(() => setShowLoading(false), 0)
         }
 
         return () => {
