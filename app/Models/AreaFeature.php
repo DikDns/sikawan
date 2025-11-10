@@ -11,7 +11,26 @@ class AreaFeature extends Model
     use HasFactory;
 
     protected $fillable = [
-        'area_group_id','name','description','geometry_type','geometry_json','centroid_lat','centroid_lng','household_count','family_count','area_survey_id','attributes_json','is_visible'
+        'area_group_id',
+        'name',
+        'description',
+        'geometry_type',
+        'geometry_json',
+        'centroid_lat',
+        'centroid_lng',
+        'household_count',
+        'family_count',
+        'area_survey_id',
+        'province_id',
+        'province_name',
+        'regency_id',
+        'regency_name',
+        'district_id',
+        'district_name',
+        'village_id',
+        'village_name',
+        'attributes_json',
+        'is_visible',
     ];
 
     protected $casts = [
@@ -21,6 +40,8 @@ class AreaFeature extends Model
         'is_visible' => 'boolean',
     ];
 
-    public function group(): BelongsTo { return $this->belongsTo(AreaGroup::class, 'area_group_id'); }
-    public function survey(): BelongsTo { return $this->belongsTo(AreaSurvey::class, 'area_survey_id'); }
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(AreaGroup::class, 'area_group_id');
+    }
 }

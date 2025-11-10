@@ -8,21 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('area_surveys', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('province_id')->nullable()->constrained('admin_areas')->nullOnDelete();
-            $table->foreignId('regency_id')->nullable()->constrained('admin_areas')->nullOnDelete();
-            $table->foreignId('district_id')->nullable()->constrained('admin_areas')->nullOnDelete();
-            $table->foreignId('village_id')->nullable()->constrained('admin_areas')->nullOnDelete();
-            $table->string('rt_rw', 20)->nullable();
-            $table->string('unit_name', 150)->nullable();
-            $table->date('survey_date')->nullable();
-            $table->text('geometry_json')->nullable();
-            $table->text('notes')->nullable();
-            $table->timestamps();
-            $table->index(['province_id','regency_id','district_id','village_id'], 'area_surveys_admin_idxs');
-        });
-
         Schema::create('area_groups', function (Blueprint $table) {
             $table->id();
             $table->string('code', 40)->unique();
@@ -49,6 +34,16 @@ return new class extends Migration
             $table->foreignId('area_survey_id')->nullable()->constrained('area_surveys')->nullOnDelete();
             $table->text('attributes_json')->nullable();
             $table->boolean('is_visible')->default(true);
+
+            $table->string('province_id', 10)->nullable();
+            $table->string('province_name', 150)->nullable();
+            $table->string('regency_id', 10)->nullable();
+            $table->string('regency_name', 150)->nullable();
+            $table->string('district_id', 10)->nullable();
+            $table->string('district_name', 150)->nullable();
+            $table->string('village_id', 10)->nullable();
+            $table->string('village_name', 150)->nullable();
+
             $table->timestamps();
             $table->index(['area_group_id', 'area_survey_id']);
             $table->index('is_visible');
@@ -59,6 +54,5 @@ return new class extends Migration
     {
         Schema::dropIfExists('area_features');
         Schema::dropIfExists('area_groups');
-        Schema::dropIfExists('area_surveys');
     }
 };

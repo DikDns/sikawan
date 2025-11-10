@@ -41,9 +41,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('households/{householdId}/assistances/{assistanceId}/status', [App\Http\Controllers\AssistanceController::class, 'updateStatus'])->name('assistances.updateStatus');
     Route::delete('households/{householdId}/assistances/{assistanceId}', [App\Http\Controllers\AssistanceController::class, 'destroy'])->name('assistances.destroy');
 
-    Route::get('areas', function () {
-        return Inertia::render('areas');
-    })->name('areas');
+    // Areas Routes
+    Route::get('areas', [App\Http\Controllers\AreaController::class, 'index'])->name('areas');
 
     Route::get('infrastructure', function () {
         return Inertia::render('infrastructure');

@@ -57,65 +57,29 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/areas',
     },
 ];
-
-// Mock data types based on SCHEMA_DB.md
-// Ref: area_groups and area_features tables
 interface AreaGroup {
     id: number;
     code: string; // 'SLUM','SETTLEMENT','DISASTER_RISK','PRIORITY_DEV'
     name: string; // area_groups.name
     description: string | null;
     legend_color_hex: string; // area_groups.legend_color_hex
+    legend_icon: string | null;
+    is_active: boolean;
     feature_count: number; // COUNT dari area_features
     household_count: number; // SUM household_count dari area_features
     family_count: number; // SUM family_count dari area_features
 }
 
-// Mock data - fully consistent with SCHEMA_DB.md
-const MOCK_AREA_GROUPS: AreaGroup[] = [
-    {
-        id: 1501341233,
-        code: 'SLUM',
-        name: 'Kawasan Kumuh',
-        description: 'Kawasan permukiman kumuh yang memerlukan penanganan',
-        legend_color_hex: '#F28AAA',
-        feature_count: 4,
-        household_count: 156,
-        family_count: 142,
-    },
-    {
-        id: 1501341234,
-        code: 'SETTLEMENT',
-        name: 'Kawasan Pemukiman',
-        description: 'Kawasan pemukiman yang telah tertata',
-        legend_color_hex: '#B2F02C',
-        feature_count: 25,
-        household_count: 892,
-        family_count: 814,
-    },
-    {
-        id: 1501341235,
-        code: 'DISASTER_RISK',
-        name: 'Kawasan Rawan Bencana',
-        description: 'Kawasan dengan risiko bencana tinggi',
-        legend_color_hex: '#FF6B6B',
-        feature_count: 2,
-        household_count: 67,
-        family_count: 58,
-    },
-    {
-        id: 1501341236,
-        code: 'PRIORITY_DEV',
-        name: 'Lokasi Prioritas Pembangunan',
-        description: 'Kawasan prioritas untuk pembangunan infrastruktur',
-        legend_color_hex: '#4C6EF5',
-        feature_count: 10,
-        household_count: 423,
-        family_count: 387,
-    },
-];
+interface Props {
+    areaGroups: AreaGroup[];
+    stats: {
+        totalGroups: number;
+        totalFeatures: number;
+        totalHouseholds: number;
+    };
+}
 
-export default function Areas() {
+export default function Areas({ areaGroups, stats }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
 
@@ -140,24 +104,9 @@ export default function Areas() {
         // TODO: Navigate to add page or open add modal
     };
 
-    // Calculate statistics
-    const stats = useMemo(() => {
-        const totalGroups = MOCK_AREA_GROUPS.length;
-        const totalFeatures = MOCK_AREA_GROUPS.reduce(
-            (sum, group) => sum + group.feature_count,
-            0,
-        );
-        const totalHouseholds = MOCK_AREA_GROUPS.reduce(
-            (sum, group) => sum + group.household_count,
-            0,
-        );
-
-        return { totalGroups, totalFeatures, totalHouseholds };
-    }, []);
-
     // Filter and search
     const filteredAreaGroups = useMemo(() => {
-        return MOCK_AREA_GROUPS.filter((group) => {
+        return areaGroups.filter((group) => {
             const matchesSearch =
                 group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 group.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -174,7 +123,7 @@ export default function Areas() {
 
             return matchesSearch && matchesFilter;
         });
-    }, [searchQuery, filterType]);
+    }, [areaGroups, searchQuery, filterType]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -251,7 +200,7 @@ export default function Areas() {
                                     <CardTitle>Daftar Kawasan</CardTitle>
                                     <CardDescription>
                                         Menampilkan {filteredAreaGroups.length}{' '}
-                                        dari {MOCK_AREA_GROUPS.length} kelompok
+                                        dari {areaGroups.length} kelompok
                                         kawasan
                                     </CardDescription>
                                 </div>

@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
         // Seed households and related data
         $this->call([
             HouseholdSeeder::class,
+            AreaGroupSeeder::class,
         ]);
     }
 }
