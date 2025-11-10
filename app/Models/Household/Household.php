@@ -30,7 +30,6 @@ class Household extends Model
         'address_text',
         'latitude',
         'longitude',
-        'photo_folder',
         'ownership_status_building',
         'ownership_status_land',
         'building_legal_status',

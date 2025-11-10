@@ -144,7 +144,6 @@ class AreaGroupSeeder extends Seeder
                         'centroid_lng' => 106.816666 + ($index * 0.001),
                         'household_count' => $featureData['household_count'],
                         'family_count' => $featureData['family_count'],
-                        'area_survey_id' => null,
                         'province_id' => '32',
                         'province_name' => 'Jawa Barat',
                         'regency_id' => '3273',

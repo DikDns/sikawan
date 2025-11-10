@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     Edit,
     Eye,
@@ -85,8 +85,7 @@ export default function Areas({ areaGroups, stats }: Props) {
 
     // Action handlers
     const handleView = (id: number) => {
-        console.log('View area group:', id);
-        // TODO: Navigate to detail page showing all area_features in this group
+        router.visit(`/areas/${id}`);
     };
 
     const handleEdit = (id: number) => {

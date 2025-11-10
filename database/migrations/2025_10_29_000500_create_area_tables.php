@@ -31,7 +31,6 @@ return new class extends Migration
             $table->decimal('centroid_lng', 10, 6)->nullable();
             $table->integer('household_count')->nullable();
             $table->integer('family_count')->nullable();
-            $table->foreignId('area_survey_id')->nullable()->constrained('area_surveys')->nullOnDelete();
             $table->text('attributes_json')->nullable();
             $table->boolean('is_visible')->default(true);
 
@@ -45,7 +44,7 @@ return new class extends Migration
             $table->string('village_name', 150)->nullable();
 
             $table->timestamps();
-            $table->index(['area_group_id', 'area_survey_id']);
+            $table->index(['area_group_id']);
             $table->index('is_visible');
         });
     }

@@ -108,11 +108,19 @@ class HouseholdSeeder extends Seeder
                 'Yanto Wijaya', 'Ika Puspita', 'Rian Pratama', 'Tari Rahmawati',
             ];
 
+            // Main occupation options from constants (general-info-step/constants.ts)
             $occupations = [
-                'Karyawan Swasta', 'Wiraswasta', 'Pedagang', 'Buruh', 'PNS',
-                'Guru', 'Petani', 'Tukang', 'Sopir', 'Ibu Rumah Tangga',
-                'Pegawai BUMN', 'Pensiunan', 'Mahasiswa', 'Freelancer',
+                'pegawai-pemerintah',
+                'perdagangan-jasa',
+                'petani-perkebunan-kehutanan-peternakan',
+                'perikanan-nelayan',
+                'pertambangan-galian',
+                'industri-pabrik',
+                'konstruksi-bangunan',
             ];
+
+            // Income mapping: '<1jt' => 1, '1-3jt' => 2, '3-5jt' => 3, '>5jt' => 4
+            $incomeOptions = [1, 2, 3, 4];
 
             $streets = [
                 'Jl. Merdeka', 'Jl. Sudirman', 'Jl. Gatot Subroto', 'Jl. Ahmad Yani',
@@ -146,7 +154,6 @@ class HouseholdSeeder extends Seeder
                     'address_text' => $streets[array_rand($streets)] . ' No. ' . rand(1, 200) . ', RT ' . sprintf('%03d', rand(1, 15)) . '/RW ' . sprintf('%03d', rand(1, 10)) . ', ' . $location['village_name'] . ', ' . $location['district_name'] . ', ' . $location['regency_name'],
                     'latitude' => $location['lat'] + (rand(-1000, 1000) / 10000),
                     'longitude' => $location['lng'] + (rand(-1000, 1000) / 10000),
-                    'photo_folder' => 'households/' . date('Y/m') . '/' . uniqid(),
 
                     // Ownership
                     'ownership_status_building' => ['OWN', 'RENT', 'OTHER'][rand(0, 2)],
@@ -166,7 +173,7 @@ class HouseholdSeeder extends Seeder
 
                     // Non-physical
                     'main_occupation' => $occupations[array_rand($occupations)],
-                    'monthly_income_idr' => rand(1000000, 8000000),
+                    'monthly_income_idr' => $incomeOptions[array_rand($incomeOptions)],
                     'health_facility_used' => ['Puskesmas', 'Rumah Sakit', 'Klinik', 'Praktik Dokter'][rand(0, 3)],
                     'health_facility_location' => ['Dalam Kelurahan/Kecamatan', 'Luar Kelurahan/Kecamatan'][rand(0, 1)],
                     'education_facility_location' => ['Dalam Kelurahan/Kecamatan', 'Luar Kelurahan/Kecamatan'][rand(0, 1)],
@@ -187,12 +194,13 @@ class HouseholdSeeder extends Seeder
                     'household_id' => $household->id,
 
                     // A.1 Keteraturan Bangunan
-                    'has_road_access' => rand(0, 1),
+                    'has_road_access' => (bool) rand(0, 1),
                     'road_width_category' => ['LE1_5', 'EQ1_5', 'GT1_5'][rand(0, 2)],
-                    'facade_faces_road' => rand(0, 1),
-                    'faces_waterbody' => rand(0, 1),
-                    'in_setback_area' => rand(0, 1),
-                    'in_hazard_area' => rand(0, 1),
+                    'facade_faces_road' => (bool) rand(0, 1),
+                    // faces_waterbody and in_setback_area can be null (nullable in migration)
+                    'faces_waterbody' => rand(0, 10) > 2 ? (bool) rand(0, 1) : null,
+                    'in_setback_area' => rand(0, 10) > 2 ? (bool) rand(0, 1) : null,
+                    'in_hazard_area' => (bool) rand(0, 1),
                     'score_a1' => rand(0, 1),
 
                     // A.2 Kelayakan Bangunan
@@ -204,25 +212,30 @@ class HouseholdSeeder extends Seeder
                     'area_per_person_m2' => round($areaPerPerson, 2),
                     'score_a2_floor_area' => $areaPerPerson >= 7.2 ? 1 : 0,
 
-                    // Struktur
-                    'has_foundation' => rand(0, 1),
-                    'has_sloof' => rand(0, 1),
-                    'has_ring_beam' => rand(0, 1),
-                    'has_roof_structure' => rand(0, 1),
-                    'has_columns' => rand(0, 1),
-
-                    // Material & Kondisi
-                    'roof_material' => ['Genteng', 'Seng', 'Asbes', 'Beton'][rand(0, 3)],
-                    'roof_condition' => ['GOOD', 'LEAK', 'RINGAN', 'SEDANG', 'BERAT'][rand(0, 4)],
-                    'wall_material' => ['Bata & Semen', 'Kayu', 'Bambu', 'Seng'][rand(0, 3)],
-                    'wall_condition' => ['GOOD', 'DAMAGED', 'RINGAN', 'SEDANG', 'BERAT'][rand(0, 4)],
-                    'floor_material' => ['Keramik', 'Semen', 'Tanah', 'Papan'][rand(0, 3)],
-                    'floor_condition' => ['LAYAK', 'TIDAK_LAYAK', 'RINGAN', 'SEDANG', 'BERAT'][rand(0, 4)],
+                    // Material & Kondisi (matching constants.ts)
+                    'roof_material' => ['SENG', 'GENTENG', 'ASBES', 'BETON', 'IJUK', 'KAYU', 'DAUN', 'LAINNYA'][rand(0, 7)],
+                    'roof_condition' => ['GOOD', 'LEAK'][rand(0, 1)],
+                    'wall_material' => ['TEMBOK', 'KAYU', 'SENG', 'BAMBU', 'LAINNYA'][rand(0, 4)],
+                    'wall_condition' => ['GOOD', 'DAMAGED'][rand(0, 1)],
+                    'floor_material' => ['KERAMIK', 'SEMEN', 'KAYU', 'TANAH', 'LAINNYA'][rand(0, 4)],
+                    'floor_condition' => ['LAYAK', 'TIDAK_LAYAK'][rand(0, 1)],
                     'score_a2_structure' => rand(0, 1),
                     'score_a2_total_pct' => rand(0, 100),
 
-                    // A.3 Akses Air
-                    'water_source' => ['SR_METERAN', 'SR_NONMETER', 'SUMUR_BOR', 'SUMUR_TRL', 'MATA_AIR_TRL'][rand(0, 4)],
+                    // A.3 Akses Air (matching constants.ts - all options)
+                    'water_source' => [
+                        'SR_METERAN',
+                        'SR_NONMETER',
+                        'SUMUR_BOR',
+                        'SUMUR_TRL',
+                        'MATA_AIR_TRL',
+                        'HUJAN',
+                        'KEMASAN',
+                        'SUMUR_TAK_TRL',
+                        'MATA_AIR_TAK_TRL',
+                        'SUNGAI',
+                        'TANGKI_MOBIL',
+                    ][rand(0, 10)],
                     'water_distance_to_septic_m' => rand(5, 15),
                     'water_distance_category' => rand(0, 1) ? 'GE10M' : 'LT10M',
                     'water_fulfillment' => ['ALWAYS', 'SEASONAL', 'NEVER'][rand(0, 2)],
@@ -241,10 +254,10 @@ class HouseholdSeeder extends Seeder
                     'waste_collection_frequency' => ['GE2X_WEEK', 'LT1X_WEEK'][rand(0, 1)],
                     'score_a5' => rand(0, 1),
 
-                    // Listrik
-                    'electricity_source' => ['PLN', 'Genset', 'Surya', 'Lainnya'][rand(0, 3)],
+                    // Listrik (matching constants.ts)
+                    'electricity_source' => ['PLN', 'GENSET', 'SOLAR', 'MENUMPANG', 'TIDAK_ADA', 'LAINNYA'][rand(0, 5)],
                     'electricity_power_watt' => [450, 900, 1300, 2200][rand(0, 3)],
-                    'electricity_connected' => rand(0, 1),
+                    'electricity_connected' => (bool) rand(0, 1),
                 ]);
 
                 // Create Household Members
@@ -305,10 +318,11 @@ class HouseholdSeeder extends Seeder
                 // Create Photos (random, 50% punya foto)
                 if (rand(0, 1)) {
                     $photoCount = rand(2, 5);
+                    $photoFolder = 'households/' . date('Y/m') . '/' . $household->id;
                     for ($m = 0; $m < $photoCount; $m++) {
                         Photo::create([
                             'household_id' => $household->id,
-                            'file_path' => $household->photo_folder . '/photo_' . ($m + 1) . '.jpg',
+                            'file_path' => $photoFolder . '/photo_' . ($m + 1) . '.jpg',
                             'caption' => ['Tampak Depan', 'Tampak Samping', 'Ruang Tamu', 'Kamar Tidur', 'Dapur', 'Kamar Mandi'][$m % 6],
                             'order_index' => $m + 1,
                         ]);
