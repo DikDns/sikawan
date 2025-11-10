@@ -71,17 +71,6 @@ class AreaGroupSeeder extends Seeder
             ],
         ];
 
-        foreach ($areaGroups as $groupData) {
-            $features = $groupData['features'];
-            unset($groupData['features']);
-
-            // Create or update area group
-            $areaGroup = AreaGroup::updateOrCreate(
-                ['id' => $groupData['id']],
-                $groupData
-            );
-        }
-
         $this->command->info('Area groups seeded successfully!');
     }
 }
