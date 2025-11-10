@@ -43,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Areas Routes
     Route::get('areas', [App\Http\Controllers\AreaController::class, 'index'])->name('areas');
+    Route::get('areas/{id}', [App\Http\Controllers\AreaController::class, 'show'])->name('areas.show');
 
     Route::get('infrastructure', function () {
         return Inertia::render('infrastructure');

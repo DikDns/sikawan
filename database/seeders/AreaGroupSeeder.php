@@ -31,7 +31,7 @@ class AreaGroupSeeder extends Seeder
         // Define area groups based on mock data
         $areaGroups = [
             [
-                'id' => 1501341233,
+                'id' => 1,
                 'code' => 'SLUM',
                 'name' => 'Kawasan Kumuh',
                 'description' => 'Kawasan permukiman kumuh yang memerlukan penanganan',
@@ -46,7 +46,7 @@ class AreaGroupSeeder extends Seeder
                 ],
             ],
             [
-                'id' => 1501341234,
+                'id' => 2,
                 'code' => 'SETTLEMENT',
                 'name' => 'Kawasan Pemukiman',
                 'description' => 'Kawasan pemukiman yang telah tertata',
@@ -83,7 +83,7 @@ class AreaGroupSeeder extends Seeder
                 // Total: 892 households, 814 families
             ],
             [
-                'id' => 1501341235,
+                'id' => 3,
                 'code' => 'DISASTER_RISK',
                 'name' => 'Kawasan Rawan Bencana',
                 'description' => 'Kawasan dengan risiko bencana tinggi',
@@ -96,7 +96,7 @@ class AreaGroupSeeder extends Seeder
                 ],
             ],
             [
-                'id' => 1501341236,
+                'id' => 4,
                 'code' => 'PRIORITY_DEV',
                 'name' => 'Lokasi Prioritas Pembangunan',
                 'description' => 'Kawasan prioritas untuk pembangunan infrastruktur',
@@ -144,7 +144,6 @@ class AreaGroupSeeder extends Seeder
                         'centroid_lng' => 106.816666 + ($index * 0.001),
                         'household_count' => $featureData['household_count'],
                         'family_count' => $featureData['family_count'],
-                        'area_survey_id' => null,
                         'province_id' => '32',
                         'province_name' => 'Jawa Barat',
                         'regency_id' => '3273',
