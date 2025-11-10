@@ -1,120 +1,103 @@
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import HeadingSmall from '@/components/heading-small';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogClose,
+  DialogOverlay,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Form } from '@inertiajs/react';
-import { useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from '@inertiajs/react';
 
-export default function DeleteUser() {
-    const passwordInput = useRef<HTMLInputElement>(null);
+interface DeleteUserProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  userId: number | null;
+}
 
-    return (
-        <div className="space-y-6">
-            <HeadingSmall
-                title="Delete account"
-                description="Delete your account and all of its resources"
-            />
-            <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
-                    <p className="font-medium">Warning</p>
-                    <p className="text-sm">
-                        Please proceed with caution, this cannot be undone.
-                    </p>
-                </div>
+export default function DeleteUser({
+  open,
+  onOpenChange,
+  userId,
+}: DeleteUserProps) {
+  const [confirmed, setConfirmed] = useState(false);
 
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button
-                            variant="destructive"
-                            data-test="delete-user-button"
-                        >
-                            Delete account
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogTitle>
-                            Are you sure you want to delete your account?
-                        </DialogTitle>
-                        <DialogDescription>
-                            Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
-                        </DialogDescription>
+  // Inertia form
+  const { data, setData, post, processing, reset } = useForm({
+    id: userId ?? null,
+  });
 
-                        <Form
-                            {...ProfileController.destroy.form()}
-                            options={{
-                                preserveScroll: true,
-                            }}
-                            onError={() => passwordInput.current?.focus()}
-                            resetOnSuccess
-                            className="space-y-6"
-                        >
-                            {({ resetAndClearErrors, processing, errors }) => (
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label
-                                            htmlFor="password"
-                                            className="sr-only"
-                                        >
-                                            Password
-                                        </Label>
+  // Update form state jika userId berubah
+  // supaya id selalu sesuai dengan user yang dipilih
+  if (data.id !== userId) {
+    setData('id', userId);
+  }
 
-                                        <Input
-                                            id="password"
-                                            type="password"
-                                            name="password"
-                                            ref={passwordInput}
-                                            placeholder="Password"
-                                            autoComplete="current-password"
-                                        />
+  const handleDelete = (e: React.FormEvent) => {
+    e.preventDefault();
 
-                                        <InputError message={errors.password} />
-                                    </div>
+    post('/users/delete', {
+      onSuccess: () => {
+        reset();
+        onOpenChange(false);
+      },
+    });
+  };
 
-                                    <DialogFooter className="gap-2">
-                                        <DialogClose asChild>
-                                            <Button
-                                                variant="secondary"
-                                                onClick={() =>
-                                                    resetAndClearErrors()
-                                                }
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </DialogClose>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogOverlay className="bg-transparent backdrop-blur-sm" />
 
-                                        <Button
-                                            variant="destructive"
-                                            disabled={processing}
-                                            asChild
-                                        >
-                                            <button
-                                                type="submit"
-                                                data-test="confirm-delete-user-button"
-                                            >
-                                                Delete account
-                                            </button>
-                                        </Button>
-                                    </DialogFooter>
-                                </>
-                            )}
-                        </Form>
-                    </DialogContent>
-                </Dialog>
-            </div>
+      <DialogContent className="max-w-sm rounded-2xl bg-white/80 p-8 backdrop-blur-md shadow-lg text-center border border-white/50">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <Trash2 className="h-8 w-8 text-red-500" />
         </div>
-    );
+
+        <DialogTitle className="text-xl font-semibold text-gray-800">
+          Hapus Pengguna?
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-sm text-gray-600">
+          Yakin hapus pengguna dengan ID{' '}
+          <span className="text-blue-600 font-medium">{userId}</span>?
+          <br />
+          Harap pastikan kembali, karena setelah dihapus data ini tidak dapat
+          dipulihkan.
+        </DialogDescription>
+
+        <div className="mt-6 flex items-center justify-center space-x-2">
+          <Checkbox
+            id="confirm-delete"
+            checked={confirmed}
+            onCheckedChange={(checked) => setConfirmed(checked as boolean)}
+          />
+          <label
+            htmlFor="confirm-delete"
+            className="text-sm text-gray-700 cursor-pointer"
+          >
+            Saya yakin untuk menghapus data ini.
+          </label>
+        </div>
+
+        <DialogFooter className="mt-8 flex justify-center gap-3">
+          <DialogClose asChild>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+              Batal Hapus
+            </Button>
+          </DialogClose>
+
+          <Button
+            variant="destructive"
+            disabled={!confirmed || processing}
+            onClick={handleDelete}
+          >
+            {processing ? 'Menghapus...' : 'Hapus'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
