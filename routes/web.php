@@ -44,6 +44,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Areas Routes
     Route::get('areas', [App\Http\Controllers\AreaController::class, 'index'])->name('areas');
     Route::get('areas/{id}', [App\Http\Controllers\AreaController::class, 'show'])->name('areas.show');
+    Route::post('areas/{areaGroupId}/areas', [App\Http\Controllers\AreaController::class, 'storeArea'])->name('areas.store');
+    Route::put('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'updateArea'])->name('areas.update');
+    Route::delete('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'destroyArea'])->name('areas.destroy');
 
     Route::get('infrastructure', function () {
         return Inertia::render('infrastructure');

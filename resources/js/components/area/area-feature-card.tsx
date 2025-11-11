@@ -1,28 +1,45 @@
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { Eye, EyeOff } from 'lucide-react';
+import { Edit, MoreVertical, Trash2 } from 'lucide-react';
 
 export interface AreaFeatureCardProps {
     id: number;
     name: string;
     description?: string | null;
-    householdCount: number;
-    familyCount: number;
-    isVisible: boolean;
+    provinceName?: string | null;
+    regencyName?: string | null;
+    districtName?: string | null;
+    villageName?: string | null;
     onClick?: () => void;
+    onEdit?: () => void;
     className?: string;
 }
 
 export function AreaFeatureCard({
     name,
     description,
-    householdCount,
-    familyCount,
-    isVisible,
+    provinceName,
+    regencyName,
+    districtName,
+    villageName,
     onClick,
+    onEdit,
     className,
 }: AreaFeatureCardProps) {
+    const locationParts = [
+        villageName,
+        districtName,
+        regencyName,
+        provinceName,
+    ].filter(Boolean);
+
     return (
         <Card
             className={cn(
@@ -34,32 +51,47 @@ export function AreaFeatureCard({
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            {name}
-                            {isVisible ? (
-                                <Eye className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                                <EyeOff className="h-4 w-4 text-muted-foreground" />
-                            )}
-                        </CardTitle>
+                        <CardTitle className="text-base">{name}</CardTitle>
                         {description && (
                             <p className="mt-1 text-sm text-muted-foreground">
                                 {description}
                             </p>
                         )}
+                        {locationParts.length > 0 && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {locationParts.join(', ')}
+                            </p>
+                        )}
                     </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
+                            >
+                                <MoreVertical className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEdit?.();
+                                }}
+                                className="cursor-pointer"
+                            >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-2">
-                <div className="flex flex-wrap gap-2">
-                    <Badge variant="default" className="text-xs">
-                        {householdCount.toLocaleString()} Rumah
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                        {familyCount.toLocaleString()} Keluarga
-                    </Badge>
-                </div>
-            </CardContent>
         </Card>
     );
 }

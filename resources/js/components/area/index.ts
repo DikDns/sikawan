@@ -4,9 +4,14 @@ export {
 } from './area-feature-card';
 export {
     AreaFeatureList,
-    type AreaFeature,
+    type Area,
     type AreaFeatureListProps,
 } from './area-feature-list';
+export {
+    AreaFormDialog,
+    type AreaFormDialogProps,
+    type Area as AreaFormType,
+} from './area-form-dialog';
 export {
     AreaMapDisplay,
     type AreaFeatureGeometry,

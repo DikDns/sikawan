@@ -1,11 +1,24 @@
+import { AreaFeatureList, type Area } from '@/components/area/area-feature-list';
+import {
+    AreaFormDialog,
+    type Area as AreaFormType,
+} from '@/components/area/area-form-dialog';
 import {
     AreaMapDisplay,
     type AreaFeatureGeometry,
 } from '@/components/area/area-map-display';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from '@/components/ui/resizable';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { getCsrfToken, handleCsrfError } from '@/lib/csrf';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -36,129 +49,317 @@ interface AreaGroup {
 
 interface Props {
     areaGroup: AreaGroup;
+    areas: Area[];
 }
 
-export default function AreaDetail({ areaGroup }: Props) {
-    // Prepare geometry for map display if available
-    const mapFeatures: AreaFeatureGeometry[] = areaGroup.geometry_json
-        ? [
-              {
-                  id: areaGroup.id,
-                  name: areaGroup.name,
-                  geometry_json: JSON.stringify(areaGroup.geometry_json),
-                  centroid_lat: areaGroup.centroid_lat,
-                  centroid_lng: areaGroup.centroid_lng,
-                  color: areaGroup.legend_color_hex,
-              },
-          ]
-        : [];
+export default function AreaDetail({ areaGroup, areas }: Props) {
+    const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingArea, setEditingArea] = useState<AreaFormType | null>(null);
+    const [areasState, setAreasState] = useState<Area[]>(areas);
+    // Map temporary layer numbers to server-assigned IDs for new shapes
+    const [resolvedLayerIds, setResolvedLayerIds] = useState<Record<number, number>>({});
+
+    // keep local state in sync if server prop changes
+    useEffect(() => {
+        setAreasState(areas);
+    }, [areas]);
+
+    // Prepare geometry for map display from local state
+    const mapFeatures: AreaFeatureGeometry[] = useMemo(
+        () =>
+            areasState.map((area) => ({
+                id: area.id,
+                name: area.name,
+                geometry_json:
+                    typeof area.geometry_json === 'string'
+                        ? area.geometry_json
+                        : JSON.stringify(area.geometry_json),
+                color: areaGroup.legend_color_hex,
+            })),
+        [areasState, areaGroup.legend_color_hex],
+    );
+
+    // Handle layer creation from map
+    const handleLayerCreated = async (
+        geometry: unknown,
+        layerNumber: number,
+    ) => {
+        // Generate default name
+        const defaultName = `${areaGroup.name} ${layerNumber}`;
+
+        try {
+            // Get CSRF token with better error handling
+            const csrfToken = getCsrfToken();
+            console.log('[AreaDetail] CSRF Token for create:', csrfToken.substring(0, 10) + '...');
+
+            const payload = {
+                name: defaultName,
+                description: null,
+                geometry_json: geometry,
+            };
+
+            const response = await fetch(`/areas/${areaGroup.id}/areas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('[AreaDetail] Create error:', response.status, errorData);
+
+                // Handle CSRF token mismatch specifically
+                if (response.status === 419) {
+                    toast.error(handleCsrfError(response, errorData));
+                    return;
+                }
+
+                throw new Error(
+                    errorData.message ||
+                        `HTTP error! status: ${response.status}`,
+                );
+            }
+
+            const data = await response.json();
+            toast.success(data.message || 'Area berhasil ditambahkan');
+            // Optimistically add to local state if backend returns the new area
+            const createdArea: Area | undefined = (data?.data?.area || data?.area);
+            if (createdArea && createdArea.id) {
+                setAreasState((prev) => [...prev, createdArea]);
+                // Resolve temp layer number to server ID so edit/delete work
+                setResolvedLayerIds((prev) => ({ ...prev, [layerNumber]: createdArea.id }));
+            } else {
+                // Fallback soft reload if no payload returned
+                router.reload({ only: ['areas'] });
+            }
+        } catch (error) {
+            console.error('Error creating area:', error);
+            const errorMessage =
+                error instanceof Error ? error.message : 'Gagal menyimpan area';
+            toast.error(errorMessage);
+        }
+    };
+
+    // Handle area form success
+    const handleFormSuccess = () => {
+        // After form success, try to refresh areas but keep optimistic state
+        router.reload({ only: ['areas'] });
+        setEditingArea(null);
+    };
+
+    // Handle area edit
+    const handleAreaEditDetail = (area: Area) => {
+        setEditingArea({
+            id: area.id,
+            name: area.name,
+            description: area.description || null,
+            geometry_json: area.geometry_json || null,
+            province_id: area.province_id || null,
+            province_name: area.province_name || null,
+            regency_id: area.regency_id || null,
+            regency_name: area.regency_name || null,
+            district_id: area.district_id || null,
+            district_name: area.district_name || null,
+            village_id: area.village_id || null,
+            village_name: area.village_name || null,
+        });
+        setIsDialogOpen(true);
+    };
+
+    // Handle area delete
+    const handleAreaDelete = async (areaId: number) => {
+        try {
+            // Get CSRF token with better error handling
+            const csrfToken = getCsrfToken();
+            console.log('[AreaDetail] CSRF Token for delete:', csrfToken.substring(0, 10) + '...');
+
+            const response = await fetch(
+                `/areas/${areaGroup.id}/areas/${areaId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                const errText = await response.text();
+                console.error('[AreaDetail] Delete error:', response.status, errText);
+
+                // Handle CSRF token mismatch specifically
+                if (response.status === 419 || errText.includes('CSRF')) {
+                    toast.error(handleCsrfError(response, { message: errText }));
+                    return;
+                }
+
+                throw new Error('Gagal menghapus area');
+            }
+
+            const data = await response.json();
+            toast.success(data.message || 'Area berhasil dihapus');
+            // Optimistically remove from local state
+            setAreasState((prev) => prev.filter((a) => a.id !== areaId));
+        } catch (error) {
+            console.error('Error deleting area:', error);
+            const msg = error instanceof Error ? error.message : 'Gagal menghapus area';
+            toast.error(msg);
+        }
+    };
+
+    // Handle area select
+    const handleAreaSelect = (area: Area) => {
+        setSelectedAreaId(area.id);
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${areaGroup.name} - Detail Kawasan`} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-hidden p-4">
-                {/* Main Content */}
-                <div className="flex w-full flex-col gap-4 md:flex-row">
-                    {/* Left Panel: Area Group Info */}
-                    <Card className="basis-1/3 p-0">
-                        <CardContent className="space-y-4">
-                            {/* Header */}
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h1 className="text-2xl font-bold text-secondary">
-                                        {areaGroup.name}
-                                    </h1>
-                                    {areaGroup.description && (
-                                        <p className="mt-1 text-muted-foreground">
-                                            {areaGroup.description}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
+                {/* Header */}
+                <div>
+                    <h1
+                        className="text-2xl font-bold"
+                        style={{ color: areaGroup.legend_color_hex }}
+                    >
+                        {areaGroup.name}
+                    </h1>
+                    {areaGroup.description && (
+                        <p className="mt-1 text-muted-foreground">
+                            {areaGroup.description}
+                        </p>
+                    )}
+                </div>
 
-                            <div>
-                                <label className="text-sm font-medium text-muted-foreground">
-                                    Kode
-                                </label>
-                                <p className="text-base">{areaGroup.code}</p>
-                            </div>
-                            {areaGroup.description && (
-                                <div>
-                                    <label className="text-sm font-medium text-muted-foreground">
-                                        Deskripsi
-                                    </label>
-                                    <p className="text-base">
-                                        {areaGroup.description}
-                                    </p>
-                                </div>
-                            )}
-                            {areaGroup.legend_icon && (
-                                <div>
-                                    <label className="text-sm font-medium text-muted-foreground">
-                                        Ikon
-                                    </label>
-                                    <p className="text-base">
-                                        {areaGroup.legend_icon}
-                                    </p>
-                                </div>
-                            )}
-                            <div>
-                                <label className="text-sm font-medium text-muted-foreground">
-                                    Warna Legend
-                                </label>
-                                <div className="mt-2 flex items-center gap-2">
-                                    <div
-                                        className="h-8 w-8 rounded border"
-                                        style={{
-                                            backgroundColor:
-                                                areaGroup.legend_color_hex,
-                                        }}
-                                    />
-                                    <span className="text-sm">
-                                        {areaGroup.legend_color_hex}
-                                    </span>
-                                </div>
-                            </div>
-                            {areaGroup.centroid_lat &&
-                                areaGroup.centroid_lng && (
-                                    <div>
-                                        <label className="text-sm font-medium text-muted-foreground">
-                                            Koordinat Pusat
-                                        </label>
-                                        <p className="text-base">
-                                            {areaGroup.centroid_lat},{' '}
-                                            {areaGroup.centroid_lng}
-                                        </p>
-                                    </div>
-                                )}
-                        </CardContent>
-                    </Card>
+                {/* Main Content: Split View */}
+                <ResizablePanelGroup
+                    direction="horizontal"
+                    className="min-h-0 flex-1"
+                >
+                    {/* Left Panel: Areas List */}
+                    <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
+                        <Card className="h-full">
+                            <CardHeader>
+                                <CardTitle>
+                                    Daftar Area ({areasState.length})
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-[calc(100%-80px)]">
+                                <AreaFeatureList
+                                    areas={areasState}
+                                    selectedAreaId={selectedAreaId}
+                                    onAreaSelect={handleAreaSelect}
+                                    onAreaEdit={handleAreaEditDetail}
+                                    className="h-full"
+                                />
+                            </CardContent>
+                        </Card>
+                    </ResizablePanel>
+
+                    <ResizableHandle withHandle />
 
                     {/* Right Panel: Map Display */}
-                    <Card className="basis-2/3">
-                        <CardHeader>
-                            <CardTitle>Peta Kawasan</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-[400px] rounded-md border">
-                                {mapFeatures.length > 0 ? (
-                                    <AreaMapDisplay
-                                        features={mapFeatures}
-                                        defaultColor={
-                                            areaGroup.legend_color_hex
-                                        }
-                                        className="h-full w-full"
+                    <ResizablePanel defaultSize={70} minSize={50} maxSize={75}>
+                        <Card className="h-full">
+                            <CardHeader>
+                                <CardTitle>Peta Kawasan</CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-[calc(100%-80px)]">
+                                <div className="h-full rounded-md border">
+                                     <AreaMapDisplay
+                                         features={mapFeatures}
+                                         defaultColor={
+                                             areaGroup.legend_color_hex
+                                         }
+                                         className="h-full w-full"
+                                         resolvedLayerIds={resolvedLayerIds}
+                                         onLayerCreated={handleLayerCreated}
+                                         onLayerDeleted={(id) => {
+                                             console.log('[AreaDetail] onLayerDeleted', id);
+                                             void handleAreaDelete(id);
+                                         }}
+                                        onLayerEdited={async (id, geometry) => {
+                                            try {
+                                                // Get CSRF token with better error handling
+                                                const csrfToken = getCsrfToken();
+                                                console.log('[AreaDetail] CSRF Token for edit:', csrfToken.substring(0, 10) + '...');
+
+
+
+                                                const response = await fetch(
+                                                    `/areas/${areaGroup.id}/areas/${id}`,
+                                                    {
+                                                        method: 'PUT',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'X-Requested-With': 'XMLHttpRequest',
+                                                            'X-CSRF-TOKEN': csrfToken,
+                                                        },
+                                                        body: JSON.stringify({
+                                                          name: areasState.find(a => a.id === id)?.name || '',
+                                                          geometry_json: geometry }),
+                                                    },
+                                                );
+
+                                                if (!response.ok) {
+                                                    const errText = await response.text();
+                                                    console.error('[AreaDetail] Server response error:', response.status, errText);
+
+                                                    // Handle CSRF token mismatch specifically
+                                                    if (response.status === 419 || errText.includes('CSRF')) {
+                                                        toast.error(handleCsrfError(response, { message: errText }));
+                                                        return;
+                                                    }
+
+                                                    throw new Error(errText || 'Gagal mengedit area');
+                                                }
+
+                                                const data = await response.json().catch(() => ({}));
+                                                toast.success(data.message || 'Area berhasil diperbarui');
+                                                // Optimistically update local state geometry
+                                                setAreasState((prev) =>
+                                                    prev.map((a) =>
+                                                        a.id === id
+                                                            ? { ...a, geometry_json: geometry }
+                                                            : a,
+                                                    ),
+                                                );
+                                            } catch (err) {
+                                                console.error('Error editing area:', err);
+                                                const msg =
+                                                    err instanceof Error
+                                                        ? err.message
+                                                        : 'Gagal mengedit area';
+                                                toast.error(msg);
+                                            }
+                                        }}
                                     />
-                                ) : (
-                                    <div className="flex h-full items-center justify-center text-muted-foreground">
-                                        Tidak ada data geometri
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
             </div>
+
+            {/* Area Form Dialog */}
+            <AreaFormDialog
+                open={isDialogOpen}
+                onOpenChange={(open) => {
+                    setIsDialogOpen(open);
+                    if (!open) {
+                        setEditingArea(null);
+                    }
+                }}
+                areaGroupId={areaGroup.id}
+                area={editingArea}
+                onSuccess={handleFormSuccess}
+            />
         </AppLayout>
     );
 }
