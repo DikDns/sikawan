@@ -1,7 +1,17 @@
-import { Map, MapLayerGroup, MapTileLayer } from '@/components/ui/map';
+import { Badge } from '@/components/ui/badge';
+import {
+    Map,
+    MapDrawControl,
+    MapDrawDelete,
+    MapDrawEdit,
+    MapDrawPolygon,
+    MapDrawRectangle,
+    MapDrawUndo,
+    MapTileLayer,
+    useLeaflet,
+} from '@/components/ui/map';
 import type { LatLngExpression } from 'leaflet';
-import { useMemo } from 'react';
-import { GeoJSON } from 'react-leaflet';
+import { useState } from 'react';
 
 export interface AreaFeatureGeometry {
     id: number;
@@ -29,88 +39,48 @@ export function AreaMapDisplay({
     center,
     zoom = 13,
 }: AreaMapDisplayProps) {
-    // Calculate center from features if not provided
-    const mapCenter = useMemo(() => {
-        if (center) return center;
+    const TORONTO_COORDINATES = [43.6532, -79.3832] satisfies LatLngExpression;
+    const { L } = useLeaflet();
+    const [numberOfShapes, setNumberOfShapes] = useState(0);
 
-        const validCentroids = features.filter(
-            (f) => f.centroid_lat && f.centroid_lng,
-        );
-
-        if (validCentroids.length === 0) {
-            return [-6.2, 106.816666] as LatLngExpression; // Default to Jakarta
-        }
-
-        const avgLat =
-            validCentroids.reduce((sum, f) => sum + (f.centroid_lat || 0), 0) /
-            validCentroids.length;
-        const avgLng =
-            validCentroids.reduce((sum, f) => sum + (f.centroid_lng || 0), 0) /
-            validCentroids.length;
-
-        return [avgLat, avgLng] as LatLngExpression;
-    }, [features, center]);
-
-    // Parse geometry JSON and render polygons
-    const polygons = useMemo(() => {
-        return features
-            .filter((f) => f.geometry_json)
-            .map((feature) => {
-                try {
-                    const geometry = JSON.parse(feature.geometry_json);
-                    return {
-                        ...feature,
-                        geometry,
-                    };
-                } catch (error) {
-                    console.error(
-                        `Error parsing geometry for feature ${feature.id}:`,
-                        error,
-                    );
-                    return null;
-                }
-            })
-            .filter((f) => f !== null);
-    }, [features]);
-
-    return (
-        <div className={className}>
-            <Map center={mapCenter} zoom={zoom} className="h-full w-full">
-                <MapTileLayer />
-                <MapLayerGroup name="area-features">
-                    {polygons.map((polygon) => {
-                        if (!polygon) return null;
-
-                        const color = polygon.color || defaultColor;
-
-                        return (
-                            <GeoJSON
-                                key={polygon.id}
-                                data={polygon.geometry}
-                                style={{
-                                    color: color,
-                                    weight: 2,
-                                    opacity: 0.8,
-                                    fillColor: color,
-                                    fillOpacity: 0.3,
-                                }}
-                                onEachFeature={(feature, layer) => {
-                                    const popupContent = `
-                                        <div style="font-size: 12px; padding: 4px;">
-                                            <div style="font-weight: bold; margin-bottom: 4px;">
-                                                ${polygon.name}
-                                            </div>
-                                            ${polygon.household_count ? `<div>Rumah: ${polygon.household_count.toLocaleString()}</div>` : ''}
-                                            ${polygon.family_count ? `<div>Keluarga: ${polygon.family_count.toLocaleString()}</div>` : ''}
-                                        </div>
-                                    `;
-                                    layer.bindPopup(popupContent);
-                                }}
-                            />
-                        );
-                    })}
-                </MapLayerGroup>
-            </Map>
-        </div>
-    );
+    return L ? (
+        <Map center={TORONTO_COORDINATES}>
+            <MapTileLayer />
+            <MapDrawControl
+                onLayersChange={(layers) => {
+                    setNumberOfShapes(layers.getLayers().length);
+                    layers.eachLayer((layer) => {
+                        if (layer instanceof L.Marker) {
+                            console.log('Marker:', layer.getLatLng());
+                        } else if (
+                            layer instanceof L.Polyline &&
+                            !(layer instanceof L.Polygon)
+                        ) {
+                            console.log('Polyline:', layer.getLatLngs());
+                        } else if (layer instanceof L.Circle) {
+                            console.log(
+                                'Circle center:',
+                                layer.getLatLng(),
+                                'radius:',
+                                layer.getRadius(),
+                            );
+                        } else if (layer instanceof L.Rectangle) {
+                            console.log('Rectangle bounds:', layer.getBounds());
+                        } else if (layer instanceof L.Polygon) {
+                            console.log('Polygon:', layer.getLatLngs());
+                        }
+                    });
+                }}
+            >
+                <MapDrawRectangle shapeOptions={{ color: defaultColor }} />
+                <MapDrawPolygon shapeOptions={{ color: defaultColor }} />
+                <MapDrawEdit />
+                <MapDrawDelete />
+                <MapDrawUndo />
+            </MapDrawControl>
+            <Badge className="absolute right-1 bottom-1 z-1000">
+                Shapes: {numberOfShapes}
+            </Badge>
+        </Map>
+    ) : null;
 }

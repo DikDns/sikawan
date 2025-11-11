@@ -2,12 +2,10 @@ import {
     AreaMapDisplay,
     type AreaFeatureGeometry,
 } from '@/components/area/area-map-display';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -41,11 +39,6 @@ interface Props {
 }
 
 export default function AreaDetail({ areaGroup }: Props) {
-    const handleAdd = () => {
-        console.log('Add new area group');
-        // TODO: Navigate to add page or open add modal
-    };
-
     // Prepare geometry for map display if available
     const mapFeatures: AreaFeatureGeometry[] = areaGroup.geometry_json
         ? [
@@ -64,35 +57,25 @@ export default function AreaDetail({ areaGroup }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${areaGroup.name} - Detail Kawasan`} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-hidden p-4">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1
-                            className="text-2xl font-bold"
-                            style={{ color: areaGroup.legend_color_hex }}
-                        >
-                            {areaGroup.name}
-                        </h1>
-                        {areaGroup.description && (
-                            <p className="mt-1 text-muted-foreground">
-                                {areaGroup.description}
-                            </p>
-                        )}
-                    </div>
-                    <Button onClick={handleAdd} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        <span>Tambah Kawasan</span>
-                    </Button>
-                </div>
-
                 {/* Main Content */}
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex w-full flex-col gap-4 md:flex-row">
                     {/* Left Panel: Area Group Info */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Informasi Kawasan</CardTitle>
-                        </CardHeader>
+                    <Card className="basis-1/3 p-0">
                         <CardContent className="space-y-4">
+                            {/* Header */}
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-2xl font-bold text-secondary">
+                                        {areaGroup.name}
+                                    </h1>
+                                    {areaGroup.description && (
+                                        <p className="mt-1 text-muted-foreground">
+                                            {areaGroup.description}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="text-sm font-medium text-muted-foreground">
                                     Kode
@@ -143,8 +126,8 @@ export default function AreaDetail({ areaGroup }: Props) {
                                             Koordinat Pusat
                                         </label>
                                         <p className="text-base">
-                                            {areaGroup.centroid_lat.toFixed(6)},{' '}
-                                            {areaGroup.centroid_lng.toFixed(6)}
+                                            {areaGroup.centroid_lat},{' '}
+                                            {areaGroup.centroid_lng}
                                         </p>
                                     </div>
                                 )}
@@ -152,7 +135,7 @@ export default function AreaDetail({ areaGroup }: Props) {
                     </Card>
 
                     {/* Right Panel: Map Display */}
-                    <Card>
+                    <Card className="basis-2/3">
                         <CardHeader>
                             <CardTitle>Peta Kawasan</CardTitle>
                         </CardHeader>
