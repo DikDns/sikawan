@@ -1,22 +1,13 @@
 import {
-    AreaFeatureList,
-    type AreaFeature,
-} from '@/components/area/area-feature-list';
-import {
     AreaMapDisplay,
     type AreaFeatureGeometry,
 } from '@/components/area/area-map-display';
 import { Button } from '@/components/ui/button';
-import {
-    ResizableHandle,
-    ResizablePanel,
-    ResizablePanelGroup,
-} from '@/components/ui/resizable';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -40,42 +31,34 @@ interface AreaGroup {
     description: string | null;
     legend_color_hex: string;
     legend_icon: string | null;
-    is_active: boolean;
-    feature_count: number;
-    household_count: number;
-    family_count: number;
+    geometry_json: unknown | null;
+    centroid_lat: number | null;
+    centroid_lng: number | null;
 }
 
 interface Props {
     areaGroup: AreaGroup;
-    features: AreaFeature[];
 }
 
-export default function AreaDetail({ areaGroup, features }: Props) {
-    const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(
-        features.length > 0 ? features[0].id : null,
-    );
-
-    const handleFeatureSelect = (feature: AreaFeature) => {
-        setSelectedFeatureId(feature.id);
-    };
-
+export default function AreaDetail({ areaGroup }: Props) {
     const handleAdd = () => {
-        console.log('Add new area feature');
+        console.log('Add new area group');
         // TODO: Navigate to add page or open add modal
     };
 
-    // Prepare features for map display
-    const mapFeatures: AreaFeatureGeometry[] = features.map((feature) => ({
-        id: feature.id,
-        name: feature.name,
-        geometry_json: feature.geometry_json || '',
-        centroid_lat: feature.centroid_lat,
-        centroid_lng: feature.centroid_lng,
-        color: areaGroup.legend_color_hex,
-        household_count: feature.household_count,
-        family_count: feature.family_count,
-    }));
+    // Prepare geometry for map display if available
+    const mapFeatures: AreaFeatureGeometry[] = areaGroup.geometry_json
+        ? [
+              {
+                  id: areaGroup.id,
+                  name: areaGroup.name,
+                  geometry_json: JSON.stringify(areaGroup.geometry_json),
+                  centroid_lat: areaGroup.centroid_lat,
+                  centroid_lng: areaGroup.centroid_lng,
+                  color: areaGroup.legend_color_hex,
+              },
+          ]
+        : [];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -102,48 +85,96 @@ export default function AreaDetail({ areaGroup, features }: Props) {
                     </Button>
                 </div>
 
-                {/* Main Content: Split View */}
-                <ResizablePanelGroup
-                    direction="horizontal"
-                    className="min-h-0 flex-1"
-                >
-                    {/* Left Panel: Area Features List */}
-                    <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
-                        <div className="flex h-full flex-col">
-                            <div className="mb-4">
-                                <h2 className="text-lg font-semibold">
-                                    Daftar Area ({features.length})
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Total:{' '}
-                                    {areaGroup.household_count.toLocaleString()}{' '}
-                                    Rumah •{' '}
-                                    {areaGroup.family_count.toLocaleString()}{' '}
-                                    Keluarga
-                                </p>
+                {/* Main Content */}
+                <div className="grid gap-4 md:grid-cols-2">
+                    {/* Left Panel: Area Group Info */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Informasi Kawasan</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <label className="text-sm font-medium text-muted-foreground">
+                                    Kode
+                                </label>
+                                <p className="text-base">{areaGroup.code}</p>
                             </div>
-                            <AreaFeatureList
-                                features={features}
-                                selectedFeatureId={selectedFeatureId}
-                                onFeatureSelect={handleFeatureSelect}
-                                className="flex-1"
-                            />
-                        </div>
-                    </ResizablePanel>
-
-                    <ResizableHandle withHandle />
+                            {areaGroup.description && (
+                                <div>
+                                    <label className="text-sm font-medium text-muted-foreground">
+                                        Deskripsi
+                                    </label>
+                                    <p className="text-base">
+                                        {areaGroup.description}
+                                    </p>
+                                </div>
+                            )}
+                            {areaGroup.legend_icon && (
+                                <div>
+                                    <label className="text-sm font-medium text-muted-foreground">
+                                        Ikon
+                                    </label>
+                                    <p className="text-base">
+                                        {areaGroup.legend_icon}
+                                    </p>
+                                </div>
+                            )}
+                            <div>
+                                <label className="text-sm font-medium text-muted-foreground">
+                                    Warna Legend
+                                </label>
+                                <div className="mt-2 flex items-center gap-2">
+                                    <div
+                                        className="h-8 w-8 rounded border"
+                                        style={{
+                                            backgroundColor:
+                                                areaGroup.legend_color_hex,
+                                        }}
+                                    />
+                                    <span className="text-sm">
+                                        {areaGroup.legend_color_hex}
+                                    </span>
+                                </div>
+                            </div>
+                            {areaGroup.centroid_lat &&
+                                areaGroup.centroid_lng && (
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">
+                                            Koordinat Pusat
+                                        </label>
+                                        <p className="text-base">
+                                            {areaGroup.centroid_lat.toFixed(6)},{' '}
+                                            {areaGroup.centroid_lng.toFixed(6)}
+                                        </p>
+                                    </div>
+                                )}
+                        </CardContent>
+                    </Card>
 
                     {/* Right Panel: Map Display */}
-                    <ResizablePanel defaultSize={60} minSize={40} maxSize={70}>
-                        <div className="h-full rounded-md border">
-                            <AreaMapDisplay
-                                features={mapFeatures}
-                                defaultColor={areaGroup.legend_color_hex}
-                                className="h-full w-full"
-                            />
-                        </div>
-                    </ResizablePanel>
-                </ResizablePanelGroup>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Peta Kawasan</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-[400px] rounded-md border">
+                                {mapFeatures.length > 0 ? (
+                                    <AreaMapDisplay
+                                        features={mapFeatures}
+                                        defaultColor={
+                                            areaGroup.legend_color_hex
+                                        }
+                                        className="h-full w-full"
+                                    />
+                                ) : (
+                                    <div className="flex h-full items-center justify-center text-muted-foreground">
+                                        Tidak ada data geometri
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </AppLayout>
     );

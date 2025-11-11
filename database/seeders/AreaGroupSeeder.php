@@ -71,6 +71,10 @@ class AreaGroupSeeder extends Seeder
             ],
         ];
 
+        foreach ($areaGroups as $areaGroup) {
+            AreaGroup::create($areaGroup);
+        }
+
         $this->command->info('Area groups seeded successfully!');
     }
 }

@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -37,9 +36,7 @@ import { Head, router } from '@inertiajs/react';
 import {
     Edit,
     Eye,
-    Home,
     Layers,
-    MapPin,
     MoreVertical,
     Plus,
     Search,
@@ -64,18 +61,15 @@ interface AreaGroup {
     description: string | null;
     legend_color_hex: string; // area_groups.legend_color_hex
     legend_icon: string | null;
-    is_active: boolean;
-    feature_count: number; // COUNT dari area_features
-    household_count: number; // SUM household_count dari area_features
-    family_count: number; // SUM family_count dari area_features
+    geometry_json: unknown | null;
+    centroid_lat: number | null;
+    centroid_lng: number | null;
 }
 
 interface Props {
     areaGroups: AreaGroup[];
     stats: {
         totalGroups: number;
-        totalFeatures: number;
-        totalHouseholds: number;
     };
 }
 
@@ -115,10 +109,7 @@ export default function Areas({ areaGroups, stats }: Props) {
                         .includes(searchQuery.toLowerCase())) ||
                 group.id.toString().includes(searchQuery);
 
-            const matchesFilter =
-                filterType === 'all' ||
-                (filterType === 'has_household' && group.household_count > 0) ||
-                (filterType === 'no_household' && group.household_count === 0);
+            const matchesFilter = filterType === 'all';
 
             return matchesSearch && matchesFilter;
         });
@@ -137,7 +128,7 @@ export default function Areas({ areaGroups, stats }: Props) {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-1">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
@@ -151,40 +142,6 @@ export default function Areas({ areaGroups, stats }: Props) {
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Total kelompok kawasan
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Area Terdaftar
-                            </CardTitle>
-                            <MapPin className="h-4 w-4 text-blue-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.totalFeatures.toLocaleString()}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Total fitur kawasan
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Rumah di Kawasan
-                            </CardTitle>
-                            <Home className="h-4 w-4 text-green-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.totalHouseholds.toLocaleString()}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Total rumah tercakup
                             </p>
                         </CardContent>
                     </Card>
@@ -236,12 +193,6 @@ export default function Areas({ areaGroups, stats }: Props) {
                                         <SelectItem value="all">
                                             Semua Kawasan
                                         </SelectItem>
-                                        <SelectItem value="has_household">
-                                            Ada Rumah
-                                        </SelectItem>
-                                        <SelectItem value="no_household">
-                                            Tanpa Rumah
-                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -255,7 +206,7 @@ export default function Areas({ areaGroups, stats }: Props) {
                                     <TableRow>
                                         <TableHead>Id Kawasan</TableHead>
                                         <TableHead>Nama Kawasan</TableHead>
-                                        <TableHead>Jumlah</TableHead>
+                                        <TableHead>Kode</TableHead>
                                         <TableHead>Legend</TableHead>
                                         <TableHead className="text-right">
                                             Aksi
@@ -281,16 +232,8 @@ export default function Areas({ areaGroups, stats }: Props) {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="space-y-1 text-sm">
-                                                    <div>
-                                                        {group.feature_count}{' '}
-                                                        item
-                                                    </div>
-                                                    <div className="text-muted-foreground">
-                                                        {group.household_count}{' '}
-                                                        rumah •{' '}
-                                                        {group.family_count} KK
-                                                    </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    {group.code}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -453,16 +396,17 @@ export default function Areas({ areaGroups, stats }: Props) {
                                                 {group.description}
                                             </p>
                                         )}
-                                        <div className="flex flex-wrap gap-2">
-                                            <Badge variant="default">
-                                                {group.feature_count} Item
-                                            </Badge>
-                                            <Badge variant="secondary">
-                                                {group.household_count} Rumah
-                                            </Badge>
-                                            <Badge variant="secondary">
-                                                {group.family_count} KK
-                                            </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className="h-4 w-4 rounded border"
+                                                style={{
+                                                    backgroundColor:
+                                                        group.legend_color_hex,
+                                                }}
+                                            />
+                                            <span className="text-sm text-muted-foreground">
+                                                {group.code}
+                                            </span>
                                         </div>
                                     </CardContent>
                                 </Card>
