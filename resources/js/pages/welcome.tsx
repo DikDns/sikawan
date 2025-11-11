@@ -11,9 +11,38 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { login } from '@/routes';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import React, { useEffect } from 'react';
+import { toast } from 'sonner';
+import { usePage } from '@inertiajs/react';
 
 export default function Welcome() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { flash } = usePage<{ flash?:any }>().props;
+    const hasShownToast = React.useRef(false);
+
+    useEffect(() => {
+        if (!hasShownToast.current && (flash?.success || flash?.error)) {
+            if (flash?.success) toast.success(flash.success);
+            if (flash?.error) toast.error(flash.error);
+            hasShownToast.current = true;
+        }
+    }, [flash]);
+
+    const { data, setData, processing, reset, errors, post } = useForm({
+        name: "",
+        email: "",
+        subject: "",
+        content: "",
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        post('/messages/store', {
+            onSuccess: () => reset(),
+        })
+    }
     return (
         <>
             <Head>
@@ -23,6 +52,7 @@ export default function Welcome() {
                     rel="stylesheet"
                 />
             </Head>
+            {/* <Toaster richColors position="top-right" /> */}
             <div className="min-h-screen bg-background">
                 {/* Header */}
                 <header className="fixed z-50 w-full">
@@ -308,12 +338,20 @@ export default function Welcome() {
                                 </p>
                                 <Card className="bg-background">
                                     <CardContent className="p-6">
-                                        <form className="space-y-4">
+                                        <form onSubmit={handleSubmit} className="space-y-4">
                                             <div className="space-y-2">
                                                 <Label htmlFor="name">
                                                     Nama Lengkap
                                                 </Label>
-                                                <Input type="text" id="name" />
+                                                <Input
+                                                    type="text"
+                                                    id="name"
+                                                    value={data.name}
+                                                    onChange={(e) => setData('name', e.target.value)}
+                                                />
+                                                {errors.name && (
+                                                    <p className="text-sm text-red-500">{errors.name}</p>
+                                                )}
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="email">
@@ -322,24 +360,49 @@ export default function Welcome() {
                                                 <Input
                                                     type="email"
                                                     id="email"
+                                                    value={data.email}
+                                                    onChange={(e) => setData('email', e.target.value)}
                                                 />
+                                                {errors.email && (
+                                                    <p className="text-sm text-red-500">{errors.email}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="subject">
+                                                    Subjek
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    id="subject"
+                                                    value={data.subject}
+                                                    onChange={(e) => setData('subject', e.target.value)}
+                                                />
+                                                {errors.subject && (
+                                                    <p className="text-sm text-red-500">{errors.subject}</p>
+                                                )}
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="message">
                                                     Pesan
                                                 </Label>
                                                 <textarea
-                                                    id="message"
+                                                    id="content"
                                                     rows={4}
-                                                    className="w-full rounded-md border bg-background p-3"
+                                                    value={data.content}
+                                                    onChange={(e) => setData('content', e.target.value)}
+                                                    className="w-full rounded-md border bg-background p-3 focus:outline-none focus:ring-2 focus:ring-primary"
                                                 ></textarea>
+                                                {errors.content && (
+                                                    <p className="text-sm text-red-500">{errors.content}</p>
+                                                )}
                                             </div>
                                             <Button
                                                 type="submit"
                                                 size="lg"
                                                 className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                                                disabled={processing}
                                             >
-                                                Kirim Pesan
+                                                {processing ? 'Mengirim...' : 'Kirim Pesan'}
                                             </Button>
                                         </form>
                                     </CardContent>
