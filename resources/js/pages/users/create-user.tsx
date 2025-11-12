@@ -41,7 +41,7 @@ const CreateUser: React.FC = () => {
     name: "",
     email: "",
     password: "",
-    role: "",
+    role_id: "",
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,22 +140,28 @@ const CreateUser: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="role">Level</Label>
+                  <Label htmlFor="role_id">Level</Label>
                   <Select
-                    value={data.role}
-                    onValueChange={(value) => setData("role", value)}
+                    value={String(data.role_id)}
+                    onValueChange={(value) => setData("role_id", value)}
                   >
-                    <SelectTrigger id="role" className="w-full">
-                      <SelectValue placeholder="Pilih role pengguna" />
+                    <SelectTrigger id="role_id" className="w-full">
+                      <SelectValue placeholder="Pilih level pengguna" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="superadmin">Super Admin</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="operator">Operator</SelectItem>
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {props.roles?.map((role: any) => (
+                        <SelectItem
+                          key={role.id}
+                          value={String(role.id)}
+                        >
+                          {role.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  {errors.role && (
-                    <p className="text-sm text-red-500">{errors.role}</p>
+                  {errors.role_id && (
+                    <p className="text-sm text-red-500">{errors.role_id}</p>
                   )}
                 </div>
 

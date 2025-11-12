@@ -68,6 +68,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::controller(LevelController::class)->group(function() {
         Route::get('/levels', 'index')->name('levels');
+        Route::get('/levels/create', 'create')->name('levels.create');
+        Route::post('/levels/store', 'store')->name('levels.store');
+        Route::post('/levels/update/{role_id}', 'update')->name('levels.update');
+        Route::post('/levels/destroy', 'destroy')->name('levels.destroy');
     });
 
     Route::controller(MessageController::class)->group(function() {

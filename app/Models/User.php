@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
@@ -19,12 +20,13 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+    use HasRoles;
+
     protected $fillable = [
         'name',
         'email',
         'email_verified_at',
         'password',
-        'role',
     ];
 
     /**

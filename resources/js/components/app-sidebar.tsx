@@ -25,58 +25,70 @@ import {
     Wrench,
 } from 'lucide-react';
 import AppLogo from './app-logo';
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Peta Sebaran',
-        href: '/distribution-map',
-        icon: MapPin,
-    },
-    {
-        title: 'Rumah',
-        href: '/households',
-        icon: Home,
-    },
-    {
-        title: 'Kawasan',
-        href: '/areas',
-        icon: Square,
-    },
-    {
-        title: 'PSU',
-        href: '/infrastructure',
-        icon: Wrench,
-    },
-    {
-        title: 'Laporan',
-        href: '/reports',
-        icon: FileText,
-    },
-    {
-        title: 'Pesan',
-        href: '/messages',
-        icon: MessageSquare,
-    },
-    {
-        title: 'Pengguna',
-        href: '/users',
-        icon: Users,
-    },
-    {
-        title: 'Level',
-        href: '/levels',
-        icon: Shield,
-    },
-];
-
-const footerNavItems: NavItem[] = [];
+import { useCan } from '@/utils/permissions';
 
 export function AppSidebar() {
+    const can = useCan();
+
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+            show: true,
+        },
+        {
+            title: 'Peta Sebaran',
+            href: '/distribution-map',
+            icon: MapPin,
+            show: can('distribution-map'),
+        },
+        {
+            title: 'Rumah',
+            href: '/households',
+            icon: Home,
+            show: can('households.index'),
+        },
+        {
+            title: 'Kawasan',
+            href: '/areas',
+            icon: Square,
+            show: can('areas'),
+        },
+        {
+            title: 'PSU',
+            href: '/infrastructure',
+            icon: Wrench,
+            show: can('infrastructure'),
+        },
+        {
+            title: 'Laporan',
+            href: '/reports',
+            icon: FileText,
+            show: can('reports'),
+        },
+        {
+            title: 'Pesan',
+            href: '/messages',
+            icon: MessageSquare,
+            show: can('messages'),
+        },
+        {
+            title: 'Pengguna',
+            href: '/users',
+            icon: Users,
+            show: can('users'),
+        },
+        {
+            title: 'Level',
+            href: '/levels',
+            icon: Shield,
+            show: can('levels'),
+        },
+    ].filter(item => item.show);
+
+    const footerNavItems: NavItem[] = [];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

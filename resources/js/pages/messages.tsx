@@ -19,6 +19,7 @@ import ViewMessage from '@/components/message/view-message';
 import DeleteMessage from '@/components/message/delete-message';
 import { toast } from 'sonner';
 import { usePage } from '@inertiajs/react';
+import { useCan } from '@/utils/permissions';
 
 dayjs.locale('id');
 
@@ -46,6 +47,7 @@ export default function Message({ messages }: { messages: any[] }) {
     const today = dayjs().startOf("day");
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMessages, setSelectedMessages] = useState<number[]>([]);
+    const can = useCan();
     const formatDate = (date: string) => {
         const messageDate = dayjs(date);
         return messageDate.isAfter(today) ? messageDate.format("HH:mm") : messageDate.format("DD MMM");
@@ -144,14 +146,16 @@ export default function Message({ messages }: { messages: any[] }) {
 
                                 {selectedMessages.length > 0 ? (
                                     <div className="flex gap-2 justify-end sm:w-1/2">
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={handleDelete}
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Hapus
-                                        </Button>
+                                        {can('messages.destroy') && (
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={handleDelete}
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Hapus
+                                            </Button>
+                                        )}
                                         <Button
                                             variant="secondary"
                                             size="sm"
@@ -237,13 +241,15 @@ export default function Message({ messages }: { messages: any[] }) {
                         )}
 
                         {/* dialogs */}
-                        <ViewMessage
-                            open={viewDialog.open}
-                            onOpenChange={(open) =>
-                                setViewDialog((prev) => ({ ...prev, open }))
-                            }
-                            message={selectedMessage}
-                        />
+                        {can('messages.show') && (
+                            <ViewMessage
+                                open={viewDialog.open}
+                                onOpenChange={(open) =>
+                                    setViewDialog((prev) => ({ ...prev, open }))
+                                }
+                                message={selectedMessage}
+                            />
+                        )}
                         <DeleteMessage
                             open={deleteDialog.open}
                             onOpenChange={(open) =>
