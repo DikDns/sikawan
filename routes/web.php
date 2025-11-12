@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\LevelController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -65,13 +68,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('reports');
     })->name('reports');
 
-    Route::get('messages', function () {
-        return Inertia::render('messages');
-    })->name('messages');
+    Route::controller(UserController::class)->group(function() {
+        Route::get('/users', 'index')->name('users');
+        Route::get('/users/create', 'create')->name('users.create');
+        Route::post('/users/store', 'store')->name('users.store');
+        Route::get('/users/show/{user_id}', 'show')->name('users.show');
+        Route::get('/users/edit/{user_id}', 'edit')->name('users.edit');
+        Route::post('/users/update/{user_id}', 'update')->name('users.update');
+        Route::post('/users/delete', 'destroy')->name('users.destroy');
+    });
 
-    Route::get('users', function () {
-        return Inertia::render('users');
-    })->name('users');
+    Route::controller(LevelController::class)->group(function() {
+        Route::get('/levels', 'index')->name('levels');
+    });
+
+    Route::controller(MessageController::class)->group(function() {
+        Route::get('/messages', 'index')->name('messages');
+        Route::post('/messages/store', 'store')->name('messages.store');
+        Route::post('/messages/destroy', 'destroy')->name('messages.destroy');
+    });
 
     // Wilayah API Routes (for cascading select)
     Route::prefix('api/wilayah')->group(function () {

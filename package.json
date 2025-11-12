@@ -68,6 +68,7 @@
         "color": "^5.0.2",
         "concurrently": "^9.0.1",
         "date-fns": "^4.1.0",
+        "dayjs": "^1.11.19",
         "embla-carousel-react": "^8.6.0",
         "globals": "^15.14.0",
         "input-otp": "^1.4.2",
@@ -93,6 +94,7 @@
         "use-debounce": "^10.0.6",
         "vaul": "^1.1.2",
         "vite": "^7.0.4",
+        "ziggy-js": "^2.6.0",
         "zod": "^4.1.12"
     },
     "optionalDependencies": {

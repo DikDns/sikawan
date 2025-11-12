@@ -20,6 +20,7 @@ import {
     LayoutGrid,
     MapPin,
     MessageSquare,
+    Shield,
     Users,
     Wrench,
 } from 'lucide-react';
@@ -65,6 +66,11 @@ const mainNavItems: NavItem[] = [
         title: 'Pengguna',
         href: '/users',
         icon: Users,
+    },
+    {
+        title: 'Level',
+        href: '/levels',
+        icon: Shield,
     },
 ];
 

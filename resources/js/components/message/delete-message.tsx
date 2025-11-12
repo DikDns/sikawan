@@ -10,43 +10,65 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 
-interface DeleteUserProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  userId: number | null;
+interface MessageItem {
+  id: number;
+  name: string;
+  subject: string;
 }
 
-export default function DeleteUser({
+interface DeleteMessageProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  messages?: MessageItem[];
+  onDeleted?: () => void;
+}
+
+export default function DeleteMessage({
   open,
   onOpenChange,
-  userId,
-}: DeleteUserProps) {
+  messages = [],
+  onDeleted,
+}: DeleteMessageProps) {
   const [confirmed, setConfirmed] = useState(false);
-
-  // Inertia form
-  const { data, setData, post, processing, reset } = useForm({
-    id: userId ?? null,
+  const { setData, post, processing, reset } = useForm({
+    ids: [] as number[],
   });
 
-  // Update form state jika userId berubah
-  // supaya id selalu sesuai dengan user yang dipilih
-  if (data.id !== userId) {
-    setData('id', userId);
-  }
+  useEffect(() => {
+    setData("ids", messages.map((m) => m.id));
+  }, [messages, setData]);
+
+  useEffect(() => {
+    if (!open) {
+      const timer = setTimeout(() => {
+        setConfirmed(false);
+        reset();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [open, reset]);
 
   const handleDelete = (e: React.FormEvent) => {
     e.preventDefault();
 
-    post('/users/delete', {
+    post('/messages/destroy', {
       onSuccess: () => {
         reset();
         onOpenChange(false);
+        if (onDeleted) onDeleted();
       },
     });
   };
+
+  const total = messages.length;
+  const singleMessage = total === 1 ? messages[0] : null;
+
+  // fungsi untuk memotong teks subjek agar tidak kepanjangan
+  const truncate = (text: string, max: number) =>
+    text.length > max ? text.slice(0, max) + '…' : text;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,14 +80,30 @@ export default function DeleteUser({
         </div>
 
         <DialogTitle className="text-xl font-semibold text-gray-800">
-          Hapus Pengguna?
+          Hapus Pesan?
         </DialogTitle>
+
         <DialogDescription className="mt-2 text-sm text-gray-600">
-          Yakin hapus pengguna dengan ID{' '}
-          <span className="text-blue-600 font-medium">{userId}</span>?
-          <br />
-          Harap pastikan kembali, karena setelah dihapus data ini tidak dapat
-          dipulihkan.
+          {total > 1 ? (
+            <>
+              Yakin ingin menghapus <b>{total}</b> pesan terpilih?
+              <br />
+              Tindakan ini tidak dapat dibatalkan.
+            </>
+          ) : singleMessage ? (
+            <>
+              Yakin ingin menghapus pesan dari{' '}
+              <b>{singleMessage.name}</b> dengan subjek{' '}
+              <span className="italic">
+                “{truncate(singleMessage.subject, 40)}”
+              </span>
+              ?
+              <br />
+              Tindakan ini tidak dapat dibatalkan.
+            </>
+          ) : (
+            'Tidak ada pesan yang dipilih untuk dihapus.'
+          )}
         </DialogDescription>
 
         <div className="mt-6 flex items-center justify-center space-x-2">
@@ -73,25 +111,28 @@ export default function DeleteUser({
             id="confirm-delete"
             checked={confirmed}
             onCheckedChange={(checked) => setConfirmed(checked as boolean)}
+            disabled={total === 0}
           />
           <label
             htmlFor="confirm-delete"
-            className="text-sm text-gray-700 cursor-pointer"
+            className={`text-sm cursor-pointer ${
+              total === 0 ? 'text-gray-400' : 'text-gray-700'
+            }`}
           >
-            Saya yakin untuk menghapus data ini.
+            Saya yakin untuk menghapus pesan ini.
           </label>
         </div>
 
         <DialogFooter className="mt-8 flex justify-center gap-3">
           <DialogClose asChild>
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              Batal Hapus
+              Batal
             </Button>
           </DialogClose>
 
           <Button
             variant="destructive"
-            disabled={!confirmed || processing}
+            disabled={!confirmed || processing || total === 0}
             onClick={handleDelete}
           >
             {processing ? 'Menghapus...' : 'Hapus'}
