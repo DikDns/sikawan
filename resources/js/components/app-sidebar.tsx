@@ -19,6 +19,7 @@ import {
     LayoutGrid,
     MapPin,
     MessageSquare,
+    Shield,
     Square,
     Users,
     Wrench,
@@ -65,6 +66,11 @@ const mainNavItems: NavItem[] = [
         title: 'Pengguna',
         href: '/users',
         icon: Users,
+    },
+    {
+        title: 'Level',
+        href: '/levels',
+        icon: Shield,
     },
 ];
 
