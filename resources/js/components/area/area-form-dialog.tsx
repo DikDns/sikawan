@@ -9,11 +9,13 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { getCsrfToken, handleCsrfError } from '@/lib/csrf';
+import { useWilayah } from '@/hooks/use-wilayah';
 
 export interface Area {
     id?: number;
@@ -46,6 +48,7 @@ export function AreaFormDialog({
     onSuccess,
 }: AreaFormDialogProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const wilayah = useWilayah();
 
     // Get initial form data
     const getInitialFormData = () => {
@@ -81,12 +84,121 @@ export function AreaFormDialog({
     // Form state
     const [formData, setFormData] = useState(getInitialFormData);
 
-    // Reset form when area changes (for edit mode)
+    // Reset form when dialog opens or area changes (edit mode)
     useEffect(() => {
-        if (open) {
-            setFormData(getInitialFormData());
+        if (!open) return;
+
+        const initial = getInitialFormData();
+        setFormData(initial);
+
+        // Preload dependent options if editing existing area
+        const p = initial.province_id;
+        const r = initial.regency_id;
+        const d = initial.district_id;
+
+        if (p) {
+            wilayah.loadCities(String(p));
+        } else {
+            wilayah.resetCities();
         }
+        if (r) {
+            wilayah.loadSubDistricts(String(r));
+        } else {
+            wilayah.resetSubDistricts();
+        }
+        if (d) {
+            wilayah.loadVillages(String(d));
+        } else {
+            wilayah.resetVillages();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, area]);
+
+    // Load cities when province changes
+    useEffect(() => {
+        if (formData.province_id) {
+            wilayah.loadCities(String(formData.province_id));
+        } else {
+            wilayah.resetCities();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.province_id]);
+
+    // Load sub-districts when city/regency changes
+    useEffect(() => {
+        if (formData.regency_id) {
+            wilayah.loadSubDistricts(String(formData.regency_id));
+        } else {
+            wilayah.resetSubDistricts();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.regency_id]);
+
+    // Load villages when district changes
+    useEffect(() => {
+        if (formData.district_id) {
+            wilayah.loadVillages(String(formData.district_id));
+        } else {
+            wilayah.resetVillages();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.district_id]);
+
+    const handleProvinceChange = useCallback((value: string) => {
+        const selected = wilayah.provinces.find(
+            (p) => String(p.value) === String(value),
+        );
+        setFormData((prev) => ({
+            ...prev,
+            province_id: value,
+            province_name: selected?.label || '',
+            regency_id: '',
+            regency_name: '',
+            district_id: '',
+            district_name: '',
+            village_id: '',
+            village_name: '',
+        }));
+    }, [wilayah.provinces]);
+
+    const handleRegencyChange = useCallback((value: string) => {
+        const selected = wilayah.cities.find(
+            (c) => String(c.value) === String(value),
+        );
+        setFormData((prev) => ({
+            ...prev,
+            regency_id: value,
+            regency_name: selected?.label || '',
+            district_id: '',
+            district_name: '',
+            village_id: '',
+            village_name: '',
+        }));
+    }, [wilayah.cities]);
+
+    const handleDistrictChange = useCallback((value: string) => {
+        const selected = wilayah.subDistricts.find(
+            (d) => String(d.value) === String(value),
+        );
+        setFormData((prev) => ({
+            ...prev,
+            district_id: value,
+            district_name: selected?.label || '',
+            village_id: '',
+            village_name: '',
+        }));
+    }, [wilayah.subDistricts]);
+
+    const handleVillageChange = useCallback((value: string) => {
+        const selected = wilayah.villages.find(
+            (v) => String(v.value) === String(value),
+        );
+        setFormData((prev) => ({
+            ...prev,
+            village_id: value,
+            village_name: selected?.label || '',
+        }));
+    }, [wilayah.villages]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -149,13 +261,13 @@ export function AreaFormDialog({
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                
+
                 // Handle CSRF token mismatch specifically
                 if (response.status === 419 || (errorData.message && errorData.message.includes('CSRF'))) {
                     toast.error(handleCsrfError(response, errorData));
                     return;
                 }
-                
+
                 throw new Error(
                     errorData.message ||
                         `HTTP error! status: ${response.status}`,
@@ -183,12 +295,12 @@ export function AreaFormDialog({
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>
-                        {area ? 'Edit Area' : 'Tambah Area'}
+                        {area ? 'Edit Kawasan' : 'Tambah Kawasan'}
                     </DialogTitle>
                     <DialogDescription>
                         {area
-                            ? 'Perbarui informasi area kawasan'
-                            : 'Tambahkan informasi area kawasan baru'}
+                            ? 'Perbarui informasi kawasan'
+                            : 'Tambahkan informasi kawasan baru'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -222,7 +334,7 @@ export function AreaFormDialog({
                                         description: e.target.value,
                                     })
                                 }
-                                placeholder="Tambahkan deskripsi area..."
+                                placeholder="Tambahkan deskripsi kawasan..."
                                 rows={3}
                             />
                         </Field>
@@ -230,29 +342,39 @@ export function AreaFormDialog({
                         <div className="grid gap-4 sm:grid-cols-2">
                             <Field>
                                 <FieldLabel>Provinsi</FieldLabel>
-                                <Input
-                                    value={formData.province_name || ''}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            province_name: e.target.value,
-                                        })
+                                <SearchableSelect
+                                    options={wilayah.provinces}
+                                    value={String(formData.province_id || '')}
+                                    onValueChange={handleProvinceChange}
+                                    placeholder={
+                                        wilayah.loadingProvinces
+                                            ? 'Memuat provinsi...'
+                                            : 'Pilih Provinsi'
                                     }
-                                    placeholder="Nama Provinsi"
+                                    searchPlaceholder="Cari provinsi..."
+                                    emptyMessage="Provinsi tidak ditemukan"
+                                    disabled={wilayah.loadingProvinces}
+                                    clearable={false}
+                                    aria-label="Pilih Provinsi"
                                 />
                             </Field>
 
                             <Field>
                                 <FieldLabel>Kota/Kabupaten</FieldLabel>
-                                <Input
-                                    value={formData.regency_name || ''}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            regency_name: e.target.value,
-                                        })
+                                <SearchableSelect
+                                    options={wilayah.cities}
+                                    value={String(formData.regency_id || '')}
+                                    onValueChange={handleRegencyChange}
+                                    placeholder={
+                                        wilayah.loadingCities
+                                            ? 'Memuat kota/kabupaten...'
+                                            : 'Pilih Kota/Kabupaten'
                                     }
-                                    placeholder="Nama Kota/Kabupaten"
+                                    searchPlaceholder="Cari kota/kabupaten..."
+                                    emptyMessage="Kota/Kabupaten tidak ditemukan"
+                                    disabled={!formData.province_id || wilayah.loadingCities}
+                                    clearable={false}
+                                    aria-label="Pilih Kota/Kabupaten"
                                 />
                             </Field>
                         </div>
@@ -260,29 +382,39 @@ export function AreaFormDialog({
                         <div className="grid gap-4 sm:grid-cols-2">
                             <Field>
                                 <FieldLabel>Kecamatan</FieldLabel>
-                                <Input
-                                    value={formData.district_name || ''}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            district_name: e.target.value,
-                                        })
+                                <SearchableSelect
+                                    options={wilayah.subDistricts}
+                                    value={String(formData.district_id || '')}
+                                    onValueChange={handleDistrictChange}
+                                    placeholder={
+                                        wilayah.loadingSubDistricts
+                                            ? 'Memuat kecamatan...'
+                                            : 'Pilih Kecamatan'
                                     }
-                                    placeholder="Nama Kecamatan"
+                                    searchPlaceholder="Cari kecamatan..."
+                                    emptyMessage="Kecamatan tidak ditemukan"
+                                    disabled={!formData.regency_id || wilayah.loadingSubDistricts}
+                                    clearable={false}
+                                    aria-label="Pilih Kecamatan"
                                 />
                             </Field>
 
                             <Field>
                                 <FieldLabel>Kelurahan/Desa</FieldLabel>
-                                <Input
-                                    value={formData.village_name || ''}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            village_name: e.target.value,
-                                        })
+                                <SearchableSelect
+                                    options={wilayah.villages}
+                                    value={String(formData.village_id || '')}
+                                    onValueChange={handleVillageChange}
+                                    placeholder={
+                                        wilayah.loadingVillages
+                                            ? 'Memuat desa/kelurahan...'
+                                            : 'Pilih Desa/Kelurahan'
                                     }
-                                    placeholder="Nama Kelurahan/Desa"
+                                    searchPlaceholder="Cari desa/kelurahan..."
+                                    emptyMessage="Desa/Kelurahan tidak ditemukan"
+                                    disabled={!formData.district_id || wilayah.loadingVillages}
+                                    clearable={false}
+                                    aria-label="Pilih Desa/Kelurahan"
                                 />
                             </Field>
                         </div>
@@ -301,7 +433,7 @@ export function AreaFormDialog({
                             {isSubmitting && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
-                            {area ? 'Simpan Perubahan' : 'Tambah Area'}
+                            {area ? 'Simpan Perubahan' : 'Tambah Kawasan'}
                         </Button>
                     </DialogFooter>
                 </form>

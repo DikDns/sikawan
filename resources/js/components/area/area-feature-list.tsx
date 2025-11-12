@@ -33,11 +33,11 @@ export function AreaFeatureList({
     className,
 }: AreaFeatureListProps) {
     return (
-        <ScrollArea className={cn('h-full', className)}>
-            <div className="space-y-3 pr-4">
+        <ScrollArea className={cn('max-h-screen', className)}>
+            <div className="space-y-3 px-2 py-4">
                 {areas.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
-                        Tidak ada area. Buat area baru dengan menggambar di
+                        Tidak ada kawasan. Buat area baru dengan menggambar di
                         peta.
                     </div>
                 ) : (

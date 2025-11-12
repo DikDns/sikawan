@@ -16,7 +16,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getCsrfToken, handleCsrfError } from '@/lib/csrf';
 
@@ -59,6 +59,8 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
     const [areasState, setAreasState] = useState<Area[]>(areas);
     // Map temporary layer numbers to server-assigned IDs for new shapes
     const [resolvedLayerIds, setResolvedLayerIds] = useState<Record<number, number>>({});
+    // In-flight guard to prevent duplicate POSTs for the same layer
+    const createInFlightRef = useRef<Set<number>>(new Set());
 
     // keep local state in sync if server prop changes
     useEffect(() => {
@@ -81,14 +83,22 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
     );
 
     // Handle layer creation from map
-    const handleLayerCreated = async (
-        geometry: unknown,
-        layerNumber: number,
-    ) => {
+    const handleLayerCreated = useCallback(
+        async (
+            geometry: unknown,
+            layerNumber: number,
+        ) => {
         // Generate default name
         const defaultName = `${areaGroup.name} ${layerNumber}`;
 
         try {
+            // Prevent duplicate POSTs for the same layer while one is in-flight
+            if (createInFlightRef.current.has(layerNumber)) {
+                console.warn('[AreaDetail] Suppressed duplicate create for layer', layerNumber);
+                return;
+            }
+            createInFlightRef.current.add(layerNumber);
+
             // Get CSRF token with better error handling
             const csrfToken = getCsrfToken();
             console.log('[AreaDetail] CSRF Token for create:', csrfToken.substring(0, 10) + '...');
@@ -142,8 +152,10 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
             const errorMessage =
                 error instanceof Error ? error.message : 'Gagal menyimpan area';
             toast.error(errorMessage);
+        } finally {
+            createInFlightRef.current.delete(layerNumber);
         }
-    };
+    }, [areaGroup.name, areaGroup.id]);
 
     // Handle area form success
     const handleFormSuccess = () => {
@@ -172,7 +184,7 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
     };
 
     // Handle area delete
-    const handleAreaDelete = async (areaId: number) => {
+    const handleAreaDelete = useCallback(async (areaId: number) => {
         try {
             // Get CSRF token with better error handling
             const csrfToken = getCsrfToken();
@@ -211,12 +223,71 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
             const msg = error instanceof Error ? error.message : 'Gagal menghapus area';
             toast.error(msg);
         }
-    };
+    }, []);
 
     // Handle area select
-    const handleAreaSelect = (area: Area) => {
+    const handleAreaSelect = useCallback((area: Area) => {
         setSelectedAreaId(area.id);
-    };
+    }, []);
+
+    const handleLayerEdited = useCallback(
+        async (id: number, geometry: unknown) => {
+            try {
+                // Get CSRF token with better error handling
+                const csrfToken = getCsrfToken();
+                console.log('[AreaDetail] CSRF Token for edit:', csrfToken.substring(0, 10) + '...');
+
+                const response = await fetch(
+                    `/areas/${areaGroup.id}/areas/${id}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: JSON.stringify({
+                            name:
+                                areasState.find((a) => a.id === id)?.name || '',
+                            geometry_json: geometry,
+                        }),
+                    },
+                );
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    console.error('[AreaDetail] Server response error:', response.status, errText);
+
+                    // Handle CSRF token mismatch specifically
+                    if (response.status === 419 || errText.includes('CSRF')) {
+                        toast.error(handleCsrfError(response, { message: errText }));
+                        return;
+                    }
+
+                    throw new Error(errText || 'Gagal mengedit area');
+                }
+
+                const data = await response.json().catch(() => ({}));
+                toast.success(data.message || 'Area berhasil diperbarui');
+                // Optimistically update local state geometry
+                setAreasState((prev) =>
+                    prev.map((a) => (a.id === id ? { ...a, geometry_json: geometry } : a)),
+                );
+            } catch (err) {
+                console.error('Error editing area:', err);
+                const msg = err instanceof Error ? err.message : 'Gagal mengedit area';
+                toast.error(msg);
+            }
+        },
+        [areaGroup.id, areasState],
+    );
+
+    // Cleanup in-flight guards on unmount
+    useEffect(() => {
+        return () => {
+            createInFlightRef.current.clear();
+        };
+    }, []);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -247,7 +318,7 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
                         <Card className="h-full">
                             <CardHeader>
                                 <CardTitle>
-                                    Daftar Area ({areasState.length})
+                                    Daftar Kawasan ({areasState.length})
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="h-[calc(100%-80px)]">
@@ -280,65 +351,11 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
                                          className="h-full w-full"
                                          resolvedLayerIds={resolvedLayerIds}
                                          onLayerCreated={handleLayerCreated}
-                                         onLayerDeleted={(id) => {
+                                         onLayerDeleted={useCallback((id: number) => {
                                              console.log('[AreaDetail] onLayerDeleted', id);
                                              void handleAreaDelete(id);
-                                         }}
-                                        onLayerEdited={async (id, geometry) => {
-                                            try {
-                                                // Get CSRF token with better error handling
-                                                const csrfToken = getCsrfToken();
-                                                console.log('[AreaDetail] CSRF Token for edit:', csrfToken.substring(0, 10) + '...');
-
-
-
-                                                const response = await fetch(
-                                                    `/areas/${areaGroup.id}/areas/${id}`,
-                                                    {
-                                                        method: 'PUT',
-                                                        headers: {
-                                                            'Content-Type': 'application/json',
-                                                            'X-Requested-With': 'XMLHttpRequest',
-                                                            'X-CSRF-TOKEN': csrfToken,
-                                                        },
-                                                        body: JSON.stringify({
-                                                          name: areasState.find(a => a.id === id)?.name || '',
-                                                          geometry_json: geometry }),
-                                                    },
-                                                );
-
-                                                if (!response.ok) {
-                                                    const errText = await response.text();
-                                                    console.error('[AreaDetail] Server response error:', response.status, errText);
-
-                                                    // Handle CSRF token mismatch specifically
-                                                    if (response.status === 419 || errText.includes('CSRF')) {
-                                                        toast.error(handleCsrfError(response, { message: errText }));
-                                                        return;
-                                                    }
-
-                                                    throw new Error(errText || 'Gagal mengedit area');
-                                                }
-
-                                                const data = await response.json().catch(() => ({}));
-                                                toast.success(data.message || 'Area berhasil diperbarui');
-                                                // Optimistically update local state geometry
-                                                setAreasState((prev) =>
-                                                    prev.map((a) =>
-                                                        a.id === id
-                                                            ? { ...a, geometry_json: geometry }
-                                                            : a,
-                                                    ),
-                                                );
-                                            } catch (err) {
-                                                console.error('Error editing area:', err);
-                                                const msg =
-                                                    err instanceof Error
-                                                        ? err.message
-                                                        : 'Gagal mengedit area';
-                                                toast.error(msg);
-                                            }
-                                        }}
+                                         }, [handleAreaDelete])}
+                                         onLayerEdited={handleLayerEdited}
                                     />
                                 </div>
                             </CardContent>

@@ -41,12 +41,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('households/{householdId}/assistances/{assistanceId}/status', [App\Http\Controllers\AssistanceController::class, 'updateStatus'])->name('assistances.updateStatus');
     Route::delete('households/{householdId}/assistances/{assistanceId}', [App\Http\Controllers\AssistanceController::class, 'destroy'])->name('assistances.destroy');
 
+    // AreaGroup CRUD Routes (Create/Update/Delete for AreaGroup)
+    Route::get('areas/create', [App\Http\Controllers\AreaGroupController::class, 'create'])->name('areas.create');
+    Route::post('areas', [App\Http\Controllers\AreaGroupController::class, 'store'])->name('areaGroups.store');
+    Route::get('areas/{id}/edit', [App\Http\Controllers\AreaGroupController::class, 'edit'])->name('areas.edit');
+    Route::match(['put','patch','post'], 'areas/{id}', [App\Http\Controllers\AreaGroupController::class, 'update'])->name('areaGroups.update');
+    Route::delete('areas/{id}', [App\Http\Controllers\AreaGroupController::class, 'destroy'])->name('areaGroups.destroy');
+
     // Areas Routes
     Route::get('areas', [App\Http\Controllers\AreaController::class, 'index'])->name('areas');
     Route::get('areas/{id}', [App\Http\Controllers\AreaController::class, 'show'])->name('areas.show');
     Route::post('areas/{areaGroupId}/areas', [App\Http\Controllers\AreaController::class, 'storeArea'])->name('areas.store');
     Route::put('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'updateArea'])->name('areas.update');
     Route::delete('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'destroyArea'])->name('areas.destroy');
+
+
 
     Route::get('infrastructure', function () {
         return Inertia::render('infrastructure');

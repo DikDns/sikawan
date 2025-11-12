@@ -16,10 +16,10 @@ import { Link } from '@inertiajs/react';
 import {
     FileText,
     Home,
+    Layers,
     LayoutGrid,
     MapPin,
     MessageSquare,
-    Square,
     Users,
     Wrench,
 } from 'lucide-react';
@@ -44,7 +44,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Kawasan',
         href: '/areas',
-        icon: Square,
+        icon: Layers,
     },
     {
         title: 'PSU',

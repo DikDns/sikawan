@@ -11,7 +11,9 @@ import {
     useLeaflet,
 } from '@/components/ui/map';
 import type { LatLngExpression } from 'leaflet';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePage } from '@inertiajs/react';
+import type { Area as AreaDetail } from './area-feature-list';
 
 export interface AreaFeatureGeometry {
     id: number;
@@ -47,12 +49,18 @@ export function AreaMapDisplay({
     resolvedLayerIds,
 }: AreaMapDisplayProps) {
     const { L } = useLeaflet();
+    const page = usePage();
+    const areasFromProps = (page.props as any)?.areas as AreaDetail[] | undefined;
     const [numberOfShapes, setNumberOfShapes] = useState(0);
     const drawLayersRef = useRef<L.FeatureGroup | null>(null);
     const layerCounterRef = useRef(0);
     const featureLayersRef = useRef<Record<number, L.Layer>>({});
     const createdLayersRef = useRef<Record<number, L.Layer>>({});
     const isInitialLoadDoneRef = useRef(false);
+    // Debounce timers and payloads for create events
+    const pendingCreateTimeoutsRef = useRef<Record<number, number>>({});
+    const pendingCreateGeometryRef = useRef<Record<number, unknown>>({});
+    const CREATE_DEBOUNCE_MS = 250;
 
     // Calculate center from features if not provided
     const mapCenter = useMemo(() => {
@@ -100,6 +108,13 @@ export function AreaMapDisplay({
             })
             .filter((f) => f !== null);
     }, [features]);
+
+    // Map of feature id -> feature for quick lookup (e.g., tooltip/pop-up labels)
+    // const featuresById = useMemo(() => {
+    //     const map = new globalThis.Map<number, AreaFeatureGeometry>();
+    //     features.forEach((f) => map.set(f.id, f));
+    //     return map;
+    // }, [features]);
 
     // Prepare initial shapes to render inside FeatureGroup for edit/delete support
     const initialShapes = useMemo(() => {
@@ -179,12 +194,107 @@ export function AreaMapDisplay({
         return shapes;
     }, [L, polygons]);
 
+    // UI classes adapted from MapPopup/MapTooltip to keep visual consistency
+    const POPUP_CLASSNAME =
+        'bg-popover text-popover-foreground animate-in fade-out-0 fade-in-0 zoom-out-95 zoom-in-95 slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 font-sans shadow-md outline-hidden';
+    const TOOLTIP_CLASSNAME =
+        'animate-in fade-in-0 zoom-in-95 fade-out-0 zoom-out-95 relative z-50 w-fit text-xs text-balance transition-opacity';
+
+    // Attach hover tooltip and click popup to a given Leaflet layer
+    const attachInfoUI = useCallback(
+        (layer: any, label?: string) => {
+            if (!L || !layer) return;
+
+            let tipe = 'Area';
+            if (layer instanceof L.Rectangle) tipe = 'Persegi Panjang';
+            else if (layer instanceof L.Polygon) tipe = 'Poligon';
+            else if (layer instanceof L.Circle) tipe = 'Lingkaran';
+            else if (layer instanceof L.Polyline) tipe = 'Garis';
+            else if (layer instanceof L.Marker) tipe = 'Titik';
+
+            // Resolve area details from the same source as AreaFormDialog (Inertia props)
+            const serverId = (layer as any).__initialId as number | undefined;
+            const areaDetail: AreaDetail | undefined = Array.isArray(areasFromProps)
+                ? areasFromProps.find((a) => a.id === serverId)
+                : undefined;
+
+            const esc = (v: any) =>
+                String(v ?? '-')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+
+            const displayName = esc(areaDetail?.name ?? label ?? 'Area');
+
+            // Tooltip (hover) — show the area name consistently
+            try {
+                layer.bindTooltip(displayName, {
+                    className: TOOLTIP_CLASSNAME,
+                    sticky: true,
+                    opacity: 1,
+                    direction: 'top',
+                    offset: L.point(0, 15),
+                });
+            } catch (err) {
+                console.warn('Failed to bind tooltip', err);
+            }
+
+            // Popup (click) — mirror labels/order used in AreaFormDialog
+            const popupContent = `
+                <div class="space-y-4" aria-label="Informasi kawasan">
+                    <div>
+                        <div class="text-xs text-muted-foreground">Nama Area</div>
+                        <div class="font-medium">${displayName}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-muted-foreground">Deskripsi</div>
+                        <div class="text-sm whitespace-pre-line">${esc(areaDetail?.description)}</div>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <div class="text-xs text-muted-foreground">Provinsi</div>
+                            <div class="text-sm">${esc(areaDetail?.province_name)}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-muted-foreground">Kota/Kabupaten</div>
+                            <div class="text-sm">${esc(areaDetail?.regency_name)}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-muted-foreground">Kecamatan</div>
+                            <div class="text-sm">${esc(areaDetail?.district_name)}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-muted-foreground">Kelurahan/Desa</div>
+                            <div class="text-sm">${esc(areaDetail?.village_name)}</div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-muted-foreground">Tipe: ${esc(tipe)}</div>
+                </div>
+            `;
+            try {
+                layer.bindPopup(popupContent, {
+                    className: POPUP_CLASSNAME,
+                    maxWidth: 360,
+                    closeButton: true,
+                    autoPan: true,
+                    autoPanPadding: L.point(10, 10),
+                });
+            } catch (err) {
+                console.warn('Failed to bind popup', err);
+            }
+        },
+        [L, areasFromProps]
+    );
+
     // Handle changes from MapDrawControl with explicit changeType
-    const handleLayersChange = (
-        layers: L.FeatureGroup,
-        changeType: 'initialized' | 'created' | 'edited' | 'deleted',
-        changedLayers?: L.LayerGroup,
-    ) => {
+    const handleLayersChange = useCallback(
+        (
+            layers: L.FeatureGroup,
+            changeType: 'initialized' | 'created' | 'edited' | 'deleted',
+            changedLayers?: L.LayerGroup,
+        ) => {
         if (!L) return;
 
         drawLayersRef.current = layers;
@@ -202,6 +312,10 @@ export function AreaMapDisplay({
                 const initialId = (layer as any).__initialId as number | null;
                 if (typeof initialId === 'number' && initialId > 0) {
                     featureLayersRef.current[initialId] = layer;
+                    // Attach tooltip/popup using feature data
+                    const feat = features.find((f) => f.id === initialId);
+                    const label = feat?.name ?? `Kawasan #${initialId}`;
+                    attachInfoUI(layer, label);
                 }
             });
             console.log(
@@ -213,11 +327,18 @@ export function AreaMapDisplay({
 
         // Created: only newly drawn layers by the user
         if (changeType === 'created') {
-            layers.eachLayer((layer) => {
+            const sourceGroup: L.LayerGroup = (changedLayers || layers) as L.LayerGroup;
+            sourceGroup.eachLayer((layer: L.Layer) => {
                 const isKnown = Object.values(featureLayersRef.current).some(
                     (existingLayer) => existingLayer === layer,
                 );
                 if (isKnown) return;
+
+                // Also skip if this layer already has a temp id registered
+                const existingTempId = (layer as any).__clientTempId as number | undefined;
+                if (existingTempId && createdLayersRef.current[existingTempId]) {
+                    // We may still update geometry payload but avoid assigning again
+                }
 
                 let geometry: unknown = null;
 
@@ -265,14 +386,32 @@ export function AreaMapDisplay({
                 }
 
                 if (geometry && onLayerCreated) {
-                    // Assign temporary client ID to newly drawn layer
-                    layerCounterRef.current += 1;
-                    const tempId = layerCounterRef.current;
-                    (layer as any).__clientTempId = tempId;
-                    createdLayersRef.current[tempId] = layer;
+                    // Assign or reuse temporary client ID to newly drawn layer
+                    let tempId = (layer as any).__clientTempId as number | undefined;
+                    if (!tempId) {
+                        layerCounterRef.current += 1;
+                        tempId = layerCounterRef.current;
+                        (layer as any).__clientTempId = tempId;
+                        createdLayersRef.current[tempId] = layer;
+                    }
 
-                    console.log('[AreaMapDisplay] created: sending geometry with tempId', tempId);
-                    onLayerCreated(geometry, tempId);
+                    // Attach default tooltip/popup for newly created layer
+                    attachInfoUI(layer, `Area baru #${tempId}`);
+
+                    // Debounce dispatch to prevent duplicate POSTs
+                    pendingCreateGeometryRef.current[tempId] = geometry;
+                    const existingTimer = pendingCreateTimeoutsRef.current[tempId];
+                    if (existingTimer) {
+                        clearTimeout(existingTimer);
+                    }
+                    pendingCreateTimeoutsRef.current[tempId] = window.setTimeout(() => {
+                        // Use latest geometry for this tempId
+                        const geom = pendingCreateGeometryRef.current[tempId!];
+                        delete pendingCreateTimeoutsRef.current[tempId!];
+                        if (!geom) return;
+                        console.log('[AreaMapDisplay] created: debounced dispatch for tempId', tempId);
+                        onLayerCreated(geom, tempId!);
+                    }, CREATE_DEBOUNCE_MS);
                 }
             });
             return;
@@ -345,7 +484,9 @@ export function AreaMapDisplay({
             }
             return;
         }
-    };
+        },
+        [L, onLayerCreated, onLayerDeleted, onLayerEdited],
+    );
 
     // When parent resolves server IDs for newly created layers, bind them here
     useEffect(() => {
@@ -361,9 +502,31 @@ export function AreaMapDisplay({
             featureLayersRef.current[serverId] = layer;
             delete createdLayersRef.current[tempId];
 
+            // Refresh tooltip/popup with server-backed name, if available
+            const feat = features.find((f) => f.id === serverId);
+            const label = feat?.name ?? `Kawasan #${serverId}`;
+            attachInfoUI(layer, label);
+
             console.log('[AreaMapDisplay] resolved tempId -> serverId', tempId, serverId);
         });
-    }, [resolvedLayerIds, L]);
+    }, [resolvedLayerIds, L, features, attachInfoUI]);
+
+    // Cleanup timers and refs on unmount to avoid leaks or duplicate bindings
+    useEffect(() => {
+        return () => {
+            Object.values(pendingCreateTimeoutsRef.current).forEach((t) => {
+                try {
+                    clearTimeout(t);
+                } catch {}
+            });
+            pendingCreateTimeoutsRef.current = {};
+            pendingCreateGeometryRef.current = {};
+            drawLayersRef.current = null;
+            featureLayersRef.current = {} as Record<number, L.Layer>;
+            createdLayersRef.current = {} as Record<number, L.Layer>;
+            isInitialLoadDoneRef.current = false;
+        };
+    }, []);
 
     // Deletion is handled directly within handleLayersChange('deleted') to avoid race conditions
 

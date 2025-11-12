@@ -25,6 +25,7 @@ class AreaController extends Controller
                 'description' => $group->description,
                 'legend_color_hex' => $group->legend_color_hex,
                 'legend_icon' => $group->legend_icon,
+                'areas_count' => $group->areas()->count(),
                 'geometry_json' => $group->geometry_json,
                 'centroid_lat' => $group->centroid_lat,
                 'centroid_lng' => $group->centroid_lng,
