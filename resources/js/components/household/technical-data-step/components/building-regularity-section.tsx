@@ -62,7 +62,7 @@ export function BuildingRegularitySection({
                 </Field>
 
                 <Field className="w-full">
-                    <FieldLabel>Menghadap Sempadan</FieldLabel>
+                    <FieldLabel>Posisi Muka Rumah Menghadap Jalan</FieldLabel>
                     <FieldContent>
                         <Select
                             value={

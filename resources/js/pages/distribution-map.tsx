@@ -1,50 +1,21 @@
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+    Map,
+    MapLayerGroup,
+    MapLayers,
+    MapLayersControl,
+    MapLocateControl,
+    MapMarker,
+    MapPolygon,
+    MapPopup,
+    MapRectangle,
+    MapTileLayer,
+    MapZoomControl,
+} from '@/components/ui/map';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Eye, EyeOff, Home, MapPin, Zap } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import {
-    GeoJSON,
-    LayerGroup,
-    MapContainer,
-    TileLayer,
-    ZoomControl,
-} from 'react-leaflet';
-
-// Fix leaflet marker icons
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type GeoJsonObject = any;
-
-const DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-});
-L.Marker.prototype.setIcon(DefaultIcon);
+import { Head, router, usePage } from '@inertiajs/react';
+import { Home } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -57,275 +28,153 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-interface Household {
+type HabitabilityStatus = 'RLH' | 'RTLH' | null;
+
+interface HouseholdForMap {
     id: number;
-    name: string;
-    address: string;
+    head_name: string;
+    address_text: string;
     latitude: number;
     longitude: number;
-    status_mbr: 'MBR' | 'NON_MBR';
-    member_total: number;
-    score?: number;
+    habitability_status: HabitabilityStatus;
+    province_name?: string | null;
+    regency_name?: string | null;
+    district_name?: string | null;
+    village_name?: string | null;
 }
 
-interface AreaFeature {
+interface AreaFeatureGeometry {
     id: number;
     name: string;
-    area_group_id: string;
-    geometry: GeoJsonObject;
-    household_count: number;
-    family_count: number;
+    description?: string | null;
+    geometry_json: unknown;
+    province_name?: string | null;
+    regency_name?: string | null;
+    district_name?: string | null;
+    village_name?: string | null;
+    color?: string;
 }
 
-interface Infrastructure {
+interface AreaGroupForMap {
     id: number;
+    code?: string | null;
     name: string;
-    type: string;
-    geometry: GeoJsonObject;
-    category: string;
+    description?: string | null;
+    legend_color_hex?: string | null;
+    legend_icon?: string | null;
+    geometry_json?: unknown;
+    centroid_lat?: number | null;
+    centroid_lng?: number | null;
+    areas: AreaFeatureGeometry[];
 }
 
-const MOCK_HOUSEHOLDS: Household[] = [
-    {
-        id: 1,
-        name: 'Rumah Keluarga Jaya',
-        address: 'Jl. Muara Enim No. 123',
-        latitude: -3.0627,
-        longitude: 104.7429,
-        status_mbr: 'MBR',
-        member_total: 5,
-        score: 75,
-    },
-    {
-        id: 2,
-        name: 'Rumah Sejahtera',
-        address: 'Jl. Gunung Megang No. 45',
-        latitude: -3.0632,
-        longitude: 104.7435,
-        status_mbr: 'NON_MBR',
-        member_total: 4,
-        score: 82,
-    },
-    {
-        id: 3,
-        name: 'Rumah Makmur',
-        address: 'Jl. Rambang No. 67',
-        latitude: -3.065,
-        longitude: 104.7445,
-        status_mbr: 'MBR',
-        member_total: 6,
-        score: 68,
-    },
-    {
-        id: 4,
-        name: 'Rumah Berkah',
-        address: 'Jl. Tangga Laut No. 89',
-        latitude: -3.0615,
-        longitude: 104.741,
-        status_mbr: 'NON_MBR',
-        member_total: 3,
-        score: 88,
-    },
-    {
-        id: 5,
-        name: 'Rumah Harapan',
-        address: 'Jl. Lawang Kidul No. 12',
-        latitude: -3.068,
-        longitude: 104.7455,
-        status_mbr: 'MBR',
-        member_total: 7,
-        score: 72,
-    },
-];
+const RLH_COLOR = '#8AD463';
+const RTLH_COLOR = '#EC6767';
+const DEFAULT_COLOR = '#8B87E8';
 
-const MOCK_AREAS: AreaFeature[] = [
-    {
-        id: 1,
-        name: 'Kawasan Kumuh 1',
-        area_group_id: 'SLUM',
-        geometry: {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [
-                            [
-                                [104.74, -3.064],
-                                [104.742, -3.064],
-                                [104.742, -3.066],
-                                [104.74, -3.066],
-                                [104.74, -3.064],
-                            ],
-                        ],
-                    },
-                },
-            ],
-        },
-        household_count: 45,
-        family_count: 40,
-    },
-    {
-        id: 2,
-        name: 'Kawasan Permukiman 1',
-        area_group_id: 'SETTLEMENT',
-        geometry: {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [
-                            [
-                                [104.741, -3.062],
-                                [104.744, -3.062],
-                                [104.744, -3.065],
-                                [104.741, -3.065],
-                                [104.741, -3.062],
-                            ],
-                        ],
-                    },
-                },
-            ],
-        },
-        household_count: 120,
-        family_count: 110,
-    },
-];
+const getStatusColor = (status: HabitabilityStatus) => {
+    if (status === 'RLH') return RLH_COLOR;
+    if (status === 'RTLH') return RTLH_COLOR;
+    return DEFAULT_COLOR;
+};
 
-const MOCK_INFRASTRUCTURE: Infrastructure[] = [
-    {
-        id: 1,
-        name: 'Jalur Pipa Air 1',
-        type: 'WATER_PIPE',
-        category: 'Air Bersih',
-        geometry: {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: [
-                            [104.74, -3.061],
-                            [104.745, -3.068],
-                        ],
-                    },
-                },
-            ],
-        },
-    },
-    {
-        id: 2,
-        name: 'Tiang PLN',
-        type: 'POWER_POLE',
-        category: 'Listrik',
-        geometry: {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [104.7425, -3.0635],
-                    },
-                },
-            ],
-        },
-    },
-    {
-        id: 3,
-        name: 'Rumah Sakit',
-        type: 'HOSPITAL',
-        category: 'Kesehatan',
-        geometry: {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: { type: 'Point', coordinates: [104.743, -3.062] },
-                },
-            ],
-        },
-    },
-];
+const HouseholdMarkerIcon = (status: HabitabilityStatus) => {
+    const color = getStatusColor(status);
+    return (
+        <div
+            className="flex size-8 items-center justify-center rounded-full border bg-background shadow-sm"
+            style={{ borderColor: color }}
+            aria-label="Lokasi rumah"
+            tabIndex={0}
+        >
+            <Home className="size-5" style={{ color }} />
+        </div>
+    );
+};
+
+const parsePolygon = (geometry: any) => {
+    if (
+        !geometry ||
+        geometry.type !== 'Polygon' ||
+        !Array.isArray(geometry.coordinates)
+    )
+        return null;
+    const rings = geometry.coordinates as number[][][];
+    return rings.map((ring) =>
+        ring.map(([lng, lat]) => [lat, lng] as [number, number]),
+    );
+};
+
+const parseRectangle = (geometry: any) => {
+    if (!Array.isArray(geometry) || geometry.length !== 2) return null;
+    const [[west, north], [east, south]] = geometry as [
+        [number, number],
+        [number, number],
+    ];
+    return [
+        [north, west] as [number, number],
+        [south, east] as [number, number],
+    ] as [[number, number], [number, number]];
+};
 
 export default function DistributionMap() {
-    const [selectedAreas, setSelectedAreas] = useState<Set<string>>(
-        new Set(['SLUM', 'SETTLEMENT']),
-    );
-    const [selectedInfra, setSelectedInfra] = useState<Set<string>>(
-        new Set(['WATER_PIPE', 'POWER_POLE', 'HOSPITAL']),
-    );
-    const [householdStatus, setHouseholdStatus] = useState<string>('all');
-    const [visibleHouseholds, setVisibleHouseholds] = useState(true);
-    const [visibleAreas, setVisibleAreas] = useState(true);
-    const [visibleInfra, setVisibleInfra] = useState(true);
+    const {
+        households = [],
+        areaGroups = [],
+        error,
+    } = usePage<{
+        flash?: any;
+        households: HouseholdForMap[];
+        areaGroups: AreaGroupForMap[];
+        error?: string;
+    }>().props;
 
-    const filteredHouseholds = useMemo(() => {
-        return MOCK_HOUSEHOLDS.filter(
-            (h) =>
-                householdStatus === 'all' || h.status_mbr === householdStatus,
+    useEffect(() => {
+        const id = setInterval(() => {
+            router.reload({
+                only: ['households', 'areaGroups'],
+            });
+        }, 60000);
+        return () => clearInterval(id);
+    }, []);
+
+    const center = useMemo(() => {
+        if (households.length > 0) {
+            const lat =
+                households.reduce((s, h) => s + h.latitude, 0) /
+                households.length;
+            const lng =
+                households.reduce((s, h) => s + h.longitude, 0) /
+                households.length;
+            return [lat, lng] as [number, number];
+        }
+        const withCentroid = areaGroups.filter(
+            (g) => g.centroid_lat && g.centroid_lng,
         );
-    }, [householdStatus]);
-
-    const filteredAreas = useMemo(() => {
-        return MOCK_AREAS.filter((a) => selectedAreas.has(a.area_group_id));
-    }, [selectedAreas]);
-
-    const filteredInfra = useMemo(() => {
-        return MOCK_INFRASTRUCTURE.filter((i) => selectedInfra.has(i.type));
-    }, [selectedInfra]);
-
-    const toggleAreaGroup = (groupId: string): void => {
-        const newSet = new Set(selectedAreas);
-        if (newSet.has(groupId)) {
-            newSet.delete(groupId);
-        } else {
-            newSet.add(groupId);
+        if (withCentroid.length > 0) {
+            const lat =
+                withCentroid.reduce((s, g) => s + (g.centroid_lat || 0), 0) /
+                withCentroid.length;
+            const lng =
+                withCentroid.reduce((s, g) => s + (g.centroid_lng || 0), 0) /
+                withCentroid.length;
+            return [lat, lng] as [number, number];
         }
-        setSelectedAreas(newSet);
-    };
+        return [-3.0638, 104.7429] as [number, number];
+    }, [households, areaGroups]);
 
-    const toggleInfraType = (type: string): void => {
-        const newSet = new Set(selectedInfra);
-        if (newSet.has(type)) {
-            newSet.delete(type);
-        } else {
-            newSet.add(type);
-        }
-        setSelectedInfra(newSet);
-    };
-
-    const getColorForArea = (groupId: string): string => {
-        const colors: Record<string, string> = {
-            SLUM: '#F28AAA',
-            SETTLEMENT: '#B2F02C',
-            DISASTER_RISK: '#FF6B6B',
-            PRIORITY_DEV: '#4C6EF5',
-        };
-        return colors[groupId] || '#999999';
-    };
-
-    const getIconForInfra = (type: string): string => {
-        switch (type) {
-            case 'WATER_PIPE':
-                return '💧';
-            case 'POWER_POLE':
-                return '⚡';
-            case 'HOSPITAL':
-                return '🏥';
-            default:
-                return '📍';
-        }
-    };
+    const groupLayerNames = useMemo(
+        () => areaGroups.map((g) => `Kawasan ${g.name}`),
+        [areaGroups],
+    );
+    const defaultLayerGroups = useMemo(
+        () => [
+            'Rumah Layak Huni',
+            'Rumah Tidak Layak Huni',
+            ...groupLayerNames,
+        ],
+        [groupLayerNames],
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -335,384 +184,301 @@ export default function DistributionMap() {
                     <div>
                         <h1 className="text-2xl font-bold">Peta Sebaran</h1>
                         <p className="text-muted-foreground">
-                            Visualisasi geografis data rumah, kawasan, dan
-                            infrastruktur
+                            Visualisasi data rumah dan kawasan
                         </p>
                     </div>
+                    {error && (
+                        <div
+                            role="alert"
+                            className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                        >
+                            {error}
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex flex-1 gap-4 overflow-hidden">
-                    <Card className="w-80 overflow-y-auto">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">
-                                Filter Data
-                            </CardTitle>
-                            <CardDescription>
-                                Pilih data yang ingin ditampilkan
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-3">
-                                <h4 className="text-sm font-semibold">
-                                    Tampilkan/Sembunyikan
-                                </h4>
-                                <div className="space-y-2">
-                                    <button
-                                        onClick={() =>
-                                            setVisibleHouseholds(
-                                                !visibleHouseholds,
-                                            )
-                                        }
-                                        className="flex w-full items-center gap-2 rounded-md border p-2 text-sm hover:bg-muted"
-                                    >
-                                        {visibleHouseholds ? (
-                                            <Eye className="h-4 w-4" />
-                                        ) : (
-                                            <EyeOff className="h-4 w-4" />
-                                        )}
-                                        <span>
-                                            Rumah ({filteredHouseholds.length})
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setVisibleAreas(!visibleAreas)
-                                        }
-                                        className="flex w-full items-center gap-2 rounded-md border p-2 text-sm hover:bg-muted"
-                                    >
-                                        {visibleAreas ? (
-                                            <Eye className="h-4 w-4" />
-                                        ) : (
-                                            <EyeOff className="h-4 w-4" />
-                                        )}
-                                        <span>
-                                            Kawasan ({filteredAreas.length})
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setVisibleInfra(!visibleInfra)
-                                        }
-                                        className="flex w-full items-center gap-2 rounded-md border p-2 text-sm hover:bg-muted"
-                                    >
-                                        {visibleInfra ? (
-                                            <Eye className="h-4 w-4" />
-                                        ) : (
-                                            <EyeOff className="h-4 w-4" />
-                                        )}
-                                        <span>
-                                            Infrastruktur (
-                                            {filteredInfra.length})
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
+                <div className="flex-1 overflow-hidden rounded-lg border">
+                    <Map center={center} zoom={15} className="h-full w-full">
+                        <MapTileLayer name="OSM" />
 
-                            <Separator />
-
-                            <div className="space-y-3">
-                                <h4 className="flex items-center gap-2 text-sm font-semibold">
-                                    <Home className="h-4 w-4" />
-                                    Filter Rumah
-                                </h4>
-                                <Select
-                                    value={householdStatus}
-                                    onValueChange={setHouseholdStatus}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Status KK" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            Semua Status
-                                        </SelectItem>
-                                        <SelectItem value="MBR">
-                                            MBR (Masyarakat Berpenghasilan
-                                            Rendah)
-                                        </SelectItem>
-                                        <SelectItem value="NON_MBR">
-                                            Non-MBR
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-3">
-                                <h4 className="flex items-center gap-2 text-sm font-semibold">
-                                    <MapPin className="h-4 w-4" />
-                                    Kawasan
-                                </h4>
-                                <div className="space-y-2">
-                                    {[
-                                        { id: 'SLUM', name: 'Kawasan Kumuh' },
-                                        {
-                                            id: 'SETTLEMENT',
-                                            name: 'Kawasan Permukiman',
-                                        },
-                                        {
-                                            id: 'DISASTER_RISK',
-                                            name: 'Kawasan Rawan Bencana',
-                                        },
-                                        {
-                                            id: 'PRIORITY_DEV',
-                                            name: 'Lokasi Prioritas',
-                                        },
-                                    ].map((group) => (
-                                        <label
-                                            key={group.id}
-                                            className="flex cursor-pointer items-center gap-2"
-                                        >
-                                            <Checkbox
-                                                checked={selectedAreas.has(
-                                                    group.id,
-                                                )}
-                                                onCheckedChange={() =>
-                                                    toggleAreaGroup(group.id)
-                                                }
-                                            />
-                                            <span className="flex flex-1 items-center gap-2 text-sm">
-                                                <div
-                                                    className="h-3 w-3 rounded"
-                                                    style={{
-                                                        backgroundColor:
-                                                            getColorForArea(
-                                                                group.id,
-                                                            ),
-                                                    }}
-                                                />
-                                                {group.name}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-3">
-                                <h4 className="flex items-center gap-2 text-sm font-semibold">
-                                    <Zap className="h-4 w-4" />
-                                    Infrastruktur
-                                </h4>
-                                <div className="space-y-2">
-                                    {[
-                                        { id: 'WATER_PIPE', name: 'Pipa Air' },
-                                        { id: 'POWER_POLE', name: 'Tiang PLN' },
-                                        { id: 'HOSPITAL', name: 'Rumah Sakit' },
-                                    ].map((infra) => (
-                                        <label
-                                            key={infra.id}
-                                            className="flex cursor-pointer items-center gap-2"
-                                        >
-                                            <Checkbox
-                                                checked={selectedInfra.has(
-                                                    infra.id,
-                                                )}
-                                                onCheckedChange={() =>
-                                                    toggleInfraType(infra.id)
-                                                }
-                                            />
-                                            <span className="flex items-center gap-2 text-sm">
-                                                <span>
-                                                    {getIconForInfra(infra.id)}
-                                                </span>
-                                                {infra.name}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-2 rounded-md bg-muted p-3">
-                                <div className="text-xs font-semibold text-muted-foreground">
-                                    Ringkasan
-                                </div>
-                                <div className="space-y-1 text-sm">
-                                    <div>
-                                        Rumah: {filteredHouseholds.length}
-                                    </div>
-                                    <div>Kawasan: {filteredAreas.length}</div>
-                                    <div>PSU: {filteredInfra.length}</div>
-                                </div>
-                        </div>
-                        </CardContent>
-                    </Card>
-
-                    <div className="flex-1 overflow-hidden rounded-lg border">
-                        <MapContainer
-                            center={[-3.0638, 104.7429]}
-                            zoom={15}
-                            style={{ height: '100%', width: '100%' }}
-                            zoomControl={false}
-                        >
-                            <TileLayer
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                attribution="&copy; OpenStreetMap contributors"
+                        <MapLayers defaultLayerGroups={defaultLayerGroups}>
+                            <MapLayersControl
+                                layerGroupsLabel="Layer"
+                                tileLayersLabel="Tipe Peta"
                             />
-                            <ZoomControl position="topright" />
+                            <MapZoomControl />
+                            <MapLocateControl />
 
-                            {visibleHouseholds && (
-                                <LayerGroup>
-                                    {filteredHouseholds.map((household) => {
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        const data: any = {
-                                            type: 'FeatureCollection',
-                                            features: [
-                                                {
-                                                    type: 'Feature',
-                                                    properties: {
-                                                        name: household.name,
-                                                    },
-                                                    geometry: {
-                                                        type: 'Point',
-                                                        coordinates: [
-                                                            household.longitude,
-                                                            household.latitude,
-                                                        ],
-                                                    },
-                                                },
-                                            ],
+                            <MapLayerGroup name="Rumah Layak Huni">
+                                {households
+                                    .filter(
+                                        (h) => h.habitability_status === 'RLH',
+                                    )
+                                    .map((h) => (
+                                        <MapMarker
+                                            key={`rlh-${h.id}`}
+                                            position={[h.latitude, h.longitude]}
+                                            icon={HouseholdMarkerIcon('RLH')}
+                                            iconAnchor={[12, 12]}
+                                            popupAnchor={[0, -12]}
+                                            aria-label={`Rumah RLH: ${h.head_name}`}
+                                        >
+                                            <MapPopup>
+                                                <div
+                                                    className="space-y-2"
+                                                    aria-label="Informasi rumah"
+                                                >
+                                                    <div className="font-medium">
+                                                        {h.head_name}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {h.address_text}
+                                                    </div>
+                                                    <div className="text-xs">
+                                                        Status: RLH
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                                        <div>
+                                                            Provinsi:{' '}
+                                                            {h.province_name ||
+                                                                '-'}
+                                                        </div>
+                                                        <div>
+                                                            Kab/Kota:{' '}
+                                                            {h.regency_name ||
+                                                                '-'}
+                                                        </div>
+                                                        <div>
+                                                            Kecamatan:{' '}
+                                                            {h.district_name ||
+                                                                '-'}
+                                                        </div>
+                                                        <div>
+                                                            Desa:{' '}
+                                                            {h.village_name ||
+                                                                '-'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </MapPopup>
+                                        </MapMarker>
+                                    ))}
+                            </MapLayerGroup>
+
+                            <MapLayerGroup name="Rumah Tidak Layak Huni">
+                                {households
+                                    .filter(
+                                        (h) => h.habitability_status === 'RTLH',
+                                    )
+                                    .map((h) => (
+                                        <MapMarker
+                                            key={`rtlh-${h.id}`}
+                                            position={[h.latitude, h.longitude]}
+                                            icon={HouseholdMarkerIcon('RTLH')}
+                                            iconAnchor={[12, 12]}
+                                            popupAnchor={[0, -12]}
+                                            aria-label={`Rumah Tidak Layak Huni: ${h.head_name}`}
+                                        >
+                                            <MapPopup>
+                                                <div
+                                                    className="space-y-2"
+                                                    aria-label="Informasi rumah"
+                                                >
+                                                    <div className="font-medium">
+                                                        {h.head_name}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {h.address_text}
+                                                    </div>
+                                                    <div className="text-xs">
+                                                        Status: RTLH
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                                        <div>
+                                                            Provinsi:{' '}
+                                                            {h.province_name ||
+                                                                '-'}
+                                                        </div>
+                                                        <div>
+                                                            Kab/Kota:{' '}
+                                                            {h.regency_name ||
+                                                                '-'}
+                                                        </div>
+                                                        <div>
+                                                            Kecamatan:{' '}
+                                                            {h.district_name ||
+                                                                '-'}
+                                                        </div>
+                                                        <div>
+                                                            Desa:{' '}
+                                                            {h.village_name ||
+                                                                '-'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </MapPopup>
+                                        </MapMarker>
+                                    ))}
+                            </MapLayerGroup>
+
+                            {areaGroups.map((group) => {
+                                const groupColor = group.legend_color_hex;
+                                const groupLayerName = `Kawasan ${group.name}`;
+                                const groupShape = (() => {
+                                    const raw =
+                                        typeof group.geometry_json === 'string'
+                                            ? JSON.parse(
+                                                  group.geometry_json as string,
+                                              )
+                                            : group.geometry_json;
+                                    if (!raw) return null;
+                                    const poly = parsePolygon(raw);
+                                    if (poly)
+                                        return {
+                                            type: 'polygon' as const,
+                                            positions: poly,
                                         };
-                                        return (
-                                            <GeoJSON
-                                                key={household.id}
-                                                data={data}
-                                                pointToLayer={(
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                    feature: any,
-                                                    latlng,
-                                                ) => {
-                                                    const color =
-                                                        household.status_mbr ===
-                                                        'MBR'
-                                                            ? '#3BD300'
-                                                            : '#1E83FF';
-                                                    return L.circleMarker(
-                                                        latlng,
-                                                        {
-                                                            radius: 8,
-                                                            fillColor: color,
-                                                            color: '#fff',
-                                                            weight: 2,
-                                                            opacity: 1,
-                                                            fillOpacity: 0.8,
-                                                        },
-                                                    );
-                                                }}
-                                                onEachFeature={(
-                                                    feature,
-                                                    layer,
-                                                ) => {
-                                                    layer.bindPopup(
-                                                        `<div style="font-size:12px"><div style="font-weight:bold;margin-bottom:4px">${household.name}</div><div style="margin-bottom:2px;color:#666">${household.address}</div><div style="margin:4px 0"><span style="display:inline-block;padding:2px 6px;background:${household.status_mbr === 'MBR' ? '#3BD300' : '#1E83FF'};color:white;border-radius:3px;font-size:11px;margin-right:4px">${household.status_mbr}</span><span style="display:inline-block;padding:2px 6px;background:#f0f0f0;border-radius:3px;font-size:11px">${household.member_total} jiwa</span></div>${household.score ? `<div style="margin-top:4px;padding-top:4px;border-top:1px solid #eee">Skor: <strong>${household.score}</strong></div>` : ''}</div>`,
-                                                    );
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </LayerGroup>
-                            )}
+                                    const rect = parseRectangle(raw);
+                                    if (rect)
+                                        return {
+                                            type: 'rectangle' as const,
+                                            bounds: rect,
+                                        };
+                                    return null;
+                                })();
+                                return (
+                                    <MapLayerGroup
+                                        key={`group-${group.id}`}
+                                        name={groupLayerName}
+                                    >
+                                        {group.areas.map((area) => {
+                                            const raw =
+                                                typeof area.geometry_json ===
+                                                'string'
+                                                    ? JSON.parse(
+                                                          area.geometry_json as string,
+                                                      )
+                                                    : area.geometry_json;
+                                            const color = area.color;
 
-                            {visibleAreas && (
-                                <LayerGroup>
-                                    {filteredAreas.map((area) => {
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        const data: any = area.geometry;
-                                        return (
-                                            <GeoJSON
-                                                key={area.id}
-                                                data={data}
-                                                style={() => ({
-                                                    color: getColorForArea(
-                                                        area.area_group_id,
-                                                    ),
-                                                    weight: 2,
-                                                    opacity: 0.8,
-                                                    fillOpacity: 0.3,
-                                                })}
-                                                onEachFeature={(
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                    feature: any,
-                                                    layer,
-                                                ) => {
-                                                    layer.bindPopup(
-                                                        `<div style="font-size:12px"><div style="font-weight:bold">${area.name}</div><div>Rumah: ${area.household_count}</div><div>Keluarga: ${area.family_count}</div></div>`,
-                                                    );
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </LayerGroup>
-                            )}
-
-                            {visibleInfra && (
-                                <LayerGroup>
-                                    {filteredInfra.map((infra) => {
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        const data: any = infra.geometry;
-                                        return (
-                                            <GeoJSON
-                                                key={infra.id}
-                                                data={data}
-                                                pointToLayer={(
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                    feature: any,
-                                                    latlng,
-                                                ) => {
-                                                    const colors: Record<
-                                                        string,
-                                                        string
-                                                    > = {
-                                                        WATER_PIPE: '#00D9FF',
-                                                        POWER_POLE: '#FFD700',
-                                                        HOSPITAL: '#FF6B9D',
-                                                    };
-                                                    const color =
-                                                        colors[infra.type] ||
-                                                        '#999999';
-                                                    return L.circleMarker(
-                                                        latlng,
-                                                        {
-                                                            radius: 7,
+                                            console.log(color);
+                                            const poly = parsePolygon(raw);
+                                            const rect = !poly
+                                                ? parseRectangle(raw)
+                                                : null;
+                                            if (poly) {
+                                                return (
+                                                    <MapPolygon
+                                                        key={`area-poly-${area.id}`}
+                                                        positions={poly}
+                                                        pathOptions={{
+                                                            color: color,
                                                             fillColor: color,
-                                                            color: '#fff',
                                                             weight: 2,
-                                                            opacity: 1,
-                                                            fillOpacity: 0.9,
-                                                        },
-                                                    );
-                                                }}
-                                                style={() => ({
-                                                    color:
-                                                        infra.type ===
-                                                        'WATER_PIPE'
-                                                            ? '#00D9FF'
-                                                            : infra.type ===
-                                                                'POWER_POLE'
-                                                              ? '#FFD700'
-                                                              : '#FF6B9D',
-                                                    weight: 2,
-                                                    opacity: 0.8,
-                                                })}
-                                                onEachFeature={(
-                                                    feature,
-                                                    layer,
-                                                ) => {
-                                                    layer.bindPopup(
-                                                        `<div style="font-size:12px"><div style="font-weight:bold">${infra.name}</div><div>${infra.category}</div></div>`,
-                                                    );
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </LayerGroup>
-                            )}
-                        </MapContainer>
-                    </div>
+                                                            opacity: 0.9,
+                                                            fillOpacity: 0.2,
+                                                        }}
+                                                        className={`cursor-pointer fill-[${color}] stroke-[${color}] stroke-2 transition-all duration-300 hover:opacity-80`}
+                                                    >
+                                                        <MapPopup>
+                                                            <div
+                                                                className="space-y-2"
+                                                                aria-label="Informasi area"
+                                                            >
+                                                                <div className="font-medium">
+                                                                    {area.name}
+                                                                </div>
+                                                                <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                                    {area.description ||
+                                                                        '-'}
+                                                                </div>
+                                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                    <div>
+                                                                        Provinsi:{' '}
+                                                                        {area.province_name ||
+                                                                            '-'}
+                                                                    </div>
+                                                                    <div>
+                                                                        Kab/Kota:{' '}
+                                                                        {area.regency_name ||
+                                                                            '-'}
+                                                                    </div>
+                                                                    <div>
+                                                                        Kecamatan:{' '}
+                                                                        {area.district_name ||
+                                                                            '-'}
+                                                                    </div>
+                                                                    <div>
+                                                                        Desa:{' '}
+                                                                        {area.village_name ||
+                                                                            '-'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </MapPopup>
+                                                    </MapPolygon>
+                                                );
+                                            }
+                                            if (rect) {
+                                                return (
+                                                    <MapRectangle
+                                                        key={`area-rect-${area.id}`}
+                                                        bounds={rect}
+                                                        pathOptions={{
+                                                            color: color,
+                                                            fillColor: color,
+                                                            weight: 2,
+                                                            opacity: 0.9,
+                                                            fillOpacity: 0.2,
+                                                        }}
+                                                        className={`cursor-pointer transition-all fill-[${color}] stroke-[${color}] stroke-2 duration-300 hover:opacity-80`}
+                                                    >
+                                                        <MapPopup>
+                                                            <div
+                                                                className="space-y-2"
+                                                                aria-label="Informasi area"
+                                                            >
+                                                                <div className="font-medium">
+                                                                    {area.name}
+                                                                </div>
+                                                                <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                                    {area.description ||
+                                                                        '-'}
+                                                                </div>
+                                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                    <div>
+                                                                        Provinsi:{' '}
+                                                                        {area.province_name ||
+                                                                            '-'}
+                                                                    </div>
+                                                                    <div>
+                                                                        Kab/Kota:{' '}
+                                                                        {area.regency_name ||
+                                                                            '-'}
+                                                                    </div>
+                                                                    <div>
+                                                                        Kecamatan:{' '}
+                                                                        {area.district_name ||
+                                                                            '-'}
+                                                                    </div>
+                                                                    <div>
+                                                                        Desa:{' '}
+                                                                        {area.village_name ||
+                                                                            '-'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </MapPopup>
+                                                    </MapRectangle>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                    </MapLayerGroup>
+                                );
+                            })}
+                        </MapLayers>
+                    </Map>
                 </div>
             </div>
         </AppLayout>

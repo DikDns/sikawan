@@ -10,7 +10,16 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import {
+    areas,
+    dashboard,
+    distributionMap,
+    infrastructure,
+    levels,
+    messages,
+    reports,
+    users,
+} from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
@@ -34,7 +43,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Peta Sebaran',
-        href: '/distribution-map',
+        href: distributionMap(),
         icon: MapPin,
     },
     {
@@ -44,32 +53,32 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Kawasan',
-        href: '/areas',
+        href: areas(),
         icon: Layers,
     },
     {
         title: 'PSU',
-        href: '/infrastructure',
+        href: infrastructure(),
         icon: Wrench,
     },
     {
         title: 'Laporan',
-        href: '/reports',
+        href: reports(),
         icon: FileText,
     },
     {
         title: 'Pesan',
-        href: '/messages',
+        href: messages(),
         icon: MessageSquare,
     },
     {
         title: 'Pengguna',
-        href: '/users',
+        href: users(),
         icon: Users,
     },
     {
         title: 'Level',
-        href: '/levels',
+        href: levels(),
         icon: Shield,
     },
 ];
