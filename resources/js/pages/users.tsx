@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     Edit,
     Eye,
@@ -45,7 +45,9 @@ import {
     UserCog,
     Users as UsersIcon,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Toaster, toast } from 'sonner';
+import DeleteUser from '@/components/delete-user';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -58,7 +60,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-// Mock data types based on user table schema
 interface User {
     id: number;
     name: string;
@@ -68,73 +69,49 @@ interface User {
     created_at: string;
 }
 
-// Mock data - fully consistent with schema
-const MOCK_USERS: User[] = [
-    {
-        id: 1501341233,
-        name: 'Alex Reynoso',
-        email: 'alex.reynoso@sikawan.com',
-        role: 'superadmin',
-        email_verified_at: '2025-01-01T00:00:00Z',
-        created_at: '2025-01-01T00:00:00Z',
-    },
-    {
-        id: 1501341234,
-        name: 'Gordon Walker',
-        email: 'gordon.walker@sikawan.com',
-        role: 'admin',
-        email_verified_at: '2025-02-15T00:00:00Z',
-        created_at: '2025-02-15T00:00:00Z',
-    },
-    {
-        id: 1501341235,
-        name: 'Devon Robinson',
-        email: 'devon.robinson@sikawan.com',
-        role: 'admin',
-        email_verified_at: '2025-03-20T00:00:00Z',
-        created_at: '2025-03-20T00:00:00Z',
-    },
-    {
-        id: 1501341236,
-        name: 'Shemar Sanford',
-        email: 'shemar.sanford@sikawan.com',
-        role: 'operator',
-        email_verified_at: '2025-04-10T00:00:00Z',
-        created_at: '2025-04-10T00:00:00Z',
-    },
-];
-
 export default function Users() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterRole, setFilterRole] = useState<string>('all');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { flash, users } = usePage<{ flash?: any; users: User[] }>().props;
+    const hasShownToast = React.useRef(false);
+
+    useEffect(() => {
+        if (!hasShownToast.current && (flash?.success || flash?.error)) {
+            if (flash?.success) toast.success(flash.success);
+            if (flash?.error) toast.error(flash.error);
+            hasShownToast.current = true;
+        }
+    }, [flash]);
 
     // Action handlers
     const handleView = (id: number) => {
-        console.log('View user:', id);
-        // TODO: Navigate to user detail page
+        router.visit(`users/show/${id}`);
     };
 
     const handleEdit = (id: number) => {
-        console.log('Edit user:', id);
-        // TODO: Navigate to edit user page or open edit modal
+        router.visit(`/users/edit/${id}`);
     };
 
+    const [dialog, setDialog] = useState<{ open: boolean; id: number | null }>({
+        open: false,
+        id: null,
+    });
+
     const handleDelete = (id: number) => {
-        console.log('Delete user:', id);
-        // TODO: Show confirmation dialog and delete
+        setDialog({ open: true, id });
     };
 
     const handleAdd = () => {
-        console.log('Add new user');
-        // TODO: Navigate to add user page or open add modal
+        router.visit('/users/create');
     };
 
     // Calculate statistics
     const stats = useMemo(() => {
-        const totalUsers = MOCK_USERS.length;
-        const adminUsers = MOCK_USERS.filter((u) => u.role === 'admin').length;
-        const operatorUsers = MOCK_USERS.filter(
-            (u) => u.role === 'operator',
+        const totalUsers = users.length;
+        const adminUsers = users.filter((u: User) => u.role === 'admin').length;
+        const operatorUsers = users.filter(
+            (u: User) => u.role === 'operator',
         ).length;
 
         return {
@@ -142,17 +119,19 @@ export default function Users() {
             adminUsers,
             operatorUsers,
         };
-    }, []);
+    }, [users]);
 
     // Get unique roles for filter
     const userRoles = useMemo(() => {
-        const uniqueRoles = Array.from(new Set(MOCK_USERS.map((u) => u.role)));
+        const uniqueRoles = Array.from(
+            new Set(users.map((u) => u.role))
+        );
         return uniqueRoles.sort();
-    }, []);
+    }, [users]);
 
     // Filter and search
     const filteredUsers = useMemo(() => {
-        return MOCK_USERS.filter((user) => {
+        return users.filter((user: User) => {
             const matchesSearch =
                 user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -163,7 +142,7 @@ export default function Users() {
 
             return matchesSearch && matchesRole;
         });
-    }, [searchQuery, filterRole]);
+    }, [searchQuery, filterRole, users]);
 
     // Helper function to get role icon
     const getRoleIcon = (role: string) => {
@@ -178,6 +157,7 @@ export default function Users() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Pengguna" />
+            <Toaster richColors position="top-right" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
                 {/* Header */}
                 <div>
@@ -250,7 +230,7 @@ export default function Users() {
                                     <CardTitle>Daftar Pengguna</CardTitle>
                                     <CardDescription>
                                         Menampilkan {filteredUsers.length} dari{' '}
-                                        {MOCK_USERS.length} pengguna
+                                        {users.length} pengguna
                                     </CardDescription>
                                 </div>
                                 <Button
@@ -285,7 +265,7 @@ export default function Users() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">
-                                                Semua Peran
+                                                Semua Level
                                             </SelectItem>
                                             {userRoles.map((role) => (
                                                 <SelectItem
@@ -310,7 +290,7 @@ export default function Users() {
                                         <TableHead>Id Pengguna</TableHead>
                                         <TableHead>Nama</TableHead>
                                         <TableHead>Email</TableHead>
-                                        <TableHead>Peran</TableHead>
+                                        <TableHead>Level</TableHead>
                                         <TableHead>Terdaftar</TableHead>
                                         <TableHead className="text-right">
                                             Aksi
@@ -438,6 +418,15 @@ export default function Users() {
                                                     ID: {user.id} • {user.email}
                                                 </CardDescription>
                                             </div>
+                                            {dialog.open && (
+                                                <DeleteUser
+                                                    open={dialog.open}
+                                                    onOpenChange={(open) =>
+                                                        setDialog({ open, id: open ? dialog.id : null })
+                                                    }
+                                                    userId={dialog.id}
+                                                />
+                                            )}
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button
