@@ -19,7 +19,74 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('distribution-map', function () {
-        return Inertia::render('distribution-map');
+        try {
+            $households = \App\Models\Household\Household::query()
+                ->where('is_draft', false)
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->orderByDesc('updated_at')
+                ->limit(2000)
+                ->get()
+                ->map(function ($h) {
+                    return [
+                        'id' => $h->id,
+                        'head_name' => $h->head_name,
+                        'address_text' => $h->address_text,
+                        'latitude' => (float) $h->latitude,
+                        'longitude' => (float) $h->longitude,
+                        'habitability_status' => $h->habitability_status, // RLH | RTLH
+                        'province_name' => $h->province_name,
+                        'regency_name' => $h->regency_name,
+                        'district_name' => $h->district_name,
+                        'village_name' => $h->village_name,
+                    ];
+                });
+
+            $areaGroups = \App\Models\AreaGroup::with('areas')
+                ->orderBy('name')
+                ->get()
+                ->map(function ($group) {
+                    return [
+                        'id' => $group->id,
+                        'code' => $group->code,
+                        'name' => $group->name,
+                        'description' => $group->description,
+                        'legend_color_hex' => $group->legend_color_hex,
+                        'legend_icon' => $group->legend_icon,
+                        'geometry_json' => $group->geometry_json,
+                        'centroid_lat' => $group->centroid_lat,
+                        'centroid_lng' => $group->centroid_lng,
+                        'areas' => $group->areas->map(function ($area) use ($group) {
+                            return [
+                                'id' => $area->id,
+                                'name' => $area->name,
+                                'description' => $area->description,
+                                'geometry_json' => $area->geometry_json,
+                                'province_id' => $area->province_id,
+                                'province_name' => $area->province_name,
+                                'regency_id' => $area->regency_id,
+                                'regency_name' => $area->regency_name,
+                                'district_id' => $area->district_id,
+                                'district_name' => $area->district_name,
+                                'village_id' => $area->village_id,
+                                'village_name' => $area->village_name,
+                                'color' => $group->legend_color_hex,
+                            ];
+                        }),
+                    ];
+                });
+
+            return Inertia::render('distribution-map', [
+                'households' => $households,
+                'areaGroups' => $areaGroups,
+            ]);
+        } catch (\Throwable $e) {
+            return Inertia::render('distribution-map', [
+                'households' => [],
+                'areaGroups' => [],
+                'error' => 'Gagal memuat data: ' . $e->getMessage(),
+            ]);
+        }
     })->name('distribution-map');
 
     // Households Routes
@@ -44,9 +111,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('households/{householdId}/assistances/{assistanceId}/status', [App\Http\Controllers\AssistanceController::class, 'updateStatus'])->name('assistances.updateStatus');
     Route::delete('households/{householdId}/assistances/{assistanceId}', [App\Http\Controllers\AssistanceController::class, 'destroy'])->name('assistances.destroy');
 
+    // AreaGroup CRUD Routes (Create/Update/Delete for AreaGroup)
+    Route::get('areas/create', [App\Http\Controllers\AreaGroupController::class, 'create'])->name('areas.create');
+    Route::post('areas', [App\Http\Controllers\AreaGroupController::class, 'store'])->name('areaGroups.store');
+    Route::get('areas/{id}/edit', [App\Http\Controllers\AreaGroupController::class, 'edit'])->name('areas.edit');
+    Route::match(['put','patch','post'], 'areas/{id}', [App\Http\Controllers\AreaGroupController::class, 'update'])->name('areaGroups.update');
+    Route::delete('areas/{id}', [App\Http\Controllers\AreaGroupController::class, 'destroy'])->name('areaGroups.destroy');
+
     // Areas Routes
     Route::get('areas', [App\Http\Controllers\AreaController::class, 'index'])->name('areas');
     Route::get('areas/{id}', [App\Http\Controllers\AreaController::class, 'show'])->name('areas.show');
+    Route::post('areas/{areaGroupId}/areas', [App\Http\Controllers\AreaController::class, 'storeArea'])->name('areas.store');
+    Route::put('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'updateArea'])->name('areas.update');
+    Route::delete('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'destroyArea'])->name('areas.destroy');
+
+
 
     Route::get('infrastructure', function () {
         return Inertia::render('infrastructure');

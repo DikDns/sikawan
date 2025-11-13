@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Area;
 use App\Models\AreaGroup;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -9,15 +10,13 @@ use Inertia\Inertia;
 class AreaController extends Controller
 {
     /**
-     * Display a listing of area groups with aggregated counts
+     * Display a listing of area groups
      */
     public function index(Request $request)
     {
-        $query = AreaGroup::withCounts()
-            ->where('is_active', true)
-            ->orderBy('name');
+        $query = AreaGroup::orderBy('name');
 
-        // Get all area groups with aggregated data
+        // Get all area groups
         $areaGroups = $query->get()->map(function ($group) {
             return [
                 'id' => $group->id,
@@ -26,18 +25,16 @@ class AreaController extends Controller
                 'description' => $group->description,
                 'legend_color_hex' => $group->legend_color_hex,
                 'legend_icon' => $group->legend_icon,
-                'is_active' => $group->is_active,
-                'feature_count' => $group->features_count ?? 0,
-                'household_count' => (int) ($group->features_sum_household_count ?? 0),
-                'family_count' => (int) ($group->features_sum_family_count ?? 0),
+                'areas_count' => $group->areas()->count(),
+                'geometry_json' => $group->geometry_json,
+                'centroid_lat' => $group->centroid_lat,
+                'centroid_lng' => $group->centroid_lng,
             ];
         });
 
         // Calculate statistics
         $stats = [
             'totalGroups' => $areaGroups->count(),
-            'totalFeatures' => $areaGroups->sum('feature_count'),
-            'totalHouseholds' => $areaGroups->sum('household_count'),
         ];
 
         return Inertia::render('areas', [
@@ -47,16 +44,11 @@ class AreaController extends Controller
     }
 
     /**
-     * Display the specified area group with its features
+     * Display the specified area group
      */
     public function show(Request $request, $id)
     {
-        $areaGroup = AreaGroup::withCounts()
-            ->with(['features' => function ($query) {
-                $query->where('is_visible', true)
-                    ->orderBy('name');
-            }])
-            ->findOrFail($id);
+        $areaGroup = AreaGroup::with('areas')->findOrFail($id);
 
         // Format area group data
         $groupData = [
@@ -66,39 +58,156 @@ class AreaController extends Controller
             'description' => $areaGroup->description,
             'legend_color_hex' => $areaGroup->legend_color_hex,
             'legend_icon' => $areaGroup->legend_icon,
-            'is_active' => $areaGroup->is_active,
-            'feature_count' => $areaGroup->features_count ?? 0,
-            'household_count' => (int) ($areaGroup->features_sum_household_count ?? 0),
-            'family_count' => (int) ($areaGroup->features_sum_family_count ?? 0),
+            'geometry_json' => $areaGroup->geometry_json,
+            'centroid_lat' => $areaGroup->centroid_lat,
+            'centroid_lng' => $areaGroup->centroid_lng,
         ];
 
-        // Format features data
-        $features = $areaGroup->features->map(function ($feature) use ($areaGroup) {
+        // Format areas data
+        $areas = $areaGroup->areas->map(function ($area) {
             return [
-                'id' => $feature->id,
-                'name' => $feature->name,
-                'description' => $feature->description,
-                'geometry_type' => $feature->geometry_type,
-                'geometry_json' => $feature->geometry_json,
-                'centroid_lat' => $feature->centroid_lat,
-                'centroid_lng' => $feature->centroid_lng,
-                'household_count' => $feature->household_count ?? 0,
-                'family_count' => $feature->family_count ?? 0,
-                'is_visible' => $feature->is_visible,
-                'province_id' => $feature->province_id,
-                'province_name' => $feature->province_name,
-                'regency_id' => $feature->regency_id,
-                'regency_name' => $feature->regency_name,
-                'district_id' => $feature->district_id,
-                'district_name' => $feature->district_name,
-                'village_id' => $feature->village_id,
-                'village_name' => $feature->village_name,
+                'id' => $area->id,
+                'name' => $area->name,
+                'description' => $area->description,
+                'geometry_json' => $area->geometry_json,
+                'province_id' => $area->province_id,
+                'province_name' => $area->province_name,
+                'regency_id' => $area->regency_id,
+                'regency_name' => $area->regency_name,
+                'district_id' => $area->district_id,
+                'district_name' => $area->district_name,
+                'village_id' => $area->village_id,
+                'village_name' => $area->village_name,
             ];
         });
 
         return Inertia::render('areas/detail', [
             'areaGroup' => $groupData,
-            'features' => $features,
+            'areas' => $areas,
+        ]);
+    }
+
+    /**
+     * Store a newly created area
+     */
+    public function storeArea(Request $request, $areaGroupId)
+    {
+        $request->validate([
+            'name' => 'required|string|max:150',
+            'description' => 'nullable|string',
+            'geometry_json' => 'required|array',
+            'province_id' => 'nullable|string|max:10',
+            'province_name' => 'nullable|string|max:150',
+            'regency_id' => 'nullable|string|max:10',
+            'regency_name' => 'nullable|string|max:150',
+            'district_id' => 'nullable|string|max:10',
+            'district_name' => 'nullable|string|max:150',
+            'village_id' => 'nullable|string|max:10',
+            'village_name' => 'nullable|string|max:150',
+        ]);
+
+        $areaGroup = AreaGroup::findOrFail($areaGroupId);
+
+        $area = $areaGroup->areas()->create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'geometry_json' => $request->geometry_json,
+            'province_id' => $request->province_id,
+            'province_name' => $request->province_name,
+            'regency_id' => $request->regency_id,
+            'regency_name' => $request->regency_name,
+            'district_id' => $request->district_id,
+            'district_name' => $request->district_name,
+            'village_id' => $request->village_id,
+            'village_name' => $request->village_name,
+        ]);
+
+        return response()->json([
+            'message' => 'Area berhasil ditambahkan',
+            'area' => [
+                'id' => $area->id,
+                'name' => $area->name,
+                'description' => $area->description,
+                'geometry_json' => $area->geometry_json,
+                'province_id' => $area->province_id,
+                'province_name' => $area->province_name,
+                'regency_id' => $area->regency_id,
+                'regency_name' => $area->regency_name,
+                'district_id' => $area->district_id,
+                'district_name' => $area->district_name,
+                'village_id' => $area->village_id,
+                'village_name' => $area->village_name,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Update the specified area
+     */
+    public function updateArea(Request $request, $areaGroupId, $areaId)
+    {
+        $request->validate([
+            'name' => 'required|string|max:150',
+            'description' => 'nullable|string',
+            'geometry_json' => 'required|array',
+            'province_id' => 'nullable|string|max:10',
+            'province_name' => 'nullable|string|max:150',
+            'regency_id' => 'nullable|string|max:10',
+            'regency_name' => 'nullable|string|max:150',
+            'district_id' => 'nullable|string|max:10',
+            'district_name' => 'nullable|string|max:150',
+            'village_id' => 'nullable|string|max:10',
+            'village_name' => 'nullable|string|max:150',
+        ]);
+
+        $area = Area::where('area_group_id', $areaGroupId)
+            ->findOrFail($areaId);
+
+        $area->update([
+            'name' => $request->name,
+            'description' => $request->description,
+            'geometry_json' => $request->geometry_json,
+            'province_id' => $request->province_id,
+            'province_name' => $request->province_name,
+            'regency_id' => $request->regency_id,
+            'regency_name' => $request->regency_name,
+            'district_id' => $request->district_id,
+            'district_name' => $request->district_name,
+            'village_id' => $request->village_id,
+            'village_name' => $request->village_name,
+        ]);
+
+        return response()->json([
+            'message' => 'Area berhasil diperbarui',
+            'area' => [
+                'id' => $area->id,
+                'name' => $area->name,
+                'description' => $area->description,
+                'geometry_json' => $area->geometry_json,
+                'province_id' => $area->province_id,
+                'province_name' => $area->province_name,
+                'regency_id' => $area->regency_id,
+                'regency_name' => $area->regency_name,
+                'district_id' => $area->district_id,
+                'district_name' => $area->district_name,
+                'village_id' => $area->village_id,
+                'village_name' => $area->village_name,
+            ],
+        ]);
+    }
+
+    /**
+     * Delete the specified area
+     */
+    public function destroyArea(Request $request, $areaGroupId, $areaId)
+    {
+        $area = Area::where('area_group_id', $areaGroupId)
+            ->findOrFail($areaId);
+
+        $area->delete();
+
+        return response()->json([
+            'message' => 'Area berhasil dihapus',
         ]);
     }
 }

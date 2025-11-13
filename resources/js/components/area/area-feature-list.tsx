@@ -2,17 +2,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { AreaFeatureCard } from './area-feature-card';
 
-export interface AreaFeature {
+export interface Area {
     id: number;
     name: string;
     description?: string | null;
-    household_count: number;
-    family_count: number;
-    is_visible: boolean;
-    geometry_json?: string | null;
-    geometry_type?: string | null;
-    centroid_lat?: number | null;
-    centroid_lng?: number | null;
+    geometry_json?: unknown | null;
     province_id?: string | null;
     province_name?: string | null;
     regency_id?: string | null;
@@ -24,38 +18,43 @@ export interface AreaFeature {
 }
 
 export interface AreaFeatureListProps {
-    features: AreaFeature[];
-    selectedFeatureId?: number | null;
-    onFeatureSelect?: (feature: AreaFeature) => void;
+    areas: Area[];
+    selectedAreaId?: number | null;
+    onAreaSelect?: (area: Area) => void;
+    onAreaEdit?: (area: Area) => void;
     className?: string;
 }
 
 export function AreaFeatureList({
-    features,
-    selectedFeatureId,
-    onFeatureSelect,
+    areas,
+    selectedAreaId,
+    onAreaSelect,
+    onAreaEdit,
     className,
 }: AreaFeatureListProps) {
     return (
-        <ScrollArea className={cn('h-full', className)}>
-            <div className="space-y-3 pr-4">
-                {features.length === 0 ? (
+        <ScrollArea className={cn('max-h-screen', className)}>
+            <div className="space-y-3 px-2 py-4">
+                {areas.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
-                        Tidak ada area feature
+                        Tidak ada kawasan. Buat area baru dengan menggambar di
+                        peta.
                     </div>
                 ) : (
-                    features.map((feature) => (
+                    areas.map((area) => (
                         <AreaFeatureCard
-                            key={feature.id}
-                            id={feature.id}
-                            name={feature.name}
-                            description={feature.description}
-                            householdCount={feature.household_count}
-                            familyCount={feature.family_count}
-                            isVisible={feature.is_visible}
-                            onClick={() => onFeatureSelect?.(feature)}
+                            key={area.id}
+                            id={area.id}
+                            name={area.name}
+                            description={area.description}
+                            provinceName={area.province_name}
+                            regencyName={area.regency_name}
+                            districtName={area.district_name}
+                            villageName={area.village_name}
+                            onClick={() => onAreaSelect?.(area)}
+                            onEdit={() => onAreaEdit?.(area)}
                             className={
-                                selectedFeatureId === feature.id
+                                selectedAreaId === area.id
                                     ? 'ring-2 ring-primary'
                                     : ''
                             }

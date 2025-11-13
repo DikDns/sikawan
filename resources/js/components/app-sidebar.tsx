@@ -10,17 +10,26 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import {
+    areas,
+    dashboard,
+    distributionMap,
+    infrastructure,
+    levels,
+    messages,
+    reports,
+    users,
+} from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
     FileText,
     Home,
+    Layers,
     LayoutGrid,
     MapPin,
     MessageSquare,
     Shield,
-    Square,
     Users,
     Wrench,
 } from 'lucide-react';
@@ -29,7 +38,6 @@ import { useCan } from '@/utils/permissions';
 
 export function AppSidebar() {
     const can = useCan();
-
     const mainNavItems: NavItem[] = [
         {
             title: 'Dashboard',
@@ -39,7 +47,7 @@ export function AppSidebar() {
         },
         {
             title: 'Peta Sebaran',
-            href: '/distribution-map',
+            href: distributionMap(),
             icon: MapPin,
             show: can('distribution-map'),
         },
@@ -51,13 +59,13 @@ export function AppSidebar() {
         },
         {
             title: 'Kawasan',
-            href: '/areas',
+            href: areas(),
             icon: Square,
             show: can('areas'),
         },
         {
             title: 'PSU',
-            href: '/infrastructure',
+            href: infrastructure(),
             icon: Wrench,
             show: can('infrastructure'),
         },
@@ -69,19 +77,19 @@ export function AppSidebar() {
         },
         {
             title: 'Pesan',
-            href: '/messages',
+            href:  messages(),
             icon: MessageSquare,
             show: can('messages'),
         },
         {
             title: 'Pengguna',
-            href: '/users',
+            href: users(),
             icon: Users,
             show: can('users'),
         },
         {
             title: 'Level',
-            href: '/levels',
+            href: levels(),
             icon: Shield,
             show: can('levels'),
         },
