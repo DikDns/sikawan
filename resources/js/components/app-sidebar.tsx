@@ -17,15 +17,15 @@ import {
     infrastructure,
     levels,
     messages,
-    reports,
     users,
 } from '@/routes';
 import { type NavItem } from '@/types';
+import { useCan } from '@/utils/permissions';
 import { Link } from '@inertiajs/react';
 import {
     FileText,
     Home,
-    Layers,
+    LayersIcon,
     LayoutGrid,
     MapPin,
     MessageSquare,
@@ -34,7 +34,6 @@ import {
     Wrench,
 } from 'lucide-react';
 import AppLogo from './app-logo';
-import { useCan } from '@/utils/permissions';
 
 export function AppSidebar() {
     const can = useCan();
@@ -60,7 +59,7 @@ export function AppSidebar() {
         {
             title: 'Kawasan',
             href: areas(),
-            icon: Square,
+            icon: LayersIcon,
             show: can('areas'),
         },
         {
@@ -77,7 +76,7 @@ export function AppSidebar() {
         },
         {
             title: 'Pesan',
-            href:  messages(),
+            href: messages(),
             icon: MessageSquare,
             show: can('messages'),
         },
@@ -93,7 +92,7 @@ export function AppSidebar() {
             icon: Shield,
             show: can('levels'),
         },
-    ].filter(item => item.show);
+    ].filter((item) => item.show);
 
     const footerNavItems: NavItem[] = [];
 
