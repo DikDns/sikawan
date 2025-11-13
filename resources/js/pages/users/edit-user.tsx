@@ -22,23 +22,22 @@ import AppLayout from "@/layouts/app-layout";
 import { toast } from 'sonner';
 
 const EditUser: React.FC = () => {
-  // ambil data user dari props inertia
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { props }: any = usePage();
-  const { user } = props; // user dari backend: Inertia::render('Users/Edit', ['user' => $user])
+  const { user, roles } = props;
 
   interface UserFormData {
     name: string;
     email: string;
     password: string;
-    role: string;
+    role_id: string;
   }
 
   const { data, setData, processing, errors, post } = useForm<UserFormData>({
     name: user?.name || "",
     email: user?.email || "",
     password: "",
-    role: user?.role || "",
+    role_id: user?.roles?.[0]?.id ? String(user.roles[0].id) : "",
   });
 
   useEffect(() => {
@@ -65,9 +64,18 @@ const EditUser: React.FC = () => {
   };
 
   const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Users', href: '/users' },
-    { title: `Edit User`, href: `/users/edit/${user.id}` },
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+    },
+    {
+      title: 'Users',
+      href: '/users',
+    },
+    {
+      title: `Edit User`,
+      href: `/users/edit/${user.id}`,
+    },
   ];
 
   return (
@@ -124,22 +132,28 @@ const EditUser: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="role">Level</Label>
+                  <Label htmlFor="role_id">Level</Label>
                   <Select
-                    value={data.role}
-                    onValueChange={(value) => setData("role", value)}
+                    value={data.role_id}
+                    onValueChange={(value) => setData("role_id", value)}
                   >
-                    <SelectTrigger id="role" className="w-full">
-                      <SelectValue placeholder="Pilih role pengguna" />
+                    <SelectTrigger id="role_id" className="w-full">
+                      <SelectValue placeholder="Pilih level pengguna" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="superadmin">Super Admin</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="operator">Operator</SelectItem>
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {roles?.map((role: any) => (
+                        <SelectItem
+                          key={role.id}
+                          value={String(role.id)}
+                        >
+                          {role.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  {errors.role && (
-                    <p className="text-sm text-red-500">{errors.role}</p>
+                  {errors.role_id && (
+                    <p className="text-sm text-red-500">{errors.role_id}</p>
                   )}
                 </div>
 
