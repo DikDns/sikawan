@@ -46,8 +46,10 @@ import {
     Users as UsersIcon,
 } from 'lucide-react';
 import React, { useMemo, useState, useEffect } from 'react';
-import { Toaster, toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 import DeleteUser from '@/components/delete-user';
+import type { PageProps as InertiaPageProps } from '@inertiajs/core';
+import { useCan } from '@/utils/permissions';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -60,21 +62,44 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+export interface Role {
+    id: number;
+    name: string;
+    guard_name: string;
+}
+
 interface User {
     id: number;
     name: string;
     email: string;
-    role: 'superadmin' | 'admin' | 'operator';
+    roles?: Role[];
     email_verified_at: string | null;
     created_at: string;
+    permissions: string[];
+}
+
+export interface PageProps extends InertiaPageProps {
+    auth: {
+        user: User | null;
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    flash?: Record<string, any>;
+    [key: string]: unknown;
 }
 
 export default function Users() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterRole, setFilterRole] = useState<string>('all');
+    const [filterLevel, setFilterLevel] = useState<string>('all');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { flash, users } = usePage<{ flash?: any; users: User[] }>().props;
     const hasShownToast = React.useRef(false);
+
+    const { props } = usePage<PageProps>();
+    const { auth } = props;
+    const user = auth.user;
+    const can = useCan();
+
+    console.log(user?.permissions);
 
     useEffect(() => {
         if (!hasShownToast.current && (flash?.success || flash?.error)) {
@@ -109,9 +134,9 @@ export default function Users() {
     // Calculate statistics
     const stats = useMemo(() => {
         const totalUsers = users.length;
-        const adminUsers = users.filter((u: User) => u.role === 'admin').length;
+        const adminUsers = users.filter((u) => u.roles?.[0]?.name === 'admin').length;
         const operatorUsers = users.filter(
-            (u: User) => u.role === 'operator',
+            (u: User) => u.roles?.[0]?.name === 'operator',
         ).length;
 
         return {
@@ -121,12 +146,16 @@ export default function Users() {
         };
     }, [users]);
 
-    // Get unique roles for filter
-    const userRoles = useMemo(() => {
-        const uniqueRoles = Array.from(
-            new Set(users.map((u) => u.role))
+    // Get unique levels for filter
+    const userLevels = useMemo(() => {
+        const uniqueLevels = Array.from(
+            new Set(
+                users
+                    .map((u) => u.roles?.[0]?.name)
+                    .filter((v): v is string => typeof v === "string")
+            )
         );
-        return uniqueRoles.sort();
+        return uniqueLevels.sort();
     }, [users]);
 
     // Filter and search
@@ -137,21 +166,22 @@ export default function Users() {
                 user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.id.toString().includes(searchQuery);
 
-            const matchesRole =
-                filterRole === 'all' || user.role === filterRole;
+            const matchesLevel =
+                filterLevel === 'all' || user.roles?.[0]?.name === filterLevel;
 
-            return matchesSearch && matchesRole;
+            return matchesSearch && matchesLevel;
         });
-    }, [searchQuery, filterRole, users]);
+    }, [searchQuery, filterLevel, users]);
 
     // Helper function to get role icon
-    const getRoleIcon = (role: string) => {
+    const getLevelIcon = (levelName: string | undefined | null) => {
         const iconMap: Record<string, React.ReactNode> = {
             superadmin: <UserCog className="h-4 w-4 text-red-600" />,
             admin: <User className="h-4 w-4 text-blue-600" />,
             operator: <UsersIcon className="h-4 w-4 text-green-600" />,
         };
-        return iconMap[role] || <User className="h-4 w-4" />;
+
+        return levelName ? iconMap[levelName] ?? <User className="h-4 w-4" /> : <User className="h-4 w-4" />;
     };
 
     return (
@@ -233,13 +263,15 @@ export default function Users() {
                                         {users.length} pengguna
                                     </CardDescription>
                                 </div>
-                                <Button
-                                    onClick={handleAdd}
-                                    className="gap-2 sm:w-auto"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    <span>Tambah Pengguna</span>
-                                </Button>
+                                {can('users.create') && (
+                                    <Button
+                                        onClick={handleAdd}
+                                        className="gap-2 sm:w-auto"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        <span>Tambah Pengguna</span>
+                                    </Button>
+                                )}
                             </div>
                             {/* Search and Filters */}
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -257,8 +289,8 @@ export default function Users() {
                                 </div>
                                 <div className="flex gap-2">
                                     <Select
-                                        value={filterRole}
-                                        onValueChange={setFilterRole}
+                                        value={filterLevel}
+                                        onValueChange={setFilterLevel}
                                     >
                                         <SelectTrigger className="w-full sm:w-[180px]">
                                             <SelectValue placeholder="Peran Pengguna" />
@@ -267,12 +299,12 @@ export default function Users() {
                                             <SelectItem value="all">
                                                 Semua Level
                                             </SelectItem>
-                                            {userRoles.map((role) => (
+                                            {userLevels.map((level) => (
                                                 <SelectItem
-                                                    key={role}
-                                                    value={role}
+                                                    key={level}
+                                                    value={level}
                                                 >
-                                                    {role}
+                                                    {level}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -305,7 +337,7 @@ export default function Users() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    {getRoleIcon(user.role)}
+                                                    {getLevelIcon(user?.roles?.[0].name)}
                                                     <span className="font-medium">
                                                         {user.name}
                                                     </span>
@@ -315,19 +347,16 @@ export default function Users() {
                                             <TableCell>
                                                 <Badge
                                                     variant={
-                                                        user.role ===
+                                                        user.roles?.[0]?.name ===
                                                         'superadmin'
                                                             ? 'destructive'
-                                                            : user.role ===
+                                                            : user.roles?.[0]?.name ===
                                                                 'admin'
                                                               ? 'default'
-                                                              : user.role ===
-                                                                  'operator'
-                                                                ? 'secondary'
-                                                                : 'outline'
+                                                              : 'secondary'
                                                     }
                                                 >
-                                                    {user.role}
+                                                    {user.roles?.[0]?.name}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
@@ -338,62 +367,72 @@ export default function Users() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
+                                                {(can('users.view') || can('users.edit') || can('users.delete')) ? (
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            asChild
                                                         >
-                                                            <MoreVertical className="h-4 w-4" />
-                                                            <span className="sr-only">
-                                                                Open menu
-                                                            </span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>
-                                                            Aksi
-                                                        </DropdownMenuLabel>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleView(
-                                                                    user.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Lihat Detail
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    user.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    user.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Hapus
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                            >
+                                                                <MoreVertical className="h-4 w-4" />
+                                                                <span className="sr-only">
+                                                                    Open menu
+                                                                </span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>
+                                                                Aksi
+                                                            </DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            {can('users.view') && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleView(
+                                                                            user.id,
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer"
+                                                                >
+                                                                    <Eye className="mr-2 h-4 w-4" />
+                                                                    Lihat Detail
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {can('users.edit') && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            user.id,
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer"
+                                                                >
+                                                                    <Edit className="mr-2 h-4 w-4" />
+                                                                    Edit
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            <DropdownMenuSeparator />
+                                                            {can('users.delete') && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            user.id,
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer text-destructive focus:text-destructive"
+                                                                >
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    Hapus
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                ) : (
+                                                    <span className="text-muted-foreground text-sm">-</span>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -409,7 +448,7 @@ export default function Users() {
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="flex-1">
                                                 <div className="mb-2 flex items-center gap-2">
-                                                    {getRoleIcon(user.role)}
+                                                    {getLevelIcon(user.roles?.[0].name)}
                                                     <CardTitle className="text-base">
                                                         {user.name}
                                                     </CardTitle>
@@ -483,17 +522,16 @@ export default function Users() {
                                         <div className="flex flex-wrap gap-2">
                                             <Badge
                                                 variant={
-                                                    user.role === 'superadmin'
+                                                    user?.roles?.[0].name === 'superadmin'
                                                         ? 'destructive'
-                                                        : user.role === 'admin'
-                                                          ? 'default'
-                                                          : user.role ===
-                                                              'operator'
-                                                            ? 'secondary'
-                                                            : 'outline'
+                                                        : user?.roles?.[0].name === 'admin'
+                                                            ? 'default'
+                                                            : user?.roles?.[0].name === 'operator'
+                                                                ? 'secondary'
+                                                                : 'outline'
                                                 }
                                             >
-                                                {user.role}
+                                                {user?.roles?.[0].name || 'Tidak ada role'}
                                             </Badge>
                                             <Badge variant="outline">
                                                 {new Date(

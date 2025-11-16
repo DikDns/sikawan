@@ -13,21 +13,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call([
+            PermissionsFromRoutesSeeder::class,
+            RoleSeeder::class,
+        ]);
 
-        User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => 'superadmin@sikawan.com'],
             [
                 'name' => 'Super Admin',
                 'password' => 'password',
                 'email_verified_at' => now(),
-                'role' => 'superadmin',
             ]
         );
+        $user->assignRole('superadmin');
 
         // Seed households and related data
         $this->call([
             HouseholdSeeder::class,
+            AreaGroupSeeder::class,
         ]);
     }
 }

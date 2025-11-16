@@ -15,17 +15,20 @@ export interface HouseholdDraftData {
 
     // Step 2: General Info
     generalInfo?: {
-        houseId?: string;
-        dataCollectionDate?: string; // ISO date string for serialization
+        dataCollectionDate?: string;
         address?: string;
-        province?: string;
-        city?: string;
-        village?: string;
-        district?: string;
-        buildingOccupancyStatus?: string;
-        landOccupancyStatus?: string;
-        buildingLegality?: string;
-        landLegality?: string;
+        provinceId?: string;
+        provinceName?: string;
+        regencyId?: string;
+        regencyName?: string;
+        districtId?: string;
+        districtName?: string;
+        villageId?: string;
+        villageName?: string;
+        ownershipStatusBuilding?: string;
+        ownershipStatusLand?: string;
+        buildingLegalStatus?: string;
+        landLegalStatus?: string;
         nik?: string;
         headOfHouseholdName?: string;
         mainOccupation?: string;
@@ -38,8 +41,57 @@ export interface HouseholdDraftData {
         totalMembers?: number;
     };
 
-    // Step 3: Technical Data (will be added later)
-    // Step 4: Map Location (will be added later)
+    // Step 3: Technical Data
+    technicalData?: {
+        // A.1 KETERATURAN BANGUNAN HUNIAN
+        hasRoadAccess?: boolean;
+        roadWidthCategory?: string;
+        facadeFacesRoad?: boolean;
+        facesWaterbody?: boolean | 'NONE';
+        inSetbackArea?: boolean | 'NONE';
+        inHazardArea?: boolean;
+
+        // A.2 KELAYAKAN BANGUNAN HUNIAN
+        buildingLengthM?: number;
+        buildingWidthM?: number;
+        floorCount?: number;
+        floorHeightM?: number;
+
+        // Material & Kondisi
+        roofMaterial?: string;
+        roofCondition?: string;
+        wallMaterial?: string;
+        wallCondition?: string;
+        floorMaterial?: string;
+        floorCondition?: string;
+
+        // A.3 AKSES AIR MINUM
+        waterSource?: string;
+        waterDistanceToSepticM?: number;
+        waterDistanceCategory?: string;
+        waterFulfillment?: string;
+
+        // A.4 PENGELOLAAN SANITASI
+        defecationPlace?: string;
+        toiletType?: string;
+        sewageDisposal?: string;
+
+        // A.5 PENGELOLAAN SAMPAH
+        wasteDisposalPlace?: string;
+        wasteCollectionFrequency?: string;
+
+        // SUMBER LISTRIK
+        electricitySource?: string;
+        electricityPowerWatt?: number;
+        electricityConnected?: boolean;
+    };
+
+    // Step 4: Map Location
+    mapLocation?: {
+        latitude?: number | string;
+        longitude?: number | string;
+    };
+
     // Step 5: Assistance (will be added later)
 
     // Metadata
@@ -77,33 +129,65 @@ export function useHouseholdDraft() {
     // Returns a Promise that resolves when save is complete
     const saveDraft = useCallback((): Promise<void> => {
         return new Promise((resolve, reject) => {
-            // Create a serializable version for comparison
+            // Create a serializable version for comparison (include generalInfo, technicalData, and mapLocation!)
             const serializableData = {
                 photos: draftData.photos.map((photo) => ({
                     id: photo.id,
                     uploaded: photo.uploaded || false,
                     path: photo.path,
                 })),
+                generalInfo: draftData.generalInfo,
+                technicalData: draftData.technicalData,
+                mapLocation: draftData.mapLocation,
                 householdId: draftData.householdId,
             };
             const dataString = JSON.stringify(serializableData);
 
             // Skip if data hasn't changed since last save
             if (lastSavedDraft === dataString) {
+                console.log('⏭️ Skipping save - no changes detected');
                 resolve();
                 return;
             }
 
-            // Only save if there are new files to upload OR if we have an existing household
+            // Check if there's any data to save
             const hasNewFiles = draftData.photos.some(
                 (photo) => photo.file && !photo.uploaded,
             );
+            const hasGeneralInfo =
+                draftData.generalInfo &&
+                Object.keys(draftData.generalInfo).length > 0;
+            const hasTechnicalData =
+                draftData.technicalData &&
+                Object.keys(draftData.technicalData).length > 0;
+            const hasMapLocation =
+                draftData.mapLocation &&
+                Object.keys(draftData.mapLocation).length > 0;
+            const hasExistingHousehold = !!draftData.householdId;
 
-            if (!hasNewFiles && !draftData.householdId) {
-                // No new files and no existing household, skip save
+            // Skip if there's nothing to save
+            if (
+                !hasNewFiles &&
+                !hasGeneralInfo &&
+                !hasTechnicalData &&
+                !hasMapLocation &&
+                !hasExistingHousehold
+            ) {
+                console.log('⏭️ Skipping save - no data to save');
                 resolve();
                 return;
             }
+
+            console.log('💾 Saving draft...', {
+                hasNewFiles,
+                hasGeneralInfo,
+                hasTechnicalData,
+                hasMapLocation,
+                hasExistingHousehold,
+                generalInfo: draftData.generalInfo,
+                technicalData: draftData.technicalData,
+                mapLocation: draftData.mapLocation,
+            });
 
             setIsSaving(true);
             try {
@@ -143,6 +227,30 @@ export function useHouseholdDraft() {
                     );
                 }
 
+                // Add general info data
+                if (draftData.generalInfo) {
+                    formData.append(
+                        'general_info',
+                        JSON.stringify(draftData.generalInfo),
+                    );
+                }
+
+                // Add technical data
+                if (draftData.technicalData) {
+                    formData.append(
+                        'technical_data',
+                        JSON.stringify(draftData.technicalData),
+                    );
+                }
+
+                // Add map location data
+                if (draftData.mapLocation) {
+                    formData.append(
+                        'map_location',
+                        JSON.stringify(draftData.mapLocation),
+                    );
+                }
+
                 // Use router.post with redirect - Inertia will handle the redirect
                 router.post('/households/draft', formData, {
                     preserveState: true,
@@ -160,6 +268,9 @@ export function useHouseholdDraft() {
                                     preview: string;
                                     uploaded: boolean;
                                 }>;
+                                generalInfo?: HouseholdDraftData['generalInfo'];
+                                technicalData?: HouseholdDraftData['technicalData'];
+                                mapLocation?: HouseholdDraftData['mapLocation'];
                                 lastSaved: string;
                             };
                         };
@@ -187,6 +298,15 @@ export function useHouseholdDraft() {
                                         path: photo.path,
                                     }),
                                 ),
+                                generalInfo:
+                                    props.draft.generalInfo ||
+                                    draftData.generalInfo,
+                                technicalData:
+                                    props.draft.technicalData ||
+                                    draftData.technicalData,
+                                mapLocation:
+                                    props.draft.mapLocation ||
+                                    draftData.mapLocation,
                             };
 
                             setDraftData(updatedData);
@@ -204,11 +324,15 @@ export function useHouseholdDraft() {
                                         path: photo.path,
                                     }),
                                 ),
+                                generalInfo: updatedData.generalInfo,
+                                technicalData: updatedData.technicalData,
+                                mapLocation: updatedData.mapLocation,
                                 householdId: updatedData.householdId,
                             };
                             setLastSavedDraft(
                                 JSON.stringify(updatedSerializable),
                             );
+                            console.log('✅ Draft saved successfully!');
                         }
                         setIsSaving(false);
                         resolve();
@@ -282,6 +406,16 @@ export function useHouseholdDraft() {
                             path: photo.path,
                         }),
                     ),
+                    generalInfo: data.draft.generalInfo,
+                    technicalData: data.draft.technicalData,
+                    mapLocation: {
+                        latitude: parseFloat(
+                            data.draft.mapLocation.latitude.toString(),
+                        ),
+                        longitude: parseFloat(
+                            data.draft.mapLocation.longitude.toString(),
+                        ),
+                    },
                     householdId: data.draft.householdId,
                     lastSaved: data.draft.lastSaved,
                 };
@@ -294,6 +428,9 @@ export function useHouseholdDraft() {
                         uploaded: photo.uploaded || false,
                         path: photo.path,
                     })),
+                    generalInfo: draftData.generalInfo,
+                    technicalData: draftData.technicalData,
+                    mapLocation: draftData.mapLocation,
                     householdId: draftData.householdId,
                 };
                 setLastSavedDraft(JSON.stringify(serializableData));

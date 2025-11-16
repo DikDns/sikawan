@@ -56,7 +56,7 @@ export interface Household {
     female_count: number;
     disabled_count: number;
     main_occupation: string | null;
-    monthly_income_idr: number | null;
+    monthly_income_idr: string | null;
     health_facility_used: string | null;
     health_facility_location: string | null;
     education_facility_location: string | null;
@@ -99,11 +99,13 @@ export interface HouseholdTechnicalData {
     // A.3 Akses Air
     water_source: string | null;
     water_distance_to_septic_m: number | null;
+    water_distance_category: string | null;
     water_fulfillment: string | null;
 
     // Listrik
     electricity_source: string | null;
     electricity_power_watt: number | null;
+    electricity_connected: boolean | null;
 
     // A.4 Sanitasi
     defecation_place: string | null;
@@ -136,6 +138,7 @@ export interface HouseAssistance {
     completed_at: string | null;
     cost_amount_idr: number | null;
     description: string | null;
+    document_path: string | null;
 }
 
 export interface HouseholdPhoto {

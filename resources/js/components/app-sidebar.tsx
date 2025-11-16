@@ -10,67 +10,92 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import {
+    areas,
+    dashboard,
+    distributionMap,
+    infrastructure,
+    levels,
+    messages,
+    users,
+} from '@/routes';
 import { type NavItem } from '@/types';
+import { useCan } from '@/utils/permissions';
 import { Link } from '@inertiajs/react';
 import {
     FileText,
     Home,
+    LayersIcon,
     LayoutGrid,
     MapPin,
     MessageSquare,
-    Square,
+    Shield,
     Users,
     Wrench,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Peta Sebaran',
-        href: '/distribution-map',
-        icon: MapPin,
-    },
-    {
-        title: 'Rumah',
-        href: '/households',
-        icon: Home,
-    },
-    {
-        title: 'Kawasan',
-        href: '/areas',
-        icon: Square,
-    },
-    {
-        title: 'PSU',
-        href: '/infrastructure',
-        icon: Wrench,
-    },
-    {
-        title: 'Laporan',
-        href: '/reports',
-        icon: FileText,
-    },
-    {
-        title: 'Pesan',
-        href: '/messages',
-        icon: MessageSquare,
-    },
-    {
-        title: 'Pengguna',
-        href: '/users',
-        icon: Users,
-    },
-];
-
-const footerNavItems: NavItem[] = [];
-
 export function AppSidebar() {
+    const can = useCan();
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+            show: true,
+        },
+        {
+            title: 'Peta Sebaran',
+            href: distributionMap(),
+            icon: MapPin,
+            show: can('distribution-map'),
+        },
+        {
+            title: 'Rumah',
+            href: '/households',
+            icon: Home,
+            show: can('households.index'),
+        },
+        {
+            title: 'Kawasan',
+            href: areas(),
+            icon: LayersIcon,
+            show: can('areas'),
+        },
+        {
+            title: 'PSU',
+            href: infrastructure(),
+            icon: Wrench,
+            show: can('infrastructure'),
+        },
+        {
+            title: 'Laporan',
+            href: '/reports',
+            icon: FileText,
+            show: can('reports'),
+        },
+        {
+            title: 'Pesan',
+            href: messages(),
+            icon: MessageSquare,
+            show: can('messages'),
+        },
+        {
+            title: 'Pengguna',
+            href: users(),
+            icon: Users,
+            show: can('users'),
+        },
+        {
+            title: 'Level',
+            href: levels(),
+            icon: Shield,
+            show: can('levels'),
+        },
+    ].filter((item) => item.show);
+
+    const footerNavItems: NavItem[] = [];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

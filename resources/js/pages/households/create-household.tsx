@@ -1,6 +1,10 @@
+import AssistanceStep from '@/components/household/assistance-step';
 import GeneralInfoStep from '@/components/household/general-info-step';
+import { validateGeneralInfo } from '@/components/household/general-info-step/validation';
+import MapLocationStep from '@/components/household/map-location-step';
 import MultiStepForm from '@/components/household/multi-step-form';
 import PhotoStep from '@/components/household/photo-step';
+import TechnicalDataStep from '@/components/household/technical-data-step';
 import {
     useHouseholdDraft,
     type HouseholdDraftData,
@@ -8,7 +12,8 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 type PhotoFile = HouseholdDraftData['photos'][number];
 
@@ -27,6 +32,9 @@ interface Props {
             preview: string;
             uploaded: boolean;
         }>;
+        generalInfo?: HouseholdDraftData['generalInfo'];
+        technicalData?: HouseholdDraftData['technicalData'];
+        mapLocation?: HouseholdDraftData['mapLocation'];
         lastSaved: string;
     } | null;
 }
@@ -41,7 +49,9 @@ const STEPS = [
 
 export default function CreateHousehold({ draft: initialDraft }: Props) {
     const [currentStep, setCurrentStep] = useState(1);
-    const { updateDraft, saveDraft, isSaving } = useHouseholdDraft();
+    const [isFinalizing, setIsFinalizing] = useState(false);
+    const { updateDraft, saveDraft, isSaving, draftData, clearDraft } =
+        useHouseholdDraft();
     const [photos, setPhotos] = useState<PhotoFile[]>(() => {
         // Initialize photos from initialDraft if available
         if (initialDraft) {
@@ -68,6 +78,9 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             );
             updateDraft({
                 photos: draftPhotos,
+                generalInfo: initialDraft.generalInfo,
+                technicalData: initialDraft.technicalData,
+                mapLocation: initialDraft.mapLocation,
                 householdId: initialDraft.householdId,
                 lastSaved: initialDraft.lastSaved,
             });
@@ -81,7 +94,97 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [photos]);
 
+    const handleFinalize = async () => {
+        if (!draftData.householdId) {
+            toast.error('Household ID tidak ditemukan');
+            return;
+        }
+
+        if (
+            !confirm('Apakah Anda yakin ingin menyimpan pendataan rumah ini?')
+        ) {
+            return;
+        }
+
+        setIsFinalizing(true);
+
+        try {
+            // Save draft first
+            await saveDraft();
+
+            const csrfToken = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content');
+
+            const response = await fetch(
+                `/households/${draftData.householdId}/finalize`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(
+                    errorData.message ||
+                        `HTTP error! status: ${response.status}`,
+                );
+            }
+
+            const data = await response.json();
+            toast.success(data.message || 'Pendataan rumah berhasil disimpan');
+
+            // Clear draft from local storage
+            clearDraft();
+
+            // Redirect to household list after 1.5 seconds
+            setTimeout(() => {
+                router.visit('/households');
+            }, 500);
+        } catch (error) {
+            console.error('Error finalizing household:', error);
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Gagal menyimpan pendataan rumah';
+            toast.error(errorMessage);
+            setIsFinalizing(false);
+        }
+    };
+
     const handleNext = async () => {
+        console.log('🚀 handleNext called', {
+            currentStep,
+            draftData: {
+                photos: draftData.photos.length,
+                generalInfo: draftData.generalInfo,
+                householdId: draftData.householdId,
+            },
+        });
+
+        // Validate General Info Step before proceeding
+        if (currentStep === 2 && draftData.generalInfo) {
+            const validation = validateGeneralInfo(draftData.generalInfo);
+            if (!validation.isValid) {
+                const firstError = Object.values(validation.errors)[0];
+                toast.error(
+                    firstError || 'Mohon lengkapi data yang wajib diisi',
+                );
+                return;
+            }
+        }
+
+        // If last step, finalize instead of moving to next step
+        if (currentStep === STEPS.length) {
+            await handleFinalize();
+            return;
+        }
+
         try {
             // Save draft before moving to next step
             await saveDraft();
@@ -91,8 +194,8 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             }
         } catch (error) {
             // Error saving draft - show error message or prevent navigation
-            console.error('Failed to save draft:', error);
-            // Optionally: show toast notification or error message to user
+            console.error('❌ Failed to save draft:', error);
+            toast.error('Gagal menyimpan data. Silakan coba lagi.');
         }
     };
 
@@ -110,6 +213,15 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
         setPhotos(newPhotos);
     };
 
+    const handleMapLocationChange = useCallback(
+        (data: HouseholdDraftData['mapLocation']) => {
+            console.log('📝 MapLocationStep onChange called', data);
+            // Update draft with map location
+            updateDraft({ mapLocation: data });
+        },
+        [updateDraft],
+    );
+
     const renderStepContent = () => {
         switch (currentStep) {
             case 1:
@@ -122,19 +234,48 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             case 2:
                 return (
                     <GeneralInfoStep
-                        data={{}}
+                        data={draftData.generalInfo || {}}
                         onChange={(data) => {
+                            console.log(
+                                '📝 GeneralInfoStep onChange called',
+                                data,
+                            );
                             // Update draft with general info data
                             updateDraft({ generalInfo: data });
                         }}
                     />
                 );
             case 3:
-                return <div>Data Teknis (Coming Soon)</div>;
+                return (
+                    <TechnicalDataStep
+                        data={draftData.technicalData || {}}
+                        onChange={(data) => {
+                            console.log(
+                                '📝 TechnicalDataStep onChange called',
+                                data,
+                            );
+                            // Update draft with technical data
+                            updateDraft({ technicalData: data });
+                        }}
+                    />
+                );
             case 4:
-                return <div>Lokasi Peta (Coming Soon)</div>;
+                return (
+                    <MapLocationStep
+                        data={draftData.mapLocation || {}}
+                        onChange={handleMapLocationChange}
+                        provinceId={draftData.generalInfo?.provinceId}
+                        provinceName={draftData.generalInfo?.provinceName}
+                        regencyId={draftData.generalInfo?.regencyId}
+                        regencyName={draftData.generalInfo?.regencyName}
+                        districtId={draftData.generalInfo?.districtId}
+                        districtName={draftData.generalInfo?.districtName}
+                        villageId={draftData.generalInfo?.villageId}
+                        villageName={draftData.generalInfo?.villageName}
+                    />
+                );
             case 5:
-                return <div>Bantuan (Coming Soon)</div>;
+                return <AssistanceStep householdId={draftData.householdId} />;
             default:
                 return null;
         }
@@ -150,9 +291,12 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
                 onClose={handleClose}
                 onNext={handleNext}
                 onPrevious={handlePrevious}
-                canGoNext={currentStep < STEPS.length}
+                canGoNext={true}
                 canGoPrevious={currentStep > 1}
-                isLoading={isSaving}
+                isLoading={isSaving || isFinalizing}
+                nextButtonText={
+                    currentStep === STEPS.length ? 'Simpan' : undefined
+                }
             >
                 {renderStepContent()}
             </MultiStepForm>

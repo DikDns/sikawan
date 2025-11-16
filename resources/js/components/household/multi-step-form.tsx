@@ -21,6 +21,7 @@ interface MultiStepFormProps {
     canGoNext?: boolean;
     canGoPrevious?: boolean;
     isLoading?: boolean;
+    nextButtonText?: string;
 }
 
 export default function MultiStepForm({
@@ -34,6 +35,7 @@ export default function MultiStepForm({
     canGoNext = true,
     canGoPrevious = true,
     isLoading = false,
+    nextButtonText,
 }: MultiStepFormProps) {
     const currentStepIndex = currentStep - 1;
 
@@ -133,7 +135,9 @@ export default function MultiStepForm({
                         disabled={!canGoNext || isLoading}
                         className="bg-[#A7F300] text-black hover:bg-[#A7F300]/90"
                     >
-                        {isLoading ? 'Menyimpan...' : 'Lanjutkan'}
+                        {isLoading
+                            ? 'Menyimpan...'
+                            : nextButtonText || 'Lanjutkan'}
                     </Button>
                 </CardContent>
             </Card>

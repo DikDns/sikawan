@@ -110,7 +110,7 @@ const ViewUser: React.FC = () => {
                   <Input
                     id="role"
                     type="role"
-                    value={user.role}
+                    value={user.roles?.[0]?.name}
                     disabled
                     className="bg-gray-100 cursor-not-allowed"
                   />

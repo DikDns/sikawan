@@ -10,14 +10,14 @@ const prefersDark = () => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
 };
 
-const setCookie = (name: string, value: string, days = 365) => {
-    if (typeof document === 'undefined') {
-        return;
-    }
+// const setCookie = (name: string, value: string, days = 365) => {
+//     if (typeof document === 'undefined') {
+//         return;
+//     }
 
-    const maxAge = days * 24 * 60 * 60;
-    document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
-};
+//     const maxAge = days * 24 * 60 * 60;
+//     document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
+// };
 
 const applyTheme = (appearance: Appearance) => {
     const isDark =
@@ -27,18 +27,18 @@ const applyTheme = (appearance: Appearance) => {
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 };
 
-const mediaQuery = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
+// const mediaQuery = () => {
+//     if (typeof window === 'undefined') {
+//         return null;
+//     }
 
-    return window.matchMedia('(prefers-color-scheme: dark)');
-};
+//     return window.matchMedia('(prefers-color-scheme: dark)');
+// };
 
-const handleSystemThemeChange = () => {
-    const currentAppearance = localStorage.getItem('appearance') as Appearance;
-    applyTheme(currentAppearance || 'system');
-};
+// const handleSystemThemeChange = () => {
+//     const currentAppearance = localStorage.getItem('appearance') as Appearance;
+//     applyTheme(currentAppearance || 'system');
+// };
 
 export function initializeTheme() {
     // Force light mode - ignore saved preferences
