@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title', 150);
             $table->text('description')->nullable();
-            $table->string('type', 50);
+            $table->enum('type', ['RUMAH', 'KAWASAN', 'PSU', 'UMUM']);
             $table->string('category', 50)->nullable();
             $table->string('file_path', 255)->nullable();
             $table->foreignId('generated_by')->nullable()->constrained('users')->nullOnDelete();

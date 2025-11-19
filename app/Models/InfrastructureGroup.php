@@ -11,7 +11,7 @@ class InfrastructureGroup extends Model
     use HasFactory;
 
     protected $fillable = [
-        'code','name','category','jenis','legend_color_hex','legend_icon','description','is_active'
+        'code','name','category','jenis','legend_color_hex','legend_icon','description','is_active', 'infrastructure_count'
     ];
 
     protected $casts = [

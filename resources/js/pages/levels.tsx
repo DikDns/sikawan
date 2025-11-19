@@ -31,7 +31,7 @@ import { useCan } from '@/utils/permissions';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Dashboard", href: "/dashboard" },
-  { title: "Roles", href: "/roles" },
+  { title: "Levels", href: "/levels" },
 ];
 
 interface Permission {

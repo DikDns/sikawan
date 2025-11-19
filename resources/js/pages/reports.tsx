@@ -45,6 +45,25 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import dayjs from "dayjs";
+import "dayjs/locale/id";
+import HouseholdStatusChart from '@/components/report/household-status-chart';
+import HouseholdLineChart from '@/components/report/household-line-chart';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
+import InfrastructureBarChart from '@/components/report/infrastructure-bar-chart';
+import ReportGenerateDialog from '@/components/report/create-report';
+import DeleteReport from '@/components/report/delete-report';
+import ReportViewDialog from '@/components/report/view-report';
+import EditReportDialog from '@/components/report/edit-report';
+
+dayjs.locale("id");
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -57,7 +76,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-// Mock data types based on schema
 interface Report {
     id: number;
     title: string;
@@ -69,140 +87,104 @@ interface Report {
     start_date: string | null;
     end_date: string | null;
     status: 'DRAFT' | 'GENERATED';
+    format?: "PDF" | "EXCEL" | null;
 }
 
-// Mock data - fully consistent with schema
-const MOCK_REPORTS: Report[] = [
-    {
-        id: 1501341233,
-        title: 'Laporan Kondisi Rumah Tahun 2025',
-        description:
-            'Laporan komprehensif kondisi perumahan di wilayah Muara Enim',
-        type: 'RUMAH',
-        category: 'Kelayakan',
-        file_path: '/storage/reports/laporan_rumah_2025.pdf',
-        generated_by: 1,
-        start_date: '2025-01-01',
-        end_date: '2025-12-31',
-        status: 'GENERATED',
-    },
-    {
-        id: 1501341234,
-        title: 'Analisis Kawasan Kumuh',
-        description: 'Identifikasi dan pemetaan kawasan kumuh di Muara Enim',
-        type: 'KAWASAN',
-        category: 'Infrastruktur',
-        file_path: '/storage/reports/kawasan_kumuh_2025.pdf',
-        generated_by: 1,
-        start_date: '2025-03-01',
-        end_date: '2025-06-30',
-        status: 'GENERATED',
-    },
-    {
-        id: 1501341235,
-        title: 'Laporan PSU Tahunan',
-        description: 'Tinjauan prasarana dan sarana infrastruktur',
-        type: 'PSU',
-        category: 'Infrastruktur',
-        file_path: '/storage/reports/psu_2025.pdf',
-        generated_by: 1,
-        start_date: '2025-01-01',
-        end_date: '2025-12-31',
-        status: 'DRAFT',
-    },
-    {
-        id: 1501341236,
-        title: 'Laporan Umum Pembangunan',
-        description: 'Ringkasan keseluruhan pembangunan di Muara Enim',
-        type: 'UMUM',
-        category: 'Pembangunan',
-        file_path: '/storage/reports/laporan_umum_2025.pdf',
-        generated_by: 1,
-        start_date: '2025-01-01',
-        end_date: '2025-12-31',
-        status: 'DRAFT',
-    },
-];
+type ReportItem = Report;
 
-export default function Reports() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function Reports({ reports, houses, infrastructures }: { reports: Report[], houses: any[], infrastructures: any[] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
     const [filterStatus, setFilterStatus] = useState<string>('all');
+    const [page, setPage] = useState(1);
+    const perPage = 5;
+    const formatDate = (date: string | null) =>
+        date ? dayjs(date).format("DD MMM YYYY") : "-";
+
+    const [viewDialog, setViewDialog] = useState({
+        open: false,
+        report: null as Report | null,
+    });
 
     // Action handlers
-    const handleView = (id: number) => {
-        console.log('View report:', id);
-        // TODO: Navigate to report detail page
+    const handleView = (report: Report) => {
+        setViewDialog({
+            open: true,
+            report: report,
+        });
     };
 
-    const handleEdit = (id: number) => {
-        console.log('Edit report:', id);
-        // TODO: Navigate to edit report page
+    const [editOpen, setEditOpen] = useState({
+        open: false,
+        report: null as Report | null,
+    });
+
+    const handleEdit = (report: Report) => {
+        setEditOpen({
+            open: true,
+            report: report,
+        })
     };
 
-    const handleDelete = (id: number) => {
-        console.log('Delete report:', id);
-        // TODO: Show confirmation dialog and delete
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [selectedReports, setSelectedReports] = useState<ReportItem[]>([]);
+
+   const handleDelete = (report: ReportItem) => {
+        setSelectedReports([report]);
+        setDeleteOpen(true);
     };
 
     const handleDownload = (filePath: string) => {
-        console.log('Download report:', filePath);
-        // TODO: Implement file download logic
-        window.open(filePath, '_blank');
+        const encoded = encodeURIComponent(filePath);
+        window.open(`/reports/download/${encoded}`, "_blank");
     };
 
     const handleAdd = () => {
-        console.log('Add new report');
-        // TODO: Navigate to add report page or open add modal
+        setOpenCreate(true);
     };
 
     // Calculate statistics
     const stats = useMemo(() => {
-        const totalReports = MOCK_REPORTS.length;
-        const generatedReports = MOCK_REPORTS.filter(
-            (r) => r.status === 'GENERATED',
-        ).length;
-        const draftReports = MOCK_REPORTS.filter(
-            (r) => r.status === 'DRAFT',
-        ).length;
+        const totalReports = reports.length;
+        const generatedReports = reports.filter(r => r.status === 'GENERATED').length;
+        const draftReports = reports.filter(r => r.status === 'DRAFT').length;
 
-        return {
-            totalReports,
-            generatedReports,
-            draftReports,
-        };
-    }, []);
+        return { totalReports, generatedReports, draftReports };
+    }, [reports]);
 
     // Get unique types for filter
     const reportTypes = useMemo(() => {
+        if (!reports) return [];
+
         const uniqueTypes = Array.from(
-            new Set(MOCK_REPORTS.map((r) => r.type)),
+            new Set(reports.map((r) => r.type))
         );
+
         return uniqueTypes.sort();
-    }, []);
+    }, [reports]);
 
-    // Filter and search
     const filteredReports = useMemo(() => {
-        return MOCK_REPORTS.filter((report) => {
-            const matchesSearch =
-                report.title
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
+        return reports.filter((report) => {
+            const matchSearch =
+                report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (report.description &&
-                    report.description
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase())) ||
-                report.id.toString().includes(searchQuery);
+                    report.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-            const matchesType =
-                filterType === 'all' || report.type === filterType;
+            const matchType = filterType === 'all' || report.type === filterType;
+            const matchStatus = filterStatus === 'all' || report.status === filterStatus;
 
-            const matchesStatus =
-                filterStatus === 'all' || report.status === filterStatus;
-
-            return matchesSearch && matchesType && matchesStatus;
+            return matchSearch && matchType && matchStatus;
         });
-    }, [searchQuery, filterType, filterStatus]);
+    }, [reports, searchQuery, filterType, filterStatus]);
+
+    const totalPages = Math.ceil(filteredReports.length / perPage);
+    const paginatedReports = filteredReports.slice((page - 1) * perPage, page * perPage);
+    const [openCreate, setOpenCreate] = useState(false);
+    const truncateText = (text: string, maxLength: number = 50) => {
+        if (!text) return "";
+        return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -279,7 +261,7 @@ export default function Reports() {
                                     <CardTitle>Daftar Laporan</CardTitle>
                                     <CardDescription>
                                         Menampilkan {filteredReports.length}{' '}
-                                        dari {MOCK_REPORTS.length} laporan
+                                        dari {reports.length} laporan
                                     </CardDescription>
                                 </div>
                                 <Button
@@ -287,7 +269,7 @@ export default function Reports() {
                                     className="gap-2 sm:w-auto"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    <span>Tambah Laporan</span>
+                                    <span>Buat Laporan</span>
                                 </Button>
                             </div>
                             {/* Search and Filters */}
@@ -366,7 +348,7 @@ export default function Reports() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredReports.map((report) => (
+                                    {paginatedReports.map((report) => (
                                         <TableRow key={report.id}>
                                             <TableCell className="font-medium">
                                                 {report.id}
@@ -374,11 +356,11 @@ export default function Reports() {
                                             <TableCell>
                                                 <div>
                                                     <div className="font-medium">
-                                                        {report.title}
+                                                        {truncateText(report.title, 50)}
                                                     </div>
                                                     {report.description && (
                                                         <div className="text-sm text-muted-foreground">
-                                                            {report.description}
+                                                            {truncateText(report.description, 60)}
                                                         </div>
                                                     )}
                                                 </div>
@@ -402,8 +384,9 @@ export default function Reports() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="text-sm">
-                                                    {report.start_date} -{' '}
-                                                    {report.end_date}
+                                                    {`${report.start_date ? formatDate(report.start_date) : "Semua"} - ${
+                                                        report.end_date ? formatDate(report.end_date) : "Semua"
+                                                    }`}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -430,7 +413,7 @@ export default function Reports() {
                                                         <DropdownMenuItem
                                                             onClick={() =>
                                                                 handleView(
-                                                                    report.id,
+                                                                    report,
                                                                 )
                                                             }
                                                             className="cursor-pointer"
@@ -453,7 +436,7 @@ export default function Reports() {
                                                         <DropdownMenuItem
                                                             onClick={() =>
                                                                 handleEdit(
-                                                                    report.id,
+                                                                    report,
                                                                 )
                                                             }
                                                             className="cursor-pointer"
@@ -465,7 +448,7 @@ export default function Reports() {
                                                         <DropdownMenuItem
                                                             onClick={() =>
                                                                 handleDelete(
-                                                                    report.id,
+                                                                    report,
                                                                 )
                                                             }
                                                             className="cursor-pointer text-destructive focus:text-destructive"
@@ -484,7 +467,7 @@ export default function Reports() {
 
                         {/* Mobile Card View */}
                         <div className="space-y-4 md:hidden">
-                            {filteredReports.map((report) => (
+                            {paginatedReports.map((report) => (
                                 <Card key={report.id}>
                                     <CardHeader className="pb-3">
                                         <div className="flex items-start justify-between gap-2">
@@ -518,7 +501,7 @@ export default function Reports() {
                                                     <DropdownMenuItem
                                                         onClick={() =>
                                                             handleView(
-                                                                report.id,
+                                                                report,
                                                             )
                                                         }
                                                         className="cursor-pointer"
@@ -541,7 +524,7 @@ export default function Reports() {
                                                     <DropdownMenuItem
                                                         onClick={() =>
                                                             handleEdit(
-                                                                report.id,
+                                                                report,
                                                             )
                                                         }
                                                         className="cursor-pointer"
@@ -553,7 +536,7 @@ export default function Reports() {
                                                     <DropdownMenuItem
                                                         onClick={() =>
                                                             handleDelete(
-                                                                report.id,
+                                                                report,
                                                             )
                                                         }
                                                         className="cursor-pointer text-destructive focus:text-destructive"
@@ -586,16 +569,71 @@ export default function Reports() {
                                                 {report.status}
                                             </Badge>
                                             <Badge variant="outline">
-                                                {report.start_date} -{' '}
-                                                {report.end_date}
+                                                {`${report.start_date ? formatDate(report.start_date) : "Semua"} - ${
+                                                    report.end_date ? formatDate(report.end_date) : "Semua"
+                                                }`}
                                             </Badge>
                                         </div>
                                     </CardContent>
                                 </Card>
                             ))}
                         </div>
+                        {/* pagination */}
+                        <div className="mt-6 flex justify-center">
+                            <Pagination>
+                                <PaginationContent>
+
+                                    <PaginationItem>
+                                        <PaginationPrevious
+                                            onClick={() => page > 1 && setPage(page - 1)}
+                                        />
+                                    </PaginationItem>
+
+                                    {Array.from({ length: totalPages }).map((_, idx) => (
+                                        <PaginationItem key={idx}>
+                                            <PaginationLink
+                                                isActive={page === idx + 1}
+                                                onClick={() => setPage(idx + 1)}
+                                            >
+                                                {idx + 1}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    ))}
+
+                                    <PaginationItem>
+                                        <PaginationNext
+                                            onClick={() => page < totalPages && setPage(page + 1)}
+                                        />
+                                    </PaginationItem>
+
+                                </PaginationContent>
+                            </Pagination>
+                        </div>
                     </CardContent>
                 </Card>
+                <HouseholdStatusChart houses={houses} />
+                <HouseholdLineChart houses={houses} />
+                <InfrastructureBarChart infrastructures={infrastructures} />
+                <ReportGenerateDialog
+                    open={openCreate}
+                    onOpenChange={setOpenCreate}
+                />
+                <DeleteReport
+                    open={deleteOpen}
+                    onOpenChange={setDeleteOpen}
+                    reports={selectedReports}
+                    onDeleted={() => console.log("Report deleted!")}
+                />
+                <ReportViewDialog
+                    open={viewDialog.open}
+                    onOpenChange={(open) => setViewDialog({ ...viewDialog, open })}
+                    report={viewDialog.report}
+                />
+                <EditReportDialog
+                    open={editOpen.open}
+                    onOpenChange={(open) => setEditOpen({ ...editOpen, open })}
+                    report={editOpen.report}
+                />
             </div>
         </AppLayout>
     );

@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             HouseholdSeeder::class,
             AreaGroupSeeder::class,
+            InfrastructureGroupSeeder::class,
+            ReportSeeder::class,
         ]);
     }
 }
