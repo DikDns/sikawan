@@ -127,9 +127,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 
-    Route::get('infrastructure', function () {
-        return Inertia::render('infrastructure');
-    })->name('infrastructure');
+    Route::get('infrastructure', [App\Http\Controllers\InfrastructureGroupController::class, 'index'])->name('infrastructure');
+    Route::post('infrastructure', [App\Http\Controllers\InfrastructureGroupController::class, 'store'])->name('infrastructure.store');
+    Route::match(['put','patch'], 'infrastructure/{id}', [App\Http\Controllers\InfrastructureGroupController::class, 'update'])->name('infrastructure.update');
+    Route::delete('infrastructure/{id}', [App\Http\Controllers\InfrastructureGroupController::class, 'destroy'])->name('infrastructure.destroy');
+
+    Route::get('infrastructure/{groupId}', [App\Http\Controllers\InfrastructureController::class, 'show'])->name('infrastructure.show');
+    Route::post('infrastructure/{groupId}/items', [App\Http\Controllers\InfrastructureController::class, 'store'])->name('infrastructure.items.store');
+    Route::put('infrastructure/{groupId}/items/{itemId}', [App\Http\Controllers\InfrastructureController::class, 'update'])->name('infrastructure.items.update');
+    Route::delete('infrastructure/{groupId}/items/{itemId}', [App\Http\Controllers\InfrastructureController::class, 'destroy'])->name('infrastructure.items.destroy');
 
     Route::get('reports', function () {
         return Inertia::render('reports');
