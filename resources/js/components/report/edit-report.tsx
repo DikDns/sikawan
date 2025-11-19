@@ -8,7 +8,6 @@ import {
     DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,7 +38,6 @@ export default function EditReportDialog({ open, onOpenChange, report }: EditRep
         return date.split("T")[0];
     };
 
-    // Sync saat report berubah
     useEffect(() => {
         setFormData(report);
     }, [report]);
@@ -96,10 +94,8 @@ export default function EditReportDialog({ open, onOpenChange, report }: EditRep
                         Ubah data laporan dan periode report.
                     </DialogDescription>
                 </DialogHeader>
-
                 <form onSubmit={handleSubmit} id="edit-report-form">
                     <div className="max-h-[70vh] overflow-y-auto px-6 pb-4 space-y-4">
-                        {/* Title */}
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-medium">Judul Laporan</label>
                             <Input
@@ -108,8 +104,6 @@ export default function EditReportDialog({ open, onOpenChange, report }: EditRep
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             />
                         </div>
-
-                        {/* Description */}
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-medium">Deskripsi (opsional)</label>
                             <Textarea
@@ -120,8 +114,6 @@ export default function EditReportDialog({ open, onOpenChange, report }: EditRep
                                 }
                             />
                         </div>
-
-                        {/* Start & End Date */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-medium">Tanggal Mulai</label>
@@ -141,7 +133,6 @@ export default function EditReportDialog({ open, onOpenChange, report }: EditRep
                                     }
                                 />
                             </div>
-
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-medium">Tanggal Selesai</label>
                                 <Input

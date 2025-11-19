@@ -29,10 +29,8 @@ interface Household {
 
 export default function HouseholdLineChart({ houses }: { houses: Household[] }) {
     const today = dayjs().endOf('day');
-
     const defaultEnd = today;
     const defaultStart = today.subtract(10, "day").startOf('day');
-
     const [startDate, setStartDate] = useState(defaultStart);
     const [endDate, setEndDate] = useState(defaultEnd);
 
@@ -49,7 +47,6 @@ export default function HouseholdLineChart({ houses }: { houses: Household[] }) 
 
     const chartData = useMemo(() => {
         const range = generateDateRange(startDate, endDate);
-
         const grouped: Record<string, number> = {};
 
         range.forEach((d) => (grouped[d] = 0));
@@ -88,9 +85,7 @@ export default function HouseholdLineChart({ houses }: { houses: Household[] }) 
         <Card className="w-full">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle>Jumlah Rumah Per Tanggal</CardTitle>
-
                 <div className="flex items-center gap-3">
-                    {/* start Date */}
                     <div className="flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
                         <input
@@ -101,8 +96,6 @@ export default function HouseholdLineChart({ houses }: { houses: Household[] }) 
                             className="border rounded px-2 py-1 text-sm"
                         />
                     </div>
-
-                    {/* end Date */}
                     <div className="flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
                         <input
@@ -114,7 +107,6 @@ export default function HouseholdLineChart({ houses }: { houses: Household[] }) 
                             className="border rounded px-2 py-1 text-sm"
                         />
                     </div>
-
                     <Button variant="ghost" size="sm" className="gap-2">
                         {startDate.format("DD MMM")} - {endDate.format("DD MMM")}
                         <ChevronDown className="w-4 h-4" />

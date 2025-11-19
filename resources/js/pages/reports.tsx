@@ -190,7 +190,6 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Laporan" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
-                {/* Header */}
                 <div>
                     <h1 className="text-2xl font-bold">Laporan</h1>
                     <p className="text-muted-foreground">
@@ -611,9 +610,12 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                         </div>
                     </CardContent>
                 </Card>
+                {/* charts */}
                 <HouseholdStatusChart houses={houses} />
                 <HouseholdLineChart houses={houses} />
                 <InfrastructureBarChart infrastructures={infrastructures} />
+
+                {/* dialogs */}
                 <ReportGenerateDialog
                     open={openCreate}
                     onOpenChange={setOpenCreate}

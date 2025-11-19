@@ -9,7 +9,6 @@ import {
     Tooltip,
     CartesianGrid,
 } from "recharts";
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useState } from "react";
 import dayjs from "dayjs";
@@ -39,7 +38,6 @@ function CustomTooltip({ active, payload }: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function InfrastructureBarChart({ infrastructures }: { infrastructures: any[] }) {
-
     const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(null);
     const [endDate, setEndDate] = useState<dayjs.Dayjs | null>(null);
     const today = dayjs();
@@ -120,7 +118,6 @@ export default function InfrastructureBarChart({ infrastructures }: { infrastruc
                             />
                             <YAxis />
                             <Tooltip content={<CustomTooltip />} />
-
                             <Bar
                                 dataKey="count"
                                 radius={[6, 6, 0, 0]}

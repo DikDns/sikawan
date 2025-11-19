@@ -84,7 +84,6 @@ export default function HouseholdCharts({ houses }: { houses: Household[] }) {
             <Card>
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
                     <CardTitle className="text-lg">Status Kelayakan Rumah</CardTitle>
-
                     <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
                         <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                             {totalHouses}

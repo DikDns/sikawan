@@ -43,7 +43,6 @@ export default function ReportGenerateDialog({
         if (Object.keys(errors).length > 0) {
             toast.error("Periksa kembali input Anda, terdapat kesalahan pada form.");
         }
-
         if (props.flash?.success) {
             toast.success(props.flash.success.message);
         }
