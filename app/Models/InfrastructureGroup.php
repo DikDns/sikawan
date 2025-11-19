@@ -8,15 +8,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InfrastructureGroup extends Model
 {
-    use HasFactory;
+  use HasFactory;
 
-    protected $fillable = [
-        'code','name','category','jenis','legend_color_hex','legend_icon','description','is_active'
-    ];
+  protected $fillable = [
+    'code',
+    'name',
+    'category',
+    'type',
+    'legend_color_hex',
+    'legend_icon',
+    'description',
+  ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
-
-    public function infrastructures(): HasMany { return $this->hasMany(Infrastructure::class); }
+  public function infrastructures(): HasMany
+  {
+    return $this->hasMany(Infrastructure::class);
+  }
 }

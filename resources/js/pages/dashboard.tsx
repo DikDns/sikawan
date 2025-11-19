@@ -1,9 +1,14 @@
 import { AnalysisChart } from '@/components/dashboard/analysis-chart';
+import { AreaSummaryTable } from '@/components/dashboard/area-summary-table';
 import { BottomStats } from '@/components/dashboard/bottom-stats';
 import { ChartSection } from '@/components/dashboard/chart-section';
 import { EconomicDataTable } from '@/components/dashboard/economic-data-table';
 import { DashboardHeader } from '@/components/dashboard/header';
+import { Header2 } from '@/components/dashboard/header-2';
+import { PSUSection } from '@/components/dashboard/psu-section';
+import { RegionStatistics } from '@/components/dashboard/region-statistics';
 import { StatCards } from '@/components/dashboard/stat-cards';
+import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
@@ -26,6 +31,16 @@ export default function Dashboard() {
                         <BottomStats />
                         <EconomicDataTable />
                     </div>
+
+                    <Separator />
+
+                    <Header2 />
+                    <RegionStatistics />
+
+                    <Separator />
+
+                    <PSUSection />
+                    <AreaSummaryTable />
                 </main>
             </div>
         </AppLayout>
