@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SuperAdmin\LogController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -167,6 +168,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/reports/destroy', 'destroy')->name('reports.destroy');
         Route::get('/reports/download/{encoded}', 'download')->where('encoded', '.*')->name('reports.download');
         Route::post('/reports/update/{report_id}', 'update')->name('reports.update');
+    });
+
+    Route::prefix('superadmin/logs')->middleware(['auth','verified','role:superadmin'])->group(function() {
+        Route::get('/', [LogController::class, 'index'])->name('superadmin.logs.index');
+        Route::get('/export', [LogController::class, 'export'])->name('superadmin.logs.export');
+        Route::resource('activity', LogController::class)->names([
+            'index' => 'superadmin.logs.activity.index',
+            'create' => 'superadmin.logs.activity.create',
+            'store' => 'superadmin.logs.activity.store',
+            'show' => 'superadmin.logs.activity.show',
+            'edit' => 'superadmin.logs.activity.edit',
+            'update' => 'superadmin.logs.activity.update',
+            'destroy' => 'superadmin.logs.activity.destroy',
+        ]);
     });
 
     // Wilayah API Routes (for cascading select)
