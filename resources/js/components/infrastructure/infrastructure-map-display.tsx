@@ -93,7 +93,7 @@ export function InfrastructureMapDisplay({
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: 28,
+        width: 28,
           height: 28,
           backgroundColor: '#ffffff',
           borderRadius: 9999,
