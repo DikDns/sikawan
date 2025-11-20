@@ -9,9 +9,6 @@ use Illuminate\Database\Seeder;
 
 class InfrastructureGroupSeeder extends Seeder
 {
-  /**
-   * Run the database seeds.
-   */
   public function run(): void
   {
     $groups = [
@@ -91,13 +88,11 @@ class InfrastructureGroupSeeder extends Seeder
 
     foreach ($groups as $groupData) {
       $group = new InfrastructureGroup($groupData);
-      // Default nilai untuk kolom NOT NULL agar insert tidak gagal
       if (\Illuminate\Support\Facades\Schema::hasColumn('infrastructure_groups', 'infrastructure_count')) {
         $group->infrastructure_count = 0;
       }
       $group->save();
 
-      // Seed infrastructures based on group type
       if ($group->type === 'Marker') {
         $points = [
           [106.816666, -6.200000],
@@ -143,7 +138,6 @@ class InfrastructureGroupSeeder extends Seeder
           ]);
         }
       } else {
-        // Optional: Polygon sample (if later groups include Polygon)
         $polygon = [
           [106.810000, -6.210000],
           [106.815000, -6.208000],
@@ -162,7 +156,6 @@ class InfrastructureGroupSeeder extends Seeder
         ]);
       }
 
-      // Sinkronisasi jumlah setelah seed infrastructures
       if (\Illuminate\Support\Facades\Schema::hasColumn('infrastructure_groups', 'infrastructure_count')) {
         $group->infrastructure_count = $group->infrastructures()->count();
         $group->save();

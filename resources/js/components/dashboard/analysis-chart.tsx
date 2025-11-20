@@ -14,7 +14,7 @@ import {
     YAxis,
 } from 'recharts';
 
-const analysisData = [
+const fallbackAnalysisData = [
     { year: '2014', rumah: 45, rlh: 35, rtuh: 40, rumahBaru: 30 },
     { year: '2015', rumah: 50, rlh: 38, rtuh: 42, rumahBaru: 32 },
     { year: '2016', rumah: 48, rlh: 40, rtuh: 45, rumahBaru: 35 },
@@ -29,7 +29,7 @@ const analysisData = [
     { year: '2025', rumah: 95, rlh: 62, rtuh: 85, rumahBaru: 58 },
 ];
 
-export function AnalysisChart() {
+export function AnalysisChart({ data }: { data?: any[] }) {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -42,7 +42,7 @@ export function AnalysisChart() {
             <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
                     <LineChart
-                        data={analysisData}
+                        data={data && data.length > 0 ? data : fallbackAnalysisData}
                         margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                     >
                         <CartesianGrid strokeDasharray="3 3" />

@@ -10,13 +10,13 @@ import {
     Tooltip,
 } from 'recharts';
 
-const chartData = [
+const fallbackChartData = [
     { name: 'Belum Dioperasikan', value: 280, fill: '#ef4444' },
     { name: 'Sedang Dioperasikan', value: 0, fill: '#fbbf24' },
     { name: 'Selesai', value: 100, fill: '#10b981' },
 ];
 
-export function ChartSection() {
+export function ChartSection({ rtlhData, rumahBaruData }: { rtlhData?: { name: string; value: number; fill: string }[]; rumahBaruData?: { name: string; value: number; fill: string }[] }) {
     return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Perolehan RTUH */}
@@ -37,7 +37,7 @@ export function ChartSection() {
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
                             <Pie
-                                data={chartData}
+                                data={(rtlhData && rtlhData.length > 0 ? rtlhData : fallbackChartData) as any}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={60}
@@ -45,7 +45,7 @@ export function ChartSection() {
                                 paddingAngle={2}
                                 dataKey="value"
                             >
-                                {chartData.map((entry, index) => (
+                                {(rtlhData && rtlhData.length > 0 ? rtlhData : fallbackChartData).map((entry, index) => (
                                     <Cell
                                         key={`cell-${index}`}
                                         fill={entry.fill}
@@ -77,7 +77,7 @@ export function ChartSection() {
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
                             <Pie
-                                data={[
+                                data={(rumahBaruData && rumahBaruData.length > 0 ? rumahBaruData : [
                                     {
                                         name: 'Butuh Dibangun',
                                         value: 280,
@@ -93,7 +93,7 @@ export function ChartSection() {
                                         value: 100,
                                         fill: '#10b981',
                                     },
-                                ]}
+                                ]) as any}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={60}
@@ -101,11 +101,15 @@ export function ChartSection() {
                                 paddingAngle={2}
                                 dataKey="value"
                             >
-                                {[
-                                    { fill: '#6366f1' },
-                                    { fill: '#fbbf24' },
-                                    { fill: '#10b981' },
-                                ].map((entry, index) => (
+                                {(
+                                    rumahBaruData && rumahBaruData.length > 0
+                                        ? rumahBaruData
+                                        : [
+                                              { fill: '#6366f1' },
+                                              { fill: '#fbbf24' },
+                                              { fill: '#10b981' },
+                                          ]
+                                ).map((entry: any, index: number) => (
                                     <Cell
                                         key={`cell-${index}`}
                                         fill={entry.fill}

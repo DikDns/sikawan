@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Building2, Hammer, Home, Plus } from 'lucide-react';
 
-const stats = [
+const fallbackStats = [
     {
         label: 'Rumah',
         value: '40,689',
@@ -32,7 +32,21 @@ const stats = [
     },
 ];
 
-export function StatCards() {
+type StatItem = { label: string; value: number | string };
+
+export function StatCards({ data }: { data?: StatItem[] }) {
+    const stats = (data && data.length > 0 ? data : fallbackStats).map((s) => {
+        const mapIcon = (label: string) => {
+            if (label === 'Rumah') return Home;
+            if (label === 'RLH') return Building2;
+            if (label === 'RTLH') return Hammer;
+            return Plus;
+        };
+        const icon = 'icon' in s ? (s as any).icon : mapIcon((s as any).label);
+        const bgColor = 'bgColor' in s ? (s as any).bgColor : 'bg-blue-100 dark:bg-blue-900';
+        const iconColor = 'iconColor' in s ? (s as any).iconColor : 'text-blue-600 dark:text-blue-400';
+        return { ...s, icon, bgColor, iconColor } as any;
+    });
     return (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat) => {

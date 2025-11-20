@@ -11,36 +11,37 @@ import { StatCards } from '@/components/dashboard/stat-cards';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
 ];
 
 export default function Dashboard() {
+    const { statCardsData, analysisData, chartSectionData, psuData, improvedPSUData, bottomStatsData, economicData, areaSummaryRows, regionStats } = usePage().props as any;
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <main className="min-h-screen space-y-6 bg-background">
                     <DashboardHeader />
-                    <StatCards />
-                    <ChartSection />
-                    <AnalysisChart />
+                    <StatCards data={statCardsData} />
+                    <ChartSection rtlhData={chartSectionData?.rtlh} rumahBaruData={chartSectionData?.rumahBaru} />
+                    <AnalysisChart data={analysisData} />
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <BottomStats />
-                        <EconomicDataTable />
+                        <BottomStats data={bottomStatsData} />
+                        <EconomicDataTable data={economicData} />
                     </div>
 
                     <Separator />
 
                     <Header2 />
-                    <RegionStatistics />
+                    <RegionStatistics items={regionStats} />
 
                     <Separator />
 
-                    <PSUSection />
-                    <AreaSummaryTable />
+                    <PSUSection psuData={psuData} improvedPSUData={improvedPSUData} />
+                    <AreaSummaryTable rows={areaSummaryRows} />
                 </main>
             </div>
         </AppLayout>

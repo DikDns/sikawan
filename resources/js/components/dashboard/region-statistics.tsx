@@ -1,28 +1,21 @@
 import { RegionCard } from './region-card';
 
-const regions = [
-    { name: 'Lawang Kidul', houses: '40,689 Rumah' },
-    { name: 'Tanjung Agung', houses: '40,689 Rumah' },
-    { name: 'Rambang', houses: '40,689 Rumah' },
-    { name: 'Rambang Niru', houses: '40,689 Rumah' },
-    { name: 'Belimbing', houses: '40,689 Rumah' },
-];
-
-const chartData = [
-    { label: 'RLH', value: 15000, color: '#B2F02C' },
-    { label: 'RTLH', value: 25689, color: '#FFAA22' },
-    { label: 'Butuh Rumah Baru', value: 25689, color: '#655B9C' },
-];
-
-export function RegionStatistics() {
+export function RegionStatistics({ items }: { items?: Array<{ region: { name: string; houses: string }; data: Array<{ label: string; value: number; color: string }> }> }) {
+    const fallbackItems = [
+        {
+            region: { name: 'Contoh Wilayah', houses: '0 Rumah' },
+            data: [
+                { label: 'RLH', value: 0, color: '#B2F02C' },
+                { label: 'RTLH', value: 0, color: '#FFAA22' },
+                { label: 'Butuh Rumah Baru', value: 0, color: '#655B9C' },
+            ],
+        },
+    ];
+    const data = items && items.length > 0 ? items : fallbackItems;
     return (
         <div className="space-y-4">
-            {regions.map((region) => (
-                <RegionCard
-                    key={region.name}
-                    region={region}
-                    data={chartData}
-                />
+            {data.map((it, idx) => (
+                <RegionCard key={`${it.region.name}-${idx}`} region={it.region} data={it.data} />
             ))}
         </div>
     );

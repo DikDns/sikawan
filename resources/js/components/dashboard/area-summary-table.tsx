@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 
-const tableData = [
+const fallbackRows = [
     { name: 'Kawasan Kumuh', rumah: 4, psu: 4 },
     { name: 'Kawasan Rawan Bencana', rumah: 2, psu: 2 },
     { name: 'Industri', rumah: 3, psu: 3 },
@@ -10,7 +10,8 @@ const tableData = [
     { name: 'Perkantoran', rumah: 3, psu: 3 },
 ];
 
-export function AreaSummaryTable() {
+export function AreaSummaryTable({ rows }: { rows?: Array<{ name: string; rumah: number; psu: number }> }) {
+    const data = rows && rows.length > 0 ? rows : fallbackRows;
     return (
         <div className="rounded-lg border border-border bg-card p-6">
             <div className="mb-6 flex items-center justify-between">
@@ -18,7 +19,7 @@ export function AreaSummaryTable() {
                     <h2 className="text-lg font-semibold text-foreground">
                         Total Kawasan
                     </h2>
-                    <p className="text-3xl font-bold text-secondary">6</p>
+                    <p className="text-3xl font-bold text-secondary">{data.length}</p>
                 </div>
                 <Button
                     variant="outline"
@@ -45,7 +46,7 @@ export function AreaSummaryTable() {
                         </tr>
                     </thead>
                     <tbody>
-                        {tableData.map((row, idx) => (
+                        {data.map((row, idx) => (
                             <tr
                                 key={idx}
                                 className="border-b border-border transition-colors hover:bg-muted"
