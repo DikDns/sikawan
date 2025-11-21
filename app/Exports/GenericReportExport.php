@@ -2,58 +2,39 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class GenericReportExport implements FromArray
+class GenericReportExport implements WithMultipleSheets
 {
     protected $data;
 
     public function __construct($data)
     {
-        $this->data = $this->formatData($data);
+        $this->data = $data;
     }
 
-    private function formatData($data)
+    public function sheets(): array
     {
-        $result = [];
+        $sheets = [];
 
-        if (isset($data['houses']) || isset($data['psu']) || isset($data['areas'])) {
-
-            foreach ($data as $groupName => $rows) {
-
-                if ($rows->isEmpty()) continue;
-
-                $result[] = [$groupName];
-                $result[] = [];
-
-                $first = $rows->first()->toArray();
-                $result[] = array_keys($first);
-
-                foreach ($rows as $row) {
-                    $result[] = array_values($row->toArray());
-                }
-
-                $result[] = [];
-                $result[] = [];
+        if (isset($this->data['houses']) || isset($this->data['psu']) || isset($this->data['areas'])) {
+            if (!empty($this->data['houses'])) {
+                $sheets[] = new SingleSheetExport('Rumah', $this->data['houses']);
             }
 
-            return $result;
-        }
-
-        if (!$data->isEmpty()) {
-            $first = $data->first()->toArray();
-            $result[] = array_keys($first);
-
-            foreach ($data as $row) {
-                $result[] = array_values($row->toArray());
+            if (!empty($this->data['psu'])) {
+                $sheets[] = new SingleSheetExport('PSU', $this->data['psu']);
             }
+
+            if (!empty($this->data['areas'])) {
+                $sheets[] = new SingleSheetExport('Kawasan', $this->data['areas']);
+            }
+
+            return $sheets;
         }
 
-        return $result;
-    }
+        $sheets[] = new SingleSheetExport('Data', $this->data);
 
-    public function array(): array
-    {
-        return $this->data;
+        return $sheets;
     }
 }
