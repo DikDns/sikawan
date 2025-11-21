@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\LevelController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SuperAdmin\LogController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -14,9 +17,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('distribution-map', function () {
         try {
@@ -127,13 +128,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 
-    Route::get('infrastructure', function () {
-        return Inertia::render('infrastructure');
-    })->name('infrastructure');
+    Route::get('infrastructure', [App\Http\Controllers\InfrastructureGroupController::class, 'index'])->name('infrastructure');
+    Route::post('infrastructure', [App\Http\Controllers\InfrastructureGroupController::class, 'store'])->name('infrastructure.store');
+    Route::match(['put','patch'], 'infrastructure/{id}', [App\Http\Controllers\InfrastructureGroupController::class, 'update'])->name('infrastructure.update');
+    Route::delete('infrastructure/{id}', [App\Http\Controllers\InfrastructureGroupController::class, 'destroy'])->name('infrastructure.destroy');
 
-    Route::get('reports', function () {
-        return Inertia::render('reports');
-    })->name('reports');
+    Route::get('infrastructure/{groupId}', [App\Http\Controllers\InfrastructureController::class, 'show'])->name('infrastructure.show');
+    Route::post('infrastructure/{groupId}/items', [App\Http\Controllers\InfrastructureController::class, 'store'])->name('infrastructure.items.store');
+    Route::put('infrastructure/{groupId}/items/{itemId}', [App\Http\Controllers\InfrastructureController::class, 'update'])->name('infrastructure.items.update');
+    Route::delete('infrastructure/{groupId}/items/{itemId}', [App\Http\Controllers\InfrastructureController::class, 'destroy'])->name('infrastructure.items.destroy');
 
     Route::controller(UserController::class)->group(function() {
         Route::get('/users', 'index')->name('users');
@@ -157,6 +160,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/messages', 'index')->name('messages');
         Route::post('/messages/store', 'store')->name('messages.store');
         Route::post('/messages/destroy', 'destroy')->name('messages.destroy');
+    });
+
+    Route::controller(ReportController::class)->group(function() {
+        Route::get('/reports', 'index')->name('reports');
+        Route::post('/reports/store', 'store')->name('reports.store');
+        Route::post('/reports/destroy', 'destroy')->name('reports.destroy');
+        Route::get('/reports/download/{encoded}', 'download')->where('encoded', '.*')->name('reports.download');
+        Route::post('/reports/update/{report_id}', 'update')->name('reports.update');
+    });
+
+    Route::prefix('superadmin/logs')->middleware(['auth','verified','role:superadmin'])->group(function() {
+        Route::get('/', [LogController::class, 'index'])->name('superadmin.logs.index');
+        Route::get('/export', [LogController::class, 'export'])->name('superadmin.logs.export');
+        Route::resource('activity', LogController::class)->names([
+            'index' => 'superadmin.logs.activity.index',
+            'create' => 'superadmin.logs.activity.create',
+            'store' => 'superadmin.logs.activity.store',
+            'show' => 'superadmin.logs.activity.show',
+            'edit' => 'superadmin.logs.activity.edit',
+            'update' => 'superadmin.logs.activity.update',
+            'destroy' => 'superadmin.logs.activity.destroy',
+        ]);
     });
 
     // Wilayah API Routes (for cascading select)

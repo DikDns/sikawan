@@ -1,0 +1,143 @@
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Field, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { getCsrfToken, handleCsrfError } from '@/lib/csrf'
+
+export interface InfrastructureItemForm {
+  id?: number
+  name: string
+  description?: string | null
+  geometry_type?: 'Point' | 'LineString' | 'Polygon'
+  geometry_json?: unknown
+}
+
+export interface InfrastructureFormDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  groupId: number
+  item?: InfrastructureItemForm | null
+  onSuccess: () => void
+}
+
+export function InfrastructureFormDialog({ open, onOpenChange, groupId, item, onSuccess }: InfrastructureFormDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formData, setFormData] = useState<InfrastructureItemForm>(() => (
+    item ? {
+      name: item.name || '',
+      description: item.description || '',
+      geometry_type: item.geometry_type,
+      geometry_json: item.geometry_json,
+    } : {
+      name: '',
+      description: '',
+      geometry_json: null,
+    }
+  ))
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    setIsSubmitting(true)
+    try {
+      const payload: any = {
+        name: formData.name,
+        description: formData.description || null,
+        geometry_type: formData.geometry_type,
+        geometry_json: formData.geometry_json,
+      }
+
+      const url = item
+        ? `/infrastructure/${groupId}/items/${item.id}`
+        : `/infrastructure/${groupId}/items`
+
+      const method = item ? 'PUT' : 'POST'
+
+      const csrfToken = getCsrfToken()
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify(method === 'PUT' ? { ...payload, _method: 'PUT' } : payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        if (response.status === 419 || (errorData.message && String(errorData.message).includes('CSRF'))) {
+          toast.error(handleCsrfError(response, errorData))
+          return
+        }
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json().catch(() => ({}))
+      toast.success(data.message || 'PSU berhasil disimpan')
+      onOpenChange(false)
+      onSuccess()
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Gagal menyimpan PSU'
+      toast.error(msg)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {item ? 'Edit PSU' : 'Tambah PSU'}
+          </DialogTitle>
+          <DialogDescription>
+            {item ? 'Perbarui informasi PSU' : 'Tambahkan informasi PSU baru'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4">
+            <Field>
+              <FieldLabel>
+                Nama <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Contoh: Posyandu 1"
+                required
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel>Deskripsi</FieldLabel>
+              <Textarea
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Tambahkan deskripsi..."
+                rows={3}
+              />
+            </Field>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {item ? 'Simpan Perubahan' : 'Tambah PSU'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

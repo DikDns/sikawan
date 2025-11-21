@@ -760,7 +760,19 @@ type InitialRectangle = {
     color?: string
     id?: number
 }
-type InitialShape = InitialPolygon | InitialRectangle
+type InitialMarker = {
+    type: "marker"
+    position: [number, number]
+    color?: string
+    id?: number
+}
+type InitialPolyline = {
+    type: "polyline"
+    positions: [number, number][]
+    color?: string
+    id?: number
+}
+type InitialShape = InitialPolygon | InitialRectangle | InitialMarker | InitialPolyline
 interface MapDrawContextType {
     readonly featureGroup: L.FeatureGroup | null
     activeMode: MapDrawMode
@@ -891,6 +903,38 @@ function MapDrawControl({
                         return
                     }
                     const layer = L.rectangle(bounds, {
+                        color: shape.color || "var(--color-primary)",
+                        weight: 2,
+                        opacity: 1,
+                    })
+                    ;(layer as any).__initialId = shape.id ?? null
+                    group.addLayer(layer)
+                    addedCount += 1
+                } else if (shape.type === "marker") {
+                    const pos = shape.position
+                    const valid = isValidLatLngPair(pos)
+                    if (!valid) {
+                        console.error("Invalid marker position", shape)
+                        return
+                    }
+                    const layer = L.marker(pos, {
+                        icon: L.divIcon({
+                            className: "",
+                            iconAnchor: [12, 12],
+                            html: renderToString(<MapPinIcon className="size-6" />),
+                        }),
+                    })
+                    ;(layer as any).__initialId = shape.id ?? null
+                    group.addLayer(layer)
+                    addedCount += 1
+                } else if (shape.type === "polyline") {
+                    const positions = shape.positions
+                    const valid = Array.isArray(positions) && positions.every(isValidLatLngPair)
+                    if (!valid) {
+                        console.error("Invalid polyline positions", shape)
+                        return
+                    }
+                    const layer = L.polyline(positions, {
                         color: shape.color || "var(--color-primary)",
                         weight: 2,
                         opacity: 1,

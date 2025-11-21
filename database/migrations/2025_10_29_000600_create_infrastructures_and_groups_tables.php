@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('legend_icon', 80)->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->integer('infrastructure_count');
             $table->timestamps();
             $table->index(['category', 'jenis']);
             $table->index('is_active');

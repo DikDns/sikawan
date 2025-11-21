@@ -2,15 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
 
-const economicData = [
+const fallbackEconomicData = [
   { indicator: "Pendapatan rata-rata", value: "Rp4,2 juta/bulan" },
-  { indicator: "Tingkat Pengangguran", value: "5,3%" },
-  { indicator: "Tingkat Kemiskinan Mutlak", value: "9.249 jiwa" },
-  { indicator: "Akses Pendidikan Dasar", value: "97%" },
-  { indicator: "Akses Kesehatan", value: "91%" },
+  { indicator: "Tingkat Pengangguran", value: "-" },
+  { indicator: "Akses Pendidikan Dasar", value: "-" },
+  { indicator: "Akses Kesehatan", value: "-" },
 ]
 
-export function EconomicDataTable() {
+export function EconomicDataTable({ data }: { data?: { indicator: string; value: string }[] }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -26,7 +25,7 @@ export function EconomicDataTable() {
             <div>Indikator</div>
             <div className="text-right">Nilai</div>
           </div>
-          {economicData.map((item, index) => (
+          {(data && data.length > 0 ? data : fallbackEconomicData).map((item, index) => (
             <div key={index} className="grid grid-cols-2 gap-4 py-2 text-sm">
               <div className="text-muted-foreground">{item.indicator}</div>
               <div className="text-right font-medium text-foreground">{item.value}</div>
