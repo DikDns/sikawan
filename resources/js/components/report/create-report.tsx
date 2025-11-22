@@ -16,8 +16,9 @@ import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from "@
 
 import { useEffect } from "react";
 import dayjs from "dayjs";
-import { useForm, usePage } from "@inertiajs/react";
+import { useForm, usePage, router } from "@inertiajs/react";
 import { toast } from "sonner";
+import * as htmlToImage from "html-to-image";
 
 export default function ReportGenerateDialog({
     open,
@@ -26,14 +27,27 @@ export default function ReportGenerateDialog({
 }: any) {
 
     const today = dayjs().format("YYYY-MM-DD");
+    const takeSnapshot = async (element: HTMLElement) => {
+        return await htmlToImage.toPng(element, {
+            quality: 1,
+            pixelRatio: 2,
+            cacheBust: true,
+            skipFonts: true,
+        });
+    }
 
-    const { data, setData, post, processing, reset, errors } = useForm({
+    const { data, setData, processing, reset, errors } = useForm({
         title: "",
         description: "",
         type: "",
         start_date: "",
         end_date: "",
         format: "PDF",
+
+        // charts data
+        chart_household_status: "",
+        chart_household_line: "",
+        chart_infrastructure: "",
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,14 +101,36 @@ export default function ReportGenerateDialog({
         }
     }, [props.flash?.success?.download_url, onOpenChange, reset]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        post("/reports/store", {
-            onSuccess: () => {},
-        });
-    };
+        const statusEl = document.getElementById("chart-status") as HTMLElement;
+        const lineEl = document.getElementById("chart-line") as HTMLElement;
+        const infraEl = document.getElementById("chart-infra") as HTMLElement;
 
+        if (!statusEl || !lineEl || !infraEl) {
+            toast.error("Chart belum siap untuk digenerate.");
+            return;
+        }
+
+        const base64Status = await takeSnapshot(statusEl);
+        const base64Line   = await takeSnapshot(lineEl);
+        const base64Infra  = await takeSnapshot(infraEl);
+
+        console.log('base64status: ',base64Status?.substring(0, 100));
+        console.log('base64line: ',base64Line?.substring(0, 100));
+        console.log('base64infra: ',base64Infra?.substring(0, 100));
+
+        router.post("/reports/store", {
+            ...data,
+            chart_household_status: base64Status,
+            chart_household_line: base64Line,
+            chart_infrastructure: base64Infra,
+        }, {
+            onSuccess: () => {},
+            onError: () => toast.error("Gagal membuat laporan."),
+        })
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -106,7 +142,7 @@ export default function ReportGenerateDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} encType="multipart/form-data">
                     <div className="max-h-[70vh] overflow-y-auto px-6 py-4 space-y-4">
                         <Input
                             placeholder="Judul laporan"

@@ -65,6 +65,16 @@
 
     {{-- households --}}
     @if ($type === 'RUMAH')
+        @if($chartStatus)
+            <h3>Grafik Status Rumah</h3>
+            <img src="{{ $chartStatus }}" style="width:100%; margin-bottom:20px;">
+        @endif
+
+        @if($chartLine)
+            <h3>Grafik Pertumbuhan Rumah</h3>
+            <img src="{{ $chartLine }}" style="width:100%; margin-bottom:20px;">
+        @endif
+
         <div class="section-title">Data Rumah Tangga</div>
 
         <table>
@@ -101,6 +111,11 @@
 
     {{-- psu --}}
     @if ($type === 'PSU')
+        @if($chartInfra)
+            <h3>Grafik Infrastruktur</h3>
+            <img src="{{ $chartInfra }}" style="width:100%; margin-bottom:20px;">
+        @endif
+
         <div class="section-title">Data PSU</div>
 
         <table>
@@ -154,6 +169,21 @@
         <p>Total Rumah: <b>{{ count($data['houses']) }}</b></p>
         <p>Total PSU: <b>{{ count($data['psu']) }}</b></p>
         <p>Total Kawasan: <b>{{ count($data['areas']) }}</b></p>
+
+        @if($chartStatus)
+            <h3>Grafik Status Rumah</h3>
+            <img src="{{ $chartStatus }}" style="width:100%; margin-bottom:20px;">
+        @endif
+
+        @if($chartLine)
+            <h3>Grafik Pertumbuhan Rumah</h3>
+            <img src="{{ $chartLine }}" style="width:100%; margin-bottom:20px;">
+        @endif
+
+        @if($chartInfra)
+            <h3>Grafik Infrastruktur</h3>
+            <img src="{{ $chartInfra }}" style="width:100%; margin-bottom:20px;">
+        @endif
 
         <div class="section-title">Data Rumah</div>
         <table>

@@ -10,7 +10,7 @@ import {
     CartesianGrid,
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/id";
 
@@ -37,7 +37,9 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function InfrastructureBarChart({ infrastructures }: { infrastructures: any[] }) {
+const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any[] }>(
+    function InfrastructureBarChart({ infrastructures }, ref)
+{
     const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(null);
     const [endDate, setEndDate] = useState<dayjs.Dayjs | null>(null);
     const today = dayjs();
@@ -60,7 +62,7 @@ export default function InfrastructureBarChart({ infrastructures }: { infrastruc
     const totalPSU = filteredData.reduce((sum, i) => sum + i.infrastructure_count, 0);
 
     return (
-        <Card>
+        <Card ref={ref}>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Jumlah PSU</CardTitle>
                 <div className="text-sm text-gray-500">
@@ -150,4 +152,6 @@ export default function InfrastructureBarChart({ infrastructures }: { infrastruc
             </CardContent>
         </Card>
     );
-}
+});
+
+export default InfrastructureBarChart;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, forwardRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     PieChart,
@@ -29,7 +29,9 @@ interface Household {
     created_at: string;
 }
 
-export default function HouseholdCharts({ houses }: { houses: Household[] }) {
+const HouseholdCharts= forwardRef<HTMLDivElement, { houses: Household[] }>(
+    function HouseholdCharts({ houses }, ref)
+{
     const today = dayjs().endOf("day");
     const [startStatus, setStartStatus] = useState<dayjs.Dayjs | null>(null);
     const [endStatus, setEndStatus] = useState<dayjs.Dayjs | null>(null);
@@ -81,7 +83,7 @@ export default function HouseholdCharts({ houses }: { houses: Household[] }) {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
+            <Card ref={ref}>
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
                     <CardTitle className="text-lg">Status Kelayakan Rumah</CardTitle>
                     <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
@@ -216,4 +218,6 @@ export default function HouseholdCharts({ houses }: { houses: Household[] }) {
             </Card>
         </div>
     );
-}
+});
+
+export default HouseholdCharts;

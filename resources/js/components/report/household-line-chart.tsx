@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, forwardRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     LineChart,
@@ -27,7 +27,7 @@ interface Household {
     habitability_status: string | null;
 }
 
-export default function HouseholdLineChart({ houses }: { houses: Household[] }) {
+const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(function HouseholdLineChart({ houses }, ref) {
     const today = dayjs().endOf('day');
     const defaultEnd = today;
     const defaultStart = today.subtract(10, "day").startOf('day');
@@ -82,7 +82,7 @@ export default function HouseholdLineChart({ houses }: { houses: Household[] }) 
     };
 
     return (
-        <Card className="w-full">
+        <Card className="w-full" ref={ref}>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle>Jumlah Rumah Per Tanggal</CardTitle>
                 <div className="flex items-center gap-3">
@@ -137,4 +137,6 @@ export default function HouseholdLineChart({ houses }: { houses: Household[] }) 
             </CardContent>
         </Card>
     );
-}
+});
+
+export default HouseholdLineChart;

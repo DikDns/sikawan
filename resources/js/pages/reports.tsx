@@ -44,7 +44,7 @@ import {
     Search,
     Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import dayjs from "dayjs";
 import "dayjs/locale/id";
 import HouseholdStatusChart from '@/components/report/household-status-chart';
@@ -97,6 +97,9 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
     const [filterStatus, setFilterStatus] = useState<string>('all');
+    const refLine = useRef<HTMLDivElement>(null);
+    const refStatus = useRef<HTMLDivElement>(null);
+    const refInfra = useRef<HTMLDivElement>(null);
     const [page, setPage] = useState(1);
     const perPage = 5;
     const formatDate = (date: string | null) =>
@@ -611,9 +614,15 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                     </CardContent>
                 </Card>
                 {/* charts */}
-                <HouseholdStatusChart houses={houses} />
-                <HouseholdLineChart houses={houses} />
-                <InfrastructureBarChart infrastructures={infrastructures} />
+                <div id="chart-status">
+                    <HouseholdStatusChart ref={refStatus} houses={houses} />
+                </div>
+                <div id="chart-line">
+                    <HouseholdLineChart ref={refLine} houses={houses} />
+                </div>
+                <div id="chart-infra">
+                    <InfrastructureBarChart ref={refInfra} infrastructures={infrastructures} />
+                </div>
 
                 {/* dialogs */}
                 <ReportGenerateDialog
@@ -624,7 +633,6 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                     open={deleteOpen}
                     onOpenChange={setDeleteOpen}
                     reports={selectedReports}
-                    onDeleted={() => console.log("Report deleted!")}
                 />
                 <ReportViewDialog
                     open={viewDialog.open}

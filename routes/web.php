@@ -164,7 +164,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::controller(ReportController::class)->group(function() {
         Route::get('/reports', 'index')->name('reports');
-        Route::post('/reports/store', 'store')->name('reports.store');
+        Route::post('/reports/store', 'store')->where('encoded', '.*')->name('reports.store');
         Route::post('/reports/destroy', 'destroy')->name('reports.destroy');
         Route::get('/reports/download/{encoded}', 'download')->where('encoded', '.*')->name('reports.download');
         Route::post('/reports/update/{report_id}', 'update')->name('reports.update');

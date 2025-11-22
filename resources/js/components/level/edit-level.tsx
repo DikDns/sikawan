@@ -101,7 +101,6 @@ export default function EditRole({ open, onOpenChange, role }: EditRoleProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] flex flex-col rounded-2xl overflow-hidden bg-background">
-                {/* Header */}
                 <DialogHeader className="px-6 pt-6 pb-2 border-b">
                     <DialogTitle className="text-xl font-semibold">
                         Edit Role
@@ -110,14 +109,11 @@ export default function EditRole({ open, onOpenChange, role }: EditRoleProps) {
                         Atur hak akses fitur yang bisa digunakan oleh role ini.
                     </DialogDescription>
                 </DialogHeader>
-
-                {/* Konten Scrollable */}
                 <form
                     id="edit-role-form"
                     onSubmit={handleSubmit}
                     className="flex-1 overflow-y-auto px-6 py-4 space-y-5"
                 >
-                    {/* Nama Role */}
                     <div>
                         <p className="text-sm text-muted-foreground mb-1">
                             Nama Role
@@ -140,13 +136,10 @@ export default function EditRole({ open, onOpenChange, role }: EditRoleProps) {
                             </p>
                         )}
                     </div>
-
-                    {/* Hak Akses */}
                     <div>
                         <p className="text-sm text-muted-foreground mb-2">
                             Hak Akses Fitur
                         </p>
-
                         <div className="space-y-4">
                             {formData.feature_groups.length === 0 ? (
                                 <p className="text-sm text-muted-foreground italic">
@@ -194,7 +187,6 @@ export default function EditRole({ open, onOpenChange, role }: EditRoleProps) {
                             )}
                         </div>
                     </div>
-
                     <div className="text-right text-xs text-muted-foreground">
                         Dibuat pada:{" "}
                         {new Date(formData.created_at).toLocaleDateString()}

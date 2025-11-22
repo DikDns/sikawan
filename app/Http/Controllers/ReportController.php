@@ -118,6 +118,10 @@ class ReportController extends Controller
         $filePath = "reports/" . $fileName;
 
         if ($format === 'PDF') {
+            $chartStatus = $request->chart_household_status;
+            $chartLine   = $request->chart_household_line;
+            $chartInfra  = $request->chart_infrastructure;
+
             $pdf = Pdf::loadView('reports.pdf', [
                 'title' => $request->title,
                 'description' => $request->description,
@@ -125,6 +129,9 @@ class ReportController extends Controller
                 'data' => $data,
                 'start' => $start,
                 'end' => $end,
+                'chartStatus' => $chartStatus,
+                'chartLine' => $chartLine,
+                'chartInfra' => $chartInfra,
             ]);
 
             File::put(storage_path("app/public/$filePath"), $pdf->output());
