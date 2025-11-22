@@ -350,7 +350,13 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {paginatedReports.map((report) => (
+                                    {paginatedReports.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                                                Tidak ada data laporan yang tersedia.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (paginatedReports.map((report) => (
                                         <TableRow key={report.id}>
                                             <TableCell className="font-medium">
                                                 {report.id}
@@ -462,14 +468,23 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                 </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )))}
                                 </TableBody>
                             </Table>
                         </div>
 
                         {/* Mobile Card View */}
                         <div className="space-y-4 md:hidden">
-                            {paginatedReports.map((report) => (
+                            {paginatedReports.length === 0 ? (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Data Tidak Ditemukan</CardTitle>
+                                        <CardDescription className="text-muted-foreground">
+                                            Tidak ada data laporan yang tersedia.
+                                        </CardDescription>
+                                    </CardHeader>
+                                </Card>
+                            ) : (paginatedReports.map((report) => (
                                 <Card key={report.id}>
                                     <CardHeader className="pb-3">
                                         <div className="flex items-start justify-between gap-2">
@@ -578,7 +593,7 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                         </div>
                                     </CardContent>
                                 </Card>
-                            ))}
+                            )))}
                         </div>
                         {/* pagination */}
                         <div className="mt-6 flex justify-center">

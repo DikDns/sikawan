@@ -33,7 +33,6 @@ class DatabaseSeeder extends Seeder
             HouseholdSeeder::class,
             AreaGroupSeeder::class,
             InfrastructureGroupSeeder::class,
-            ReportSeeder::class,
         ]);
     }
 }
