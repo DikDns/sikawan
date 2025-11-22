@@ -27,10 +27,13 @@ function CustomTooltip({ active, payload }: any) {
             <div className="font-semibold">{item.name}</div>
             <div>Jumlah: {item.count}</div>
             <div>
-                Jenis:{" "}
-                <span className={item.jenis === "SARANA" ? "text-purple-600" : "text-green-600"}>
-                    {item.jenis === "SARANA" ? "Sarana" : "Prasarana"}
+                Tipe:{" "}
+                <span className={item.type === "Polyline" ? "text-purple-600" : "text-green-600"}>
+                    {item.type === "Polyline" ? "Polyline" : "Marker"}
                 </span>
+            </div>
+            <div>
+                Kategori: {item.category}
             </div>
         </div>
     );
@@ -56,7 +59,8 @@ const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any
     const chartData = filteredData.map((item) => ({
         name: item.name,
         count: item.infrastructure_count,
-        jenis: item.jenis,
+        type: item.type,
+        category: item.category,
     }));
 
     const totalPSU = filteredData.reduce((sum, i) => sum + i.infrastructure_count, 0);
@@ -128,7 +132,7 @@ const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any
                                 shape={(props: any) => {
                                     const { x, y, width, height, payload } = props;
                                     const fillColor =
-                                        payload.jenis === "SARANA"
+                                        payload.type === "Polyline"
                                             ? "#8B5CF6"
                                             : "#22c55e";
                                     return (
