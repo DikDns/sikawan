@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Pagination } from '@/components/ui/pagination'
-import { Download, Trash2 } from 'lucide-react'
+import { Pager } from '@/components/ui/pagination'
+import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -17,25 +17,22 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function SuperadminLogs() {
   const { logs, filters } = usePage().props as any
-  const [userId, setUserId] = useState<string>(filters?.applied?.user_id || '')
-  const [model, setModel] = useState<string>(filters?.applied?.model || '')
+  const [userId, setUserId] = useState<string>(filters?.applied?.user_id || 'all')
+  const [model, setModel] = useState<string>(filters?.applied?.model || 'all')
   const [start, setStart] = useState<string>(filters?.applied?.start_date || '')
   const [end, setEnd] = useState<string>(filters?.applied?.end_date || '')
 
   const applyFilters = (page?: number) => {
-    const query: any = { user_id: userId || undefined, model: model || undefined, start_date: start || undefined, end_date: end || undefined }
+    const query: any = {
+      user_id: userId && userId !== 'all' ? userId : undefined,
+      model: model && model !== 'all' ? model : undefined,
+      start_date: start || undefined,
+      end_date: end || undefined,
+    }
     if (page) query.page = page
     router.get('/superadmin/logs', query, { preserveScroll: true, preserveState: true })
   }
 
-  const handleExport = () => {
-    const params = new URLSearchParams()
-    if (userId) params.append('user_id', userId)
-    if (model) params.append('model', model)
-    if (start) params.append('start_date', start)
-    if (end) params.append('end_date', end)
-    window.location.href = '/superadmin/logs/export?' + params.toString()
-  }
 
   const handleDelete = (id: number) => {
     router.delete(`/superadmin/logs/activity/${id}`, { preserveScroll: true })
@@ -50,23 +47,18 @@ export default function SuperadminLogs() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle>Audit Logs</CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleExport} className="gap-2">
-                <Download className="h-4 w-4" />
-                Export Excel
-              </Button>
-            </div>
+            
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
               <div className="space-y-2">
                 <label className="text-sm">User</label>
-                <Select value={userId} onValueChange={setUserId}>
+                <Select value={userId} onValueChange={(val) => setUserId(val || 'all')}>
                   <SelectTrigger>
                     <SelectValue placeholder="Semua user" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua</SelectItem>
+                    <SelectItem value="all">Semua</SelectItem>
                     {filters?.users?.map((u: any) => (
                       <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
                     ))}
@@ -75,12 +67,12 @@ export default function SuperadminLogs() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm">Model</label>
-                <Select value={model} onValueChange={setModel}>
+                <Select value={model} onValueChange={(val) => setModel(val || 'all')}>
                   <SelectTrigger>
                     <SelectValue placeholder="Semua model" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua</SelectItem>
+                    <SelectItem value="all">Semua</SelectItem>
                     {filters?.models?.map((m: any, idx: number) => (
                       <SelectItem key={idx} value={m.value}>{m.name}</SelectItem>
                     ))}
@@ -98,7 +90,7 @@ export default function SuperadminLogs() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <Button variant="secondary" onClick={() => applyFilters()}>Terapkan</Button>
-              <Button variant="ghost" onClick={() => { setUserId(''); setModel(''); setStart(''); setEnd(''); applyFilters() }}>Reset</Button>
+              <Button variant="ghost" onClick={() => { setUserId('all'); setModel('all'); setStart(''); setEnd(''); applyFilters() }}>Reset</Button>
             </div>
 
             <div className="mt-6 overflow-x-auto">
@@ -140,7 +132,7 @@ export default function SuperadminLogs() {
             </div>
 
             <div className="mt-4">
-              <Pagination
+              <Pager
                 page={logs?.current_page || 1}
                 pageCount={logs?.last_page || 1}
                 onChange={pageChange}

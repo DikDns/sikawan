@@ -32,6 +32,7 @@ import {
     Shield,
     Users,
     Wrench,
+    ScrollText,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
@@ -91,6 +92,12 @@ export function AppSidebar() {
             href: levels(),
             icon: Shield,
             show: can('levels'),
+        },
+        {
+            title: 'Logs',
+            href: '/superadmin/logs',
+            icon: ScrollText,
+            show: can('logs'),
         },
     ].filter((item) => item.show);
 

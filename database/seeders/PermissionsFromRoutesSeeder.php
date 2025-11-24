@@ -30,6 +30,7 @@ class PermissionsFromRoutesSeeder extends Seeder
             'levels.update',
             'levels.destroy',
             'levels.show',
+            'logs',
         ];
 
         foreach ($extraPermissions as $perm) {
