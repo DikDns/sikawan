@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Panduan Pengguna Aplikasi Si-Kawan</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="panduan-pengguna-aplikasi-si-kawan">Panduan Pengguna Aplikasi Si-Kawan</h1>
+<p><strong>Versi Dokumen:</strong> 1.0<br>
+<strong>Tanggal:</strong> 26 November 2024<br>
+<strong>Ditujukan untuk:</strong> Staff Mitra &amp; Pengguna Non-Teknis</p>
+<hr>
+<h2 id="daftar-isi">Daftar Isi</h2>
+<ol>
+<li><a href="#pengantar">Pengantar</a></li>
+<li><a href="#fitur-utama-aplikasi">Fitur Utama Aplikasi</a></li>
+<li><a href="#panduan-visual-alur-kerja">Panduan Visual Alur Kerja</a></li>
+<li><a href="#troubleshooting-dasar">Troubleshooting Dasar</a></li>
+<li><a href="#tips--best-practices">Tips &amp; Best Practices</a></li>
+<li><a href="#faq-tanya-jawab">FAQ (Tanya Jawab)</a></li>
+</ol>
+<hr>
+<h2 id="pengantar">Pengantar</h2>
+<p>Selamat datang di <strong>Si-Kawan</strong> (Sistem Informasi Perumahan &amp; Kawasan Pemukiman). Aplikasi ini dirancang untuk memudahkan pendataan, pemantauan, dan pelaporan kondisi perumahan serta prasarana, sarana, dan utilitas (PSU).</p>
+<p>Tujuan utama aplikasi ini adalah:</p>
+<ul>
+<li><strong>Digitalisasi Data:</strong> Mengubah catatan manual menjadi data digital yang aman dan mudah diakses.</li>
+<li><strong>Pemetaan Wilayah:</strong> Memvisualisasikan sebaran rumah layak huni dan tidak layak huni dalam peta interaktif.</li>
+<li><strong>Pelaporan Cepat:</strong> Menghasilkan laporan otomatis untuk kebutuhan administrasi dan pengambilan keputusan.</li>
+</ul>
+<p>Panduan ini disusun khusus untuk pengguna agar dapat menggunakan aplikasi Si-Kawan dengan lancar dan efektif.</p>
+<hr>
+<h2 id="fitur-utama-aplikasi">Fitur Utama Aplikasi</h2>
+<p>Berikut adalah fitur-fitur utama yang akan sering digunakan:</p>
+<h3 id="1-dashboard-beranda">1. Dashboard (Beranda)</h3>
+<p>Halaman pertama yang muncul setelah login. Dashboard memberikan gambaran cepat mengenai situasi terkini.</p>
+<ul>
+<li><strong>Kartu Statistik:</strong> Menampilkan angka total rumah, rumah layak huni (RLH), dan tidak layak huni (RTLH).</li>
+<li><strong>Grafik Analisis:</strong> Visualisasi tren data perumahan dan kondisi ekonomi warga.</li>
+<li><strong>Ringkasan Wilayah:</strong> Tabel ringkas yang menunjukkan data per kecamatan atau desa.</li>
+</ul>
+<h3 id="2-data-rumah-households">2. Data Rumah (Households)</h3>
+<p>Pusat pengelolaan data rumah tangga.</p>
+<ul>
+<li><strong>Daftar Rumah:</strong> Melihat seluruh data rumah yang telah diinput.</li>
+<li><strong>Input Data Bertahap:</strong> Formulir pengisian data yang dibagi menjadi 5 langkah mudah (Foto, Info Umum, Data Teknis, Peta, Bantuan) agar tidak membingungkan.</li>
+<li><strong>Status Kelayakan:</strong> Sistem otomatis menandai apakah rumah termasuk RLH atau RTLH berdasarkan data teknis yang diinput.</li>
+</ul>
+<h3 id="3-peta-sebaran-distribution-map">3. Peta Sebaran (Distribution Map)</h3>
+<p>Fitur visualisasi geografis.</p>
+<ul>
+<li><strong>Peta Interaktif:</strong> Melihat lokasi rumah di atas peta digital.</li>
+<li><strong>Kode Warna:</strong>
+<ul>
+<li>🟢 <strong>Hijau:</strong> Rumah Layak Huni (RLH)</li>
+<li>🔴 <strong>Merah:</strong> Rumah Tidak Layak Huni (RTLH)</li>
+</ul>
+</li>
+<li><strong>Detail Cepat:</strong> Klik pada ikon rumah di peta untuk melihat info singkat pemilik dan alamat.</li>
+</ul>
+<h3 id="11-halaman-landing-publik-welcome">11. Halaman Landing Publik (Welcome)</h3>
+<p>Halaman publik tanpa login yang menjadi pintu masuk utama aplikasi.</p>
+<ul>
+<li><strong>Navigasi Cepat:</strong> Tersedia menu <code>Home</code>, <code>Peta Sebaran</code>, dan <code>Login</code> di header.</li>
+<li><strong>Aksi Utama:</strong> Tombol &quot;Jelajahi Peta&quot; mengarahkan ke halaman peta sebaran publik.</li>
+<li><strong>Konten Visual:</strong> Bagian hero dengan logo dan gambar kawasan untuk memperkenalkan aplikasi.</li>
+<li><strong>Form Pesan:</strong> Pengunjung dapat mengirim masukan melalui form kontak (Nama, Email, Subjek, Pesan).</li>
+<li><strong>Akses:</strong> Buka alamat utama aplikasi (<code>/</code>) untuk mengakses landing page.</li>
+</ul>
+<h3 id="12-peta-sebaran-publik">12. Peta Sebaran Publik</h3>
+<p>Halaman peta yang dapat diakses tanpa login untuk melihat sebaran data.</p>
+<ul>
+<li><strong>Navigasi:</strong> Header menyediakan link <code>Home</code> dan <code>Login</code> agar pengguna bisa kembali atau masuk.</li>
+<li><strong>Filter &amp; Pencarian:</strong> Panel di kanan atas berisi:
+<ul>
+<li><strong>Cari:</strong> Menyaring berdasarkan nama/alamat rumah atau nama kawasan/PSU.</li>
+<li><strong>Toggle Layer:</strong> Menyalakan/mematikan tampilan <code>Rumah</code>, <code>Kawasan</code>, dan <code>PSU</code>.</li>
+</ul>
+</li>
+<li><strong>Warna &amp; Ikon:</strong>
+<ul>
+<li><strong>Rumah:</strong> RLH (Hijau), RTLH (Merah) dengan ikon <code>Home</code>.</li>
+<li><strong>Kawasan:</strong> Warna mengikuti <code>Warna Legenda</code> yang ditetapkan pada Kelompok Kawasan.</li>
+<li><strong>PSU:</strong> Ikon sesuai kategori (mis. <code>Hospital</code>, <code>GraduationCap</code>, <code>Zap</code>, <code>Droplet</code>, <code>Trash2</code>, <code>Building2</code>) dengan warna legenda.</li>
+</ul>
+</li>
+<li><strong>Interaksi Peta:</strong> Klik area atau marker untuk melihat popup informasi singkat.</li>
+<li><strong>Penyegaran Data:</strong> Data diperbarui otomatis setiap ±60 detik.</li>
+</ul>
+<h3 id="4-data-psu-infrastruktur">4. Data PSU (Infrastruktur)</h3>
+<p>Manajemen data Prasarana, Sarana, dan Utilitas umum.</p>
+<ul>
+<li><strong>Kategori Lengkap:</strong> Mencakup Kesehatan, Pendidikan, Listrik, Air Bersih, Drainase, Sampah, dan lainnya.</li>
+<li><strong>Tipe Data:</strong> Mendukung titik lokasi (seperti bangunan sekolah) maupun jaringan (seperti jalur pipa air atau jalan).</li>
+</ul>
+<h3 id="5-manajemen-kawasan-area-management">5. Manajemen Kawasan (Area Management)</h3>
+<p>Menu untuk mengelola data kawasan atau zona khusus (misalnya: Kawasan Kumuh, Kawasan Rawan Bencana, dll).</p>
+<ul>
+<li><strong>Daftar Kawasan:</strong> Menampilkan daftar kelompok kawasan yang ada dengan fitur pencarian dan filter.</li>
+<li><strong>Tambah Kelompok Kawasan:</strong> Membuat kategori kawasan baru dengan mengisi Nama, Kode, Deskripsi, dan Warna Legenda.</li>
+<li><strong>Detail &amp; Peta Kawasan:</strong>
+<ul>
+<li><strong>Peta Interaktif:</strong> Menggambar area (polygon) langsung di peta untuk menandai wilayah yang masuk dalam kategori tersebut.</li>
+<li><strong>Daftar Area:</strong> Melihat dan mengelola daftar area spesifik yang telah digambar.</li>
+</ul>
+</li>
+</ul>
+<h3 id="6-laporan-reports">6. Laporan (Reports)</h3>
+<p>Fitur untuk mencetak dan mengunduh data.</p>
+<ul>
+<li><strong>Pembuatan Laporan:</strong> Buat laporan baru berdasarkan kategori (Rumah, Kawasan, PSU).</li>
+<li><strong>Format:</strong> Unduh laporan dalam format PDF atau Excel.</li>
+<li><strong>Arsip:</strong> Riwayat laporan yang pernah dibuat tersimpan rapi dan bisa diunduh ulang kapan saja.</li>
+</ul>
+<h3 id="7-pesan-messages">7. Pesan (Messages)</h3>
+<p>Kotak masuk untuk komunikasi.</p>
+<ul>
+<li>Menerima pesan atau masukan dari masyarakat atau formulir kontak publik.</li>
+<li>Fitur pencarian dan filter untuk memudahkan pengelolaan pesan.</li>
+</ul>
+<h3 id="8-pengguna-users">8. Pengguna (Users)</h3>
+<p>Menu untuk mengelola pengguna yang memiliki akses ke aplikasi.</p>
+<ul>
+<li><strong>Daftar Pengguna:</strong> Melihat seluruh pengguna terdaftar, termasuk peran mereka (Admin, Operator, dll).</li>
+<li><strong>Tambah Pengguna:</strong> Mendaftarkan pengguna baru dengan mengisi Nama, Email, dan menetapkan Peran (Role).</li>
+<li><strong>Edit &amp; Hapus:</strong> Mengubah informasi pengguna atau menghapus akun jika sudah tidak aktif.</li>
+</ul>
+<h3 id="9-level-roles--permissions">9. Level (Roles &amp; Permissions)</h3>
+<p>Menu untuk mengatur peran dan hak akses secara mendetail.</p>
+<ul>
+<li><strong>Manajemen Peran:</strong> Membuat level akses baru (misal: &quot;Surveyor Lapangan&quot;, &quot;Koordinator Kecamatan&quot;).</li>
+<li><strong>Pengaturan Hak Akses:</strong> Menentukan fitur apa saja yang bisa diakses oleh setiap level (misal: &quot;Surveyor&quot; hanya bisa input data, tidak bisa menghapus).</li>
+<li><strong>Fleksibilitas:</strong> Memudahkan pembagian tugas sesuai wewenang masing-masing staff.</li>
+</ul>
+<h3 id="10-log-aktivitas-audit-logs">10. Log Aktivitas (Audit Logs)</h3>
+<p>Fitur khusus administrator untuk memantau keamanan dan aktivitas sistem.</p>
+<ul>
+<li><strong>Rekam Jejak:</strong> Mencatat setiap tindakan penting (login, tambah data, hapus laporan) beserta waktu dan pelakunya.</li>
+<li><strong>Transparansi:</strong> Membantu menelusuri jika terjadi kesalahan input atau perubahan data yang tidak disengaja.</li>
+<li><strong>Filter:</strong> Mencari riwayat aktivitas berdasarkan nama user, jenis aktivitas, atau rentang tanggal tertentu.</li>
+</ul>
+<hr>
+<h2 id="panduan-visual-alur-kerja">Panduan Visual Alur Kerja</h2>
+<h3 id="a-proses-login">A. Proses Login</h3>
+<ol>
+<li>Buka alamat website Si-Kawan.</li>
+<li>Masukkan <strong>Email</strong> dan <strong>Password</strong> Anda.</li>
+<li>Klik tombol <strong>Login</strong>.</li>
+<li><em>(Jika lupa password)</em>: Klik &quot;Lupa Password?&quot; untuk mereset kata sandi melalui email.</li>
+</ol>
+<h3 id="b-menambah-data-rumah-baru">B. Menambah Data Rumah Baru</h3>
+<p>Ini adalah aktivitas yang paling sering dilakukan. Ikuti langkah ini:</p>
+<ol>
+<li>Masuk ke menu <strong>Rumah</strong> di sidebar kiri.</li>
+<li>Klik tombol <strong>+ Tambah Rumah</strong> di pojok kanan atas.</li>
+<li><strong>Langkah 1: Foto</strong>
+<ul>
+<li>Upload foto kondisi rumah (Depan, Samping, Dalam).</li>
+<li>Pastikan foto jelas dan tidak buram.</li>
+</ul>
+</li>
+<li><strong>Langkah 2: Informasi Umum</strong>
+<ul>
+<li>Isi Nama Kepala Keluarga, NIK, dan Alamat lengkap.</li>
+<li>Pilih Provinsi, Kabupaten, Kecamatan, dan Desa dari daftar.</li>
+</ul>
+</li>
+<li><strong>Langkah 3: Data Teknis</strong>
+<ul>
+<li>Isi kondisi atap, dinding, dan lantai.</li>
+<li>Jawab pertanyaan terkait fasilitas sanitasi dan air.</li>
+</ul>
+</li>
+<li><strong>Langkah 4: Lokasi Peta</strong>
+<ul>
+<li>Geser pin di peta untuk menandai lokasi rumah yang tepat.</li>
+<li>Koordinat akan terisi otomatis.</li>
+</ul>
+</li>
+<li><strong>Langkah 5: Bantuan</strong>
+<ul>
+<li>Catat bantuan yang pernah diterima atau yang dibutuhkan.</li>
+</ul>
+</li>
+<li>Klik <strong>Simpan</strong> untuk menyelesaikan.</li>
+</ol>
+<h3 id="c-membuat-laporan">C. Membuat Laporan</h3>
+<ol>
+<li>Masuk ke menu <strong>Laporan</strong>.</li>
+<li>Klik <strong>Buat Laporan</strong>.</li>
+<li>Isi Judul Laporan dan Deskripsi singkat.</li>
+<li>Pilih <strong>Tipe Laporan</strong> (misal: Laporan RTLH).</li>
+<li>Klik <strong>Generate</strong>. Tunggu sebentar hingga status berubah menjadi &quot;Generated&quot;.</li>
+<li>Klik ikon <strong>Download</strong> untuk mengunduh file ke komputer Anda.</li>
+</ol>
+<hr>
+<h2 id="troubleshooting-dasar">Troubleshooting Dasar</h2>
+<p>Masalah yang sering dihadapi dan cara mengatasinya:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Masalah</th>
+<th style="text-align:left">Kemungkinan Penyebab</th>
+<th style="text-align:left">Solusi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Gagal Login</strong></td>
+<td style="text-align:left">Email/Password salah</td>
+<td style="text-align:left">Cek kembali penulisan huruf besar/kecil. Gunakan fitur &quot;Lupa Password&quot; jika perlu.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Peta Tidak Muncul</strong></td>
+<td style="text-align:left">Koneksi internet lambat</td>
+<td style="text-align:left">Refresh halaman. Pastikan koneksi internet stabil.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Foto Gagal Upload</strong></td>
+<td style="text-align:left">Ukuran file terlalu besar</td>
+<td style="text-align:left">Pastikan ukuran foto di bawah 2MB. Kompres foto jika perlu sebelum upload.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Data Tidak Tersimpan</strong></td>
+<td style="text-align:left">Ada kolom wajib yang kosong</td>
+<td style="text-align:left">Periksa kembali formulir, biasanya kolom yang belum diisi akan berwarna merah atau ada pesan peringatan.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Tombol Tidak Bisa Diklik</strong></td>
+<td style="text-align:left">Proses loading sedang berjalan</td>
+<td style="text-align:left">Tunggu beberapa detik. Jangan klik tombol berulang-ulang dengan cepat.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="tips--best-practices">Tips &amp; Best Practices</h2>
+<ol>
+<li><strong>Simpan Berkala:</strong> Saat mengisi data rumah yang panjang, sistem memiliki fitur <em>auto-save</em> (simpan otomatis) sebagai draft, namun tetap disarankan untuk menyelesaikan input dalam satu sesi agar data tidak tercecer.</li>
+<li><strong>Kualitas Foto:</strong> Ambil foto rumah dalam posisi landscape (mendatar) agar tampilan di aplikasi lebih proporsional.</li>
+<li><strong>Akurasi Peta:</strong> Saat menandai lokasi rumah, perbesar (zoom) peta semaksimal mungkin untuk mendapatkan titik koordinat yang paling akurat.</li>
+<li><strong>Keamanan Akun:</strong> Jangan berikan password Anda kepada orang lain. Selalu <strong>Logout</strong> (Keluar) jika menggunakan komputer umum.</li>
+<li><strong>Penamaan Laporan:</strong> Berikan judul laporan yang spesifik, contoh: <em>&quot;Laporan RTLH Desa Mekarjaya - November 2024&quot;</em> agar mudah dicari kembali.</li>
+</ol>
+<hr>
+<h2 id="faq-tanya-jawab">FAQ (Tanya Jawab)</h2>
+<p><strong>Q: Apakah saya bisa mengedit data rumah yang sudah disimpan?</strong><br>
+A: Ya, masuk ke menu Rumah, cari nama kepala keluarga, klik tombol Edit (ikon pensil), lakukan perubahan, lalu Simpan.</p>
+<p><strong>Q: Apakah aplikasi ini bisa digunakan di HP?</strong><br>
+A: Si-Kawan berbasis web dan responsif, sehingga bisa dibuka melalui browser di HP atau Tablet. Namun, untuk input data yang banyak, disarankan menggunakan Laptop/PC demi kenyamanan.</p>
+<p><strong>Q: Bagaimana jika saya salah memasukkan lokasi di peta?</strong><br>
+A: Anda bisa mengedit data rumah tersebut, masuk ke langkah &quot;Lokasi Peta&quot;, dan geser kembali pin ke lokasi yang benar.</p>
+<p><strong>Q: Siapa yang bisa melihat data yang saya input?</strong><br>
+A: Data hanya bisa dilihat oleh pengguna terdaftar dengan hak akses yang sesuai (Admin dan Surveyor). Data tidak dipublikasikan secara terbuka ke umum kecuali halaman statistik publik (jika ada).</p>
+
+            
+            
+        </body>
+        </html>

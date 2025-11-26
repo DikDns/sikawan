@@ -71,13 +71,10 @@ export default function Welcome() {
                                 </div>
                                 <nav className="flex items-center gap-2">
                                     <Button variant="ghost" asChild>
-                                        <Link href="#">Home</Link>
+                                        <Link href="/">Home</Link>
                                     </Button>
                                     <Button variant="ghost" asChild>
-                                        <Link href="#">Features</Link>
-                                    </Button>
-                                    <Button variant="ghost" asChild>
-                                        <Link href="#">Pricing</Link>
+                                        <Link href="/peta-sebaran">Peta Sebaran</Link>
                                     </Button>
                                     <Button asChild>
                                         <Link href={login()}>Login</Link>
@@ -116,7 +113,7 @@ export default function Welcome() {
                                     className="mt-6 w-fit bg-lime-300 font-semibold text-[#552C91] hover:bg-lime-400 hover:text-[#552C91]"
                                     asChild
                                 >
-                                    <Link href="#">
+                                    <Link href="/peta-sebaran">
                                         Jelajahi Peta
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
