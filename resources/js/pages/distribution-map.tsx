@@ -160,7 +160,7 @@ export default function DistributionMap() {
                 withCentroid.length;
             return [lat, lng] as [number, number];
         }
-        return [-3.0638, 104.7429] as [number, number];
+        return [-4.2327, 103.6141] as [number, number];
     }, [households, areaGroups]);
 
     const groupLayerNames = useMemo(
@@ -198,7 +198,7 @@ export default function DistributionMap() {
                 </div>
 
                 <div className="flex-1 overflow-hidden rounded-lg border">
-                    <Map center={center} zoom={15} className="h-full w-full">
+                    <Map center={center} className="h-full w-full">
                         <MapTileLayer name="OSM" />
 
                         <MapLayers defaultLayerGroups={defaultLayerGroups}>

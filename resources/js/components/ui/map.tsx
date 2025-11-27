@@ -95,9 +95,12 @@ import {
     useMapEvents,
 } from "react-leaflet"
 
+const DEFAULT_CENTER: LatLngExpression = [-3.6632234, 103.7781606]
+
 function Map({
-    zoom = 15,
+    zoom = 10,
     className,
+    center: _center,
     ...props
 }: Omit<MapContainerProps, "zoomControl"> & {
     center: LatLngExpression
@@ -105,6 +108,7 @@ function Map({
 }) {
     return (
         <LeafletMapContainer
+            center={DEFAULT_CENTER}
             zoom={zoom}
             attributionControl={false}
             zoomControl={false}
@@ -163,7 +167,7 @@ function MapTileLayer({
 
     const context = useContext(MapLayersContext)
     const DEFAULT_URL =
-        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png	"
     // const DEFAULT_DARK_URL =
     // "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
     const resolvedUrl = url ?? DEFAULT_URL

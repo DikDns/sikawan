@@ -10,9 +10,9 @@ import {
     MapTileLayer,
     useLeaflet,
 } from '@/components/ui/map';
+import { usePage } from '@inertiajs/react';
 import type { LatLngExpression } from 'leaflet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
 import type { Area as AreaDetail } from './area-feature-list';
 
 export interface AreaFeatureGeometry {
@@ -50,7 +50,9 @@ export function AreaMapDisplay({
 }: AreaMapDisplayProps) {
     const { L } = useLeaflet();
     const page = usePage();
-    const areasFromProps = (page.props as any)?.areas as AreaDetail[] | undefined;
+    const areasFromProps = (page.props as any)?.areas as
+        | AreaDetail[]
+        | undefined;
     const [numberOfShapes, setNumberOfShapes] = useState(0);
     const drawLayersRef = useRef<L.FeatureGroup | null>(null);
     const layerCounterRef = useRef(0);
@@ -71,7 +73,7 @@ export function AreaMapDisplay({
         );
 
         if (validCentroids.length === 0) {
-            return [-6.2, 106.816666] as LatLngExpression; // Default to Jakarta
+            return [-4.2327, 103.6141] as LatLngExpression; // Default to Muara Enim
         }
 
         const avgLat =
@@ -214,7 +216,9 @@ export function AreaMapDisplay({
 
             // Resolve area details from the same source as AreaFormDialog (Inertia props)
             const serverId = (layer as any).__initialId as number | undefined;
-            const areaDetail: AreaDetail | undefined = Array.isArray(areasFromProps)
+            const areaDetail: AreaDetail | undefined = Array.isArray(
+                areasFromProps,
+            )
                 ? areasFromProps.find((a) => a.id === serverId)
                 : undefined;
 
@@ -285,7 +289,7 @@ export function AreaMapDisplay({
                 console.warn('Failed to bind popup', err);
             }
         },
-        [L, areasFromProps]
+        [L, areasFromProps],
     );
 
     // Handle changes from MapDrawControl with explicit changeType
@@ -295,195 +299,220 @@ export function AreaMapDisplay({
             changeType: 'initialized' | 'created' | 'edited' | 'deleted',
             changedLayers?: L.LayerGroup,
         ) => {
-        if (!L) return;
+            if (!L) return;
 
-        drawLayersRef.current = layers;
-        setNumberOfShapes(layers.getLayers().length);
+            drawLayersRef.current = layers;
+            setNumberOfShapes(layers.getLayers().length);
 
-        console.log('[AreaMapDisplay] onLayersChange', {
-            changeType,
-            totalLayers: layers.getLayers().length,
-        });
-
-        // Initial load: register existing layers but do NOT create backend records
-        if (changeType === 'initialized') {
-            isInitialLoadDoneRef.current = true;
-            layers.eachLayer((layer: L.Layer) => {
-                const initialId = (layer as any).__initialId as number | null;
-                if (typeof initialId === 'number' && initialId > 0) {
-                    featureLayersRef.current[initialId] = layer;
-                    // Attach tooltip/popup using feature data
-                    const feat = features.find((f) => f.id === initialId);
-                    const label = feat?.name ?? `Kawasan #${initialId}`;
-                    attachInfoUI(layer, label);
-                }
+            console.log('[AreaMapDisplay] onLayersChange', {
+                changeType,
+                totalLayers: layers.getLayers().length,
             });
-            console.log(
-                '[AreaMapDisplay] initialized: registered ids',
-                Object.keys(featureLayersRef.current),
-            );
-            return;
-        }
 
-        // Created: only newly drawn layers by the user
-        if (changeType === 'created') {
-            const sourceGroup: L.LayerGroup = (changedLayers || layers) as L.LayerGroup;
-            sourceGroup.eachLayer((layer: L.Layer) => {
-                const isKnown = Object.values(featureLayersRef.current).some(
-                    (existingLayer) => existingLayer === layer,
+            // Initial load: register existing layers but do NOT create backend records
+            if (changeType === 'initialized') {
+                isInitialLoadDoneRef.current = true;
+                layers.eachLayer((layer: L.Layer) => {
+                    const initialId = (layer as any).__initialId as
+                        | number
+                        | null;
+                    if (typeof initialId === 'number' && initialId > 0) {
+                        featureLayersRef.current[initialId] = layer;
+                        // Attach tooltip/popup using feature data
+                        const feat = features.find((f) => f.id === initialId);
+                        const label = feat?.name ?? `Kawasan #${initialId}`;
+                        attachInfoUI(layer, label);
+                    }
+                });
+                console.log(
+                    '[AreaMapDisplay] initialized: registered ids',
+                    Object.keys(featureLayersRef.current),
                 );
-                if (isKnown) return;
+                return;
+            }
 
-                // Also skip if this layer already has a temp id registered
-                const existingTempId = (layer as any).__clientTempId as number | undefined;
-                if (existingTempId && createdLayersRef.current[existingTempId]) {
-                    // We may still update geometry payload but avoid assigning again
-                }
+            // Created: only newly drawn layers by the user
+            if (changeType === 'created') {
+                const sourceGroup: L.LayerGroup = (changedLayers ||
+                    layers) as L.LayerGroup;
+                sourceGroup.eachLayer((layer: L.Layer) => {
+                    const isKnown = Object.values(
+                        featureLayersRef.current,
+                    ).some((existingLayer) => existingLayer === layer);
+                    if (isKnown) return;
 
-                let geometry: unknown = null;
-
-                if (layer instanceof L.Marker) {
-                    geometry = {
-                        type: 'Point',
-                        coordinates: [
-                            layer.getLatLng().lng,
-                            layer.getLatLng().lat,
-                        ],
-                    };
-                } else if (
-                    layer instanceof L.Polyline &&
-                    !(layer instanceof L.Polygon)
-                ) {
-                    const latlngs = (
-                        layer as L.Polyline
-                    ).getLatLngs() as L.LatLng[];
-                    geometry = {
-                        type: 'LineString',
-                        coordinates: latlngs.map((ll) => [ll.lng, ll.lat]),
-                    };
-                } else if (layer instanceof L.Circle) {
-                    const center = layer.getLatLng();
-                    const radius = layer.getRadius();
-                    geometry = {
-                        type: 'Circle',
-                        center: [center.lng, center.lat],
-                        radius: radius,
-                    };
-                } else if (layer instanceof L.Rectangle) {
-                    const bounds = layer.getBounds();
-                    geometry = [
-                        [bounds.getWest(), bounds.getNorth()],
-                        [bounds.getEast(), bounds.getSouth()],
-                    ];
-                } else if (layer instanceof L.Polygon) {
-                    const latlngs = layer.getLatLngs() as L.LatLng[][];
-                    geometry = {
-                        type: 'Polygon',
-                        coordinates: latlngs.map((ring) =>
-                            ring.map((ll) => [ll.lng, ll.lat]),
-                        ),
-                    };
-                }
-
-                if (geometry && onLayerCreated) {
-                    // Assign or reuse temporary client ID to newly drawn layer
-                    let tempId = (layer as any).__clientTempId as number | undefined;
-                    if (!tempId) {
-                        layerCounterRef.current += 1;
-                        tempId = layerCounterRef.current;
-                        (layer as any).__clientTempId = tempId;
-                        createdLayersRef.current[tempId] = layer;
+                    // Also skip if this layer already has a temp id registered
+                    const existingTempId = (layer as any).__clientTempId as
+                        | number
+                        | undefined;
+                    if (
+                        existingTempId &&
+                        createdLayersRef.current[existingTempId]
+                    ) {
+                        // We may still update geometry payload but avoid assigning again
                     }
 
-                    // Attach default tooltip/popup for newly created layer
-                    attachInfoUI(layer, `Area baru #${tempId}`);
+                    let geometry: unknown = null;
 
-                    // Debounce dispatch to prevent duplicate POSTs
-                    pendingCreateGeometryRef.current[tempId] = geometry;
-                    const existingTimer = pendingCreateTimeoutsRef.current[tempId];
-                    if (existingTimer) {
-                        clearTimeout(existingTimer);
-                    }
-                    pendingCreateTimeoutsRef.current[tempId] = window.setTimeout(() => {
-                        // Use latest geometry for this tempId
-                        const geom = pendingCreateGeometryRef.current[tempId!];
-                        delete pendingCreateTimeoutsRef.current[tempId!];
-                        if (!geom) return;
-                        console.log('[AreaMapDisplay] created: debounced dispatch for tempId', tempId);
-                        onLayerCreated(geom, tempId!);
-                    }, CREATE_DEBOUNCE_MS);
-                }
-            });
-            return;
-        }
-
-        // Edited: user modified layers
-        if (changeType === 'edited') {
-            console.log('[AreaMapDisplay] edited: user modified layers');
-            if (!changedLayers) return;
-            changedLayers.eachLayer((layer: L.Layer) => {
-                const id = (layer as any).__initialId as number | null;
-                if (typeof id !== 'number' || id <= 0) return;
-
-                let geometry: any = null;
-                if ((layer as any).getBounds) {
-                    const bounds = (layer as any).getBounds();
-                    geometry = {
-                        type: 'Polygon',
-                        coordinates: [
-                            [
-                                [bounds.getWest(), bounds.getSouth()],
-                                [bounds.getEast(), bounds.getSouth()],
-                                [bounds.getEast(), bounds.getNorth()],
-                                [bounds.getWest(), bounds.getNorth()],
-                                [bounds.getWest(), bounds.getSouth()],
+                    if (layer instanceof L.Marker) {
+                        geometry = {
+                            type: 'Point',
+                            coordinates: [
+                                layer.getLatLng().lng,
+                                layer.getLatLng().lat,
                             ],
-                        ],
-                    };
-                } else if ((layer as any).getLatLngs) {
-                    const latlngs = (layer as any).getLatLngs() as L.LatLng[][];
-                    geometry = {
-                        type: 'Polygon',
-                        coordinates: latlngs.map((ring) =>
-                            ring.map((ll) => [ll.lng, ll.lat]),
-                        ),
-                    };
-                }
+                        };
+                    } else if (
+                        layer instanceof L.Polyline &&
+                        !(layer instanceof L.Polygon)
+                    ) {
+                        const latlngs = (
+                            layer as L.Polyline
+                        ).getLatLngs() as L.LatLng[];
+                        geometry = {
+                            type: 'LineString',
+                            coordinates: latlngs.map((ll) => [ll.lng, ll.lat]),
+                        };
+                    } else if (layer instanceof L.Circle) {
+                        const center = layer.getLatLng();
+                        const radius = layer.getRadius();
+                        geometry = {
+                            type: 'Circle',
+                            center: [center.lng, center.lat],
+                            radius: radius,
+                        };
+                    } else if (layer instanceof L.Rectangle) {
+                        const bounds = layer.getBounds();
+                        geometry = [
+                            [bounds.getWest(), bounds.getNorth()],
+                            [bounds.getEast(), bounds.getSouth()],
+                        ];
+                    } else if (layer instanceof L.Polygon) {
+                        const latlngs = layer.getLatLngs() as L.LatLng[][];
+                        geometry = {
+                            type: 'Polygon',
+                            coordinates: latlngs.map((ring) =>
+                                ring.map((ll) => [ll.lng, ll.lat]),
+                            ),
+                        };
+                    }
 
-                if (geometry && onLayerEdited) {
-                    console.log('[AreaMapDisplay] edited: sending geometry for id', id);
-                    onLayerEdited(id, geometry);
-                }
-            });
-            return;
-        }
+                    if (geometry && onLayerCreated) {
+                        // Assign or reuse temporary client ID to newly drawn layer
+                        let tempId = (layer as any).__clientTempId as
+                            | number
+                            | undefined;
+                        if (!tempId) {
+                            layerCounterRef.current += 1;
+                            tempId = layerCounterRef.current;
+                            (layer as any).__clientTempId = tempId;
+                            createdLayersRef.current[tempId] = layer;
+                        }
 
-        // Deleted: find server-provided layers removed from the group
-        if (changeType === 'deleted') {
-            const removedIds: number[] = [];
-            if (changedLayers) {
+                        // Attach default tooltip/popup for newly created layer
+                        attachInfoUI(layer, `Area baru #${tempId}`);
+
+                        // Debounce dispatch to prevent duplicate POSTs
+                        pendingCreateGeometryRef.current[tempId] = geometry;
+                        const existingTimer =
+                            pendingCreateTimeoutsRef.current[tempId];
+                        if (existingTimer) {
+                            clearTimeout(existingTimer);
+                        }
+                        pendingCreateTimeoutsRef.current[tempId] =
+                            window.setTimeout(() => {
+                                // Use latest geometry for this tempId
+                                const geom =
+                                    pendingCreateGeometryRef.current[tempId!];
+                                delete pendingCreateTimeoutsRef.current[
+                                    tempId!
+                                ];
+                                if (!geom) return;
+                                console.log(
+                                    '[AreaMapDisplay] created: debounced dispatch for tempId',
+                                    tempId,
+                                );
+                                onLayerCreated(geom, tempId!);
+                            }, CREATE_DEBOUNCE_MS);
+                    }
+                });
+                return;
+            }
+
+            // Edited: user modified layers
+            if (changeType === 'edited') {
+                console.log('[AreaMapDisplay] edited: user modified layers');
+                if (!changedLayers) return;
                 changedLayers.eachLayer((layer: L.Layer) => {
                     const id = (layer as any).__initialId as number | null;
-                    if (typeof id === 'number' && id > 0) {
-                        removedIds.push(id);
+                    if (typeof id !== 'number' || id <= 0) return;
+
+                    let geometry: any = null;
+                    if ((layer as any).getBounds) {
+                        const bounds = (layer as any).getBounds();
+                        geometry = {
+                            type: 'Polygon',
+                            coordinates: [
+                                [
+                                    [bounds.getWest(), bounds.getSouth()],
+                                    [bounds.getEast(), bounds.getSouth()],
+                                    [bounds.getEast(), bounds.getNorth()],
+                                    [bounds.getWest(), bounds.getNorth()],
+                                    [bounds.getWest(), bounds.getSouth()],
+                                ],
+                            ],
+                        };
+                    } else if ((layer as any).getLatLngs) {
+                        const latlngs = (
+                            layer as any
+                        ).getLatLngs() as L.LatLng[][];
+                        geometry = {
+                            type: 'Polygon',
+                            coordinates: latlngs.map((ring) =>
+                                ring.map((ll) => [ll.lng, ll.lat]),
+                            ),
+                        };
+                    }
+
+                    if (geometry && onLayerEdited) {
+                        console.log(
+                            '[AreaMapDisplay] edited: sending geometry for id',
+                            id,
+                        );
+                        onLayerEdited(id, geometry);
                     }
                 });
-            } else {
-                // Fallback: diff against known feature map
-                Object.entries(featureLayersRef.current).forEach(([idStr, lyr]) => {
-                    const exists = layers.hasLayer(lyr);
-                    if (!exists) removedIds.push(Number(idStr));
-                });
+                return;
             }
-            if (removedIds.length > 0) {
-                console.log('[AreaMapDisplay] deleted ids', removedIds);
-                removedIds.forEach((id) => {
-                    delete featureLayersRef.current[id];
-                    onLayerDeleted?.(id);
-                });
+
+            // Deleted: find server-provided layers removed from the group
+            if (changeType === 'deleted') {
+                const removedIds: number[] = [];
+                if (changedLayers) {
+                    changedLayers.eachLayer((layer: L.Layer) => {
+                        const id = (layer as any).__initialId as number | null;
+                        if (typeof id === 'number' && id > 0) {
+                            removedIds.push(id);
+                        }
+                    });
+                } else {
+                    // Fallback: diff against known feature map
+                    Object.entries(featureLayersRef.current).forEach(
+                        ([idStr, lyr]) => {
+                            const exists = layers.hasLayer(lyr);
+                            if (!exists) removedIds.push(Number(idStr));
+                        },
+                    );
+                }
+                if (removedIds.length > 0) {
+                    console.log('[AreaMapDisplay] deleted ids', removedIds);
+                    removedIds.forEach((id) => {
+                        delete featureLayersRef.current[id];
+                        onLayerDeleted?.(id);
+                    });
+                }
+                return;
             }
-            return;
-        }
         },
         [L, onLayerCreated, onLayerDeleted, onLayerEdited],
     );
@@ -507,7 +536,11 @@ export function AreaMapDisplay({
             const label = feat?.name ?? `Kawasan #${serverId}`;
             attachInfoUI(layer, label);
 
-            console.log('[AreaMapDisplay] resolved tempId -> serverId', tempId, serverId);
+            console.log(
+                '[AreaMapDisplay] resolved tempId -> serverId',
+                tempId,
+                serverId,
+            );
         });
     }, [resolvedLayerIds, L, features, attachInfoUI]);
 

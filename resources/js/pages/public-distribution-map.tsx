@@ -242,7 +242,7 @@ export default function PublicDistributionMap() {
                 withCentroid.length;
             return [lat, lng] as [number, number];
         }
-        return [-3.0638, 104.7429] as [number, number];
+        return [-4.2327, 103.6141] as [number, number];
     }, [filteredHouseholds, households, areaGroups]);
 
     const kawasanLayerNames = useMemo(
@@ -265,9 +265,7 @@ export default function PublicDistributionMap() {
     function PSUMarkerIcon(group: InfrastructureGroupForMap) {
         const color = group.legend_color_hex || DEFAULT_COLOR;
         const name = (group.legend_icon || '').toLowerCase();
-        let iconEl: JSX.Element = (
-            <Building2 className="size-6" style={{ color }} />
-        );
+        let iconEl = <Building2 className="size-6" style={{ color }} />;
         if (name === 'hospital')
             iconEl = <Hospital className="size-6" style={{ color }} />;
         else if (name === 'graduation-cap')
@@ -329,7 +327,11 @@ export default function PublicDistributionMap() {
                 </div>
             </header>
             <div className="relative h-[calc(100vh-64px)] w-full pt-16">
-                <Map center={center} zoom={13} className="h-full w-full">
+                <Map
+                    center={[-4.2327, 103.6141]}
+                    zoom={13}
+                    className="h-full w-full"
+                >
                     <MapTileLayer name="OSM" />
 
                     <MapLayers
