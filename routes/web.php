@@ -60,6 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::get('areas', [App\Http\Controllers\AreaController::class, 'index'])->name('areas');
   Route::get('areas/{id}', [App\Http\Controllers\AreaController::class, 'show'])->whereNumber('id')->name('areas.show');
   Route::post('areas/sync-all', [App\Http\Controllers\AreaController::class, 'syncAll'])->name('areas.syncAll');
+  Route::get('areas/sync-all/status', [App\Http\Controllers\AreaController::class, 'syncAllStatus'])->name('areas.syncAllStatus');
   Route::get('areas/{areaId}/households', [App\Http\Controllers\AreaController::class, 'householdsByArea'])->whereNumber('areaId')->name('areas.households');
   Route::post('areas/{areaGroupId}/areas', [App\Http\Controllers\AreaController::class, 'storeArea'])->name('areas.store');
   Route::put('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'updateArea'])->name('areas.update');

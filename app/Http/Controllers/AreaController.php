@@ -139,6 +139,25 @@ class AreaController extends Controller
     ], 202);
   }
 
+  public function syncAllStatus(Request $request)
+  {
+    $runId = Cache::get('sync-all:run');
+    $status = Cache::get('sync-all:status', 'idle');
+    $start = Cache::get('sync-all:start');
+    $last = Cache::get('sync-all:last');
+    $total = $runId ? (int) Cache::get("sync-all:total:$runId", 0) : 0;
+    $pending = $runId ? (int) Cache::get("sync-all:pending:$runId", 0) : 0;
+
+    return response()->json([
+      'run_id' => $runId,
+      'status' => $status,
+      'start_at' => $start instanceof \Carbon\Carbon ? $start->toIso8601String() : $start,
+      'last_at' => $last instanceof \Carbon\Carbon ? $last->toIso8601String() : $last,
+      'total' => $total,
+      'pending' => $pending,
+    ]);
+  }
+
   /**
    * Fetch households related to a specific area
    */

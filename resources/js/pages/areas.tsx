@@ -27,7 +27,7 @@ import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -64,6 +64,14 @@ export default function Areas({ areaGroups, stats }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
     const [syncAllOpen, setSyncAllOpen] = useState(false);
+    const [syncAllPolling, setSyncAllPolling] = useState(false);
+    const [syncAllStatus, setSyncAllStatus] = useState<{
+        status: string;
+        total: number;
+        pending: number;
+    } | null>(null);
+
+    useSyncAllPolling(syncAllPolling, setSyncAllPolling, setSyncAllStatus);
 
     // Action handlers
     const handleView = (id: number) => {
@@ -188,9 +196,9 @@ export default function Areas({ areaGroups, stats }: Props) {
                         </DialogHeader>
                         <div className="space-y-3">
                             <div className="text-sm text-muted-foreground">
-                                Tindakan ini akan menyinkronkan semua Kawasan
-                                yang memiliki geometri dan minimal satu data
-                                wilayah terisi.
+                                Tindakan ini akan menyinkronkan semua Rumah dan
+                                Kawasan yang memiliki geometri dan minimal satu
+                                data wilayah terisi.
                             </div>
                         </div>
                         <DialogFooter>
@@ -226,6 +234,7 @@ export default function Areas({ areaGroups, stats }: Props) {
                                                 'Sinkronisasi semua kawasan dimulai',
                                         );
                                         setSyncAllOpen(false);
+                                        setSyncAllPolling(true);
                                     } catch {
                                         toast.error(
                                             'Terjadi kesalahan jaringan',
@@ -240,6 +249,15 @@ export default function Areas({ areaGroups, stats }: Props) {
                     </DialogContent>
                 </Dialog>
 
+                {syncAllPolling && (
+                    <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
+                        Memantau sinkronisasi...{' '}
+                        {syncAllStatus
+                            ? `(${Math.max(0, syncAllStatus.total - syncAllStatus.pending)}/${syncAllStatus.total})`
+                            : ''}
+                    </div>
+                )}
+
                 {/* Statistics Cards & Table */}
                 <AreaGroupTable
                     groups={filteredAreaGroups}
@@ -250,4 +268,42 @@ export default function Areas({ areaGroups, stats }: Props) {
             </div>
         </AppLayout>
     );
+}
+
+// Polling status sinkronisasi
+function useSyncAllPolling(
+    polling: boolean,
+    setPolling: (v: boolean) => void,
+    setStatus: (
+        s: { status: string; total: number; pending: number } | null,
+    ) => void,
+) {
+    useEffect(() => {
+        let timer: any;
+        const poll = async () => {
+            try {
+                const res = await csrfFetch('/areas/sync-all/status', {
+                    method: 'GET',
+                });
+                const data = await res.json().catch(() => ({}));
+                const status = String(data?.status || 'idle');
+                const total = Number(data?.total || 0);
+                const pending = Number(data?.pending || 0);
+                setStatus({ status, total, pending });
+                if (status === 'completed' || (total > 0 && pending <= 0)) {
+                    toast.success('Sinkronisasi semua kawasan selesai');
+                    setPolling(false);
+                }
+            } catch (e) {
+                // swallow errors, continue polling a few times
+            }
+        };
+        if (polling) {
+            poll();
+            timer = setInterval(poll, 3000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [polling, setPolling, setStatus]);
 }

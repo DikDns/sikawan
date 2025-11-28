@@ -16,10 +16,12 @@ class SyncAreaHouseholdsJob implements ShouldQueue
   use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
   public int $areaId;
+  public ?string $runId;
 
-  public function __construct(int $areaId)
+  public function __construct(int $areaId, ?string $runId = null)
   {
     $this->areaId = $areaId;
+    $this->runId = $runId;
   }
 
   public function handle(): void
@@ -138,6 +140,26 @@ class SyncAreaHouseholdsJob implements ShouldQueue
       }
       Cache::forever('area-sync-status-' . $area->id, 'completed');
       Cache::forever('area-sync-last-' . $area->id, now());
+
+      if ($this->runId) {
+        $pendingKey = 'sync-all:pending:' . $this->runId;
+        $remaining = null;
+        try {
+          $remaining = Cache::decrement($pendingKey);
+        } catch (\Throwable $e) {
+          $remaining = Cache::get($pendingKey);
+          if (is_numeric($remaining)) {
+            Cache::put($pendingKey, max(0, (int) $remaining - 1), 3600);
+            $remaining = (int) Cache::get($pendingKey);
+          } else {
+            $remaining = null;
+          }
+        }
+        if (is_int($remaining) && $remaining <= 0) {
+          Cache::forever('sync-all:status', 'completed');
+          Cache::forever('sync-all:last', now());
+        }
+      }
     } finally {
       $lock->release();
     }
