@@ -52,13 +52,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
   // AreaGroup CRUD Routes (Create/Update/Delete for AreaGroup)
   Route::get('areas/create', [App\Http\Controllers\AreaGroupController::class, 'create'])->name('areas.create');
   Route::post('areas', [App\Http\Controllers\AreaGroupController::class, 'store'])->name('areaGroups.store');
-  Route::get('areas/{id}/edit', [App\Http\Controllers\AreaGroupController::class, 'edit'])->name('areas.edit');
-  Route::match(['put', 'patch', 'post'], 'areas/{id}', [App\Http\Controllers\AreaGroupController::class, 'update'])->name('areaGroups.update');
-  Route::delete('areas/{id}', [App\Http\Controllers\AreaGroupController::class, 'destroy'])->name('areaGroups.destroy');
+  Route::get('areas/{id}/edit', [App\Http\Controllers\AreaGroupController::class, 'edit'])->whereNumber('id')->name('areas.edit');
+  Route::match(['put', 'patch', 'post'], 'areas/{id}', [App\Http\Controllers\AreaGroupController::class, 'update'])->whereNumber('id')->name('areaGroups.update');
+  Route::delete('areas/{id}', [App\Http\Controllers\AreaGroupController::class, 'destroy'])->whereNumber('id')->name('areaGroups.destroy');
 
   // Areas Routes
   Route::get('areas', [App\Http\Controllers\AreaController::class, 'index'])->name('areas');
-  Route::get('areas/{id}', [App\Http\Controllers\AreaController::class, 'show'])->name('areas.show');
+  Route::get('areas/{id}', [App\Http\Controllers\AreaController::class, 'show'])->whereNumber('id')->name('areas.show');
+  Route::post('areas/sync-all', [App\Http\Controllers\AreaController::class, 'syncAll'])->name('areas.syncAll');
   Route::post('areas/{areaGroupId}/areas', [App\Http\Controllers\AreaController::class, 'storeArea'])->name('areas.store');
   Route::put('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'updateArea'])->name('areas.update');
   Route::delete('areas/{areaGroupId}/areas/{areaId}', [App\Http\Controllers\AreaController::class, 'destroyArea'])->name('areas.destroy');

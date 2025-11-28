@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Area;
 use App\Models\AreaGroup;
 use App\Models\Household\Household;
+use App\Jobs\SyncAreaHouseholdsJob;
+use App\Jobs\SyncAllEligibleAreasJob;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -109,6 +111,30 @@ class AreaController extends Controller
       'areas' => $areas,
       'households' => $households,
     ]);
+  }
+
+  public function sync(Request $request, $areaId)
+  {
+    $area = Area::find($areaId);
+    if (! $area) {
+      return response()->json([
+        'message' => 'Area tidak ditemukan',
+      ], 404);
+    }
+
+    SyncAreaHouseholdsJob::dispatch($area->id);
+    return response()->json([
+      'message' => 'Sinkronisasi kawasan sedang diproses',
+      'area_id' => $area->id,
+    ], 202);
+  }
+
+  public function syncAll(Request $request)
+  {
+    SyncAllEligibleAreasJob::dispatch();
+    return response()->json([
+      'message' => 'Sinkronisasi seluruh kawasan yang memenuhi kriteria sedang diproses',
+    ], 202);
   }
 
   /**

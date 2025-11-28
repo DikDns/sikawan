@@ -3,6 +3,7 @@
 namespace App\Models\Household;
 
 use App\Models\User;
+use App\Models\Area;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,6 +51,7 @@ class Household extends Model
         'habitability_status',
         'eligibility_score_total',
         'eligibility_computed_at',
+        'area_id',
         'is_draft',
     ];
 
@@ -97,5 +99,10 @@ class Household extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class);
     }
 }

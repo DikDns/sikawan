@@ -1,4 +1,3 @@
-import { getCsrfToken } from '@/lib/csrf';
 import { type HouseholdListItem, type HouseholdStats } from '@/types/household';
 import { router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
@@ -63,7 +62,6 @@ export default function HouseholdsList({ households, stats }: Props) {
         setIsDeleting(true);
         try {
             router.delete(`/households/${householdToDelete}`, {
-                data: { _token: getCsrfToken() },
                 preserveState: true,
                 preserveScroll: true,
             });

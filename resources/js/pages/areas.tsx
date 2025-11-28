@@ -7,6 +7,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -16,10 +23,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -54,6 +63,7 @@ interface Props {
 export default function Areas({ areaGroups, stats }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
+    const [syncAllOpen, setSyncAllOpen] = useState(false);
 
     // Action handlers
     const handleView = (id: number) => {
@@ -119,13 +129,25 @@ export default function Areas({ areaGroups, stats }: Props) {
                                     {areaGroups.length} kelompok kawasan
                                 </CardDescription>
                             </div>
-                            <Button
-                                onClick={handleAdd}
-                                className="gap-2 sm:w-auto"
-                            >
-                                <Plus className="h-4 w-4" />
-                                <span>Tambah Kawasan</span>
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    onClick={handleAdd}
+                                    className="gap-2 sm:w-auto"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    <span>Tambah Kawasan</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => setSyncAllOpen(true)}
+                                    variant="secondary"
+                                    className="gap-2 sm:w-auto"
+                                    aria-label="Sinkronisasi Rumah"
+                                >
+                                    <span>Sinkronisasi Rumah</span>
+                                </Button>
+                            </div>
                         </div>
                         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
                             <div className="relative flex-1">
@@ -156,6 +178,67 @@ export default function Areas({ areaGroups, stats }: Props) {
                         </div>
                     </CardHeader>
                 </Card>
+
+                <Dialog open={syncAllOpen} onOpenChange={setSyncAllOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>
+                                Sinkronisasi Rumah dan Kawasan
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-3">
+                            <div className="text-sm text-muted-foreground">
+                                Tindakan ini akan menyinkronkan semua Kawasan
+                                yang memiliki geometri dan minimal satu data
+                                wilayah terisi.
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setSyncAllOpen(false)}
+                            >
+                                Batal
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={async () => {
+                                    try {
+                                        const res = await csrfFetch(
+                                            '/areas/sync-all',
+                                            { method: 'POST' },
+                                        );
+                                        if (!res.ok) {
+                                            const data = await res
+                                                .json()
+                                                .catch(() => ({}));
+                                            toast.error(
+                                                handleCsrfError(res, data),
+                                            );
+                                            return;
+                                        }
+                                        const data = await res
+                                            .json()
+                                            .catch(() => ({}));
+                                        toast.success(
+                                            data.message ||
+                                                'Sinkronisasi semua kawasan dimulai',
+                                        );
+                                        setSyncAllOpen(false);
+                                    } catch {
+                                        toast.error(
+                                            'Terjadi kesalahan jaringan',
+                                        );
+                                    }
+                                }}
+                                className="gap-2"
+                            >
+                                Mulai Sinkronisasi
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
                 {/* Statistics Cards & Table */}
                 <AreaGroupTable
