@@ -485,7 +485,7 @@ function MapCircle({
     return (
         <LeafletCircle
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -500,7 +500,7 @@ function MapCircleMarker({
     return (
         <LeafletCircleMarker
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -515,7 +515,7 @@ function MapPolyline({
     return (
         <LeafletPolyline
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -530,7 +530,7 @@ function MapPolygon({
     return (
         <LeafletPolygon
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -545,7 +545,7 @@ function MapRectangle({
     return (
         <LeafletRectangle
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -889,8 +889,9 @@ function MapDrawControl({
                     }
                     const layer = L.polygon(positions, {
                         color: shape.color || "var(--color-primary)",
-                        weight: 2,
+                        weight: 4,
                         opacity: 1,
+                        fillOpacity: 0.25,
                     })
                     ;(layer as any).__initialId = shape.id ?? null
                     group.addLayer(layer)
@@ -940,7 +941,7 @@ function MapDrawControl({
                     }
                     const layer = L.polyline(positions, {
                         color: shape.color || "var(--color-primary)",
-                        weight: 2,
+                        weight: 4,
                         opacity: 1,
                     })
                     ;(layer as any).__initialId = shape.id ?? null
@@ -1075,7 +1076,7 @@ function MapDrawPolyline({
     shapeOptions = {
         color: "var(--color-primary)",
         opacity: 1,
-        weight: 2,
+        weight: 4,
     },
     ...props
 }: DrawOptions.PolylineOptions) {
@@ -1158,7 +1159,8 @@ function MapDrawPolygon({
     shapeOptions = {
         color: "var(--color-primary)",
         opacity: 1,
-        weight: 2,
+        weight: 4,
+        fillOpacity: 0.25,
     },
     ...props
 }: DrawOptions.PolygonOptions) {

@@ -307,11 +307,11 @@ export default function PublicDistributionMap() {
                             <div className="flex items-center gap-2">
                                 <img
                                     src="/images/sikawan-logo.png"
-                                    alt="SI-KAWAN"
+                                    alt="SIHUMA"
                                     className="h-8 w-8"
                                 />
                                 <span className="text-lg font-semibold text-primary">
-                                    SI-KAWAN
+                                    SIHUMA
                                 </span>
                             </div>
                             <nav className="flex items-center gap-2">

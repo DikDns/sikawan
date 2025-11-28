@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { getCsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -157,7 +158,11 @@ export default function Infrastructure({ groups, stats }: Props) {
     };
 
     const handleDelete = (id: number) => {
-        router.delete(`/infrastructure/${id}`);
+        router.delete(`/infrastructure/${id}`, {
+            data: { _token: getCsrfToken() },
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const handleAdd = () => {
@@ -176,12 +181,7 @@ export default function Infrastructure({ groups, stats }: Props) {
     };
 
     // Calculate statistics
-    const totalInfrastructure = useMemo(() => {
-        return groups.reduce(
-            (sum, g) => sum + (g.infrastructure_count || 0),
-            0,
-        );
-    }, [groups]);
+    // Removed unused totalInfrastructure to satisfy lint rules
 
     // Get unique categories for filter
     const categories = useMemo(() => {
@@ -759,7 +759,13 @@ export default function Infrastructure({ groups, stats }: Props) {
                                         <Select
                                             value={data.type}
                                             onValueChange={(v) =>
-                                                setData('type', v as any)
+                                                setData(
+                                                    'type',
+                                                    v as
+                                                        | 'Marker'
+                                                        | 'Polyline'
+                                                        | 'Polygon',
+                                                )
                                             }
                                         >
                                             <SelectTrigger id="type">

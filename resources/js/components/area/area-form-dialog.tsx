@@ -11,11 +11,11 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Textarea } from '@/components/ui/textarea';
+import { useWilayah } from '@/hooks/use-wilayah';
+import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { getCsrfToken, handleCsrfError } from '@/lib/csrf';
-import { useWilayah } from '@/hooks/use-wilayah';
 
 export interface Area {
     id?: number;
@@ -144,61 +144,73 @@ export function AreaFormDialog({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.district_id]);
 
-    const handleProvinceChange = useCallback((value: string) => {
-        const selected = wilayah.provinces.find(
-            (p) => String(p.value) === String(value),
-        );
-        setFormData((prev) => ({
-            ...prev,
-            province_id: value,
-            province_name: selected?.label || '',
-            regency_id: '',
-            regency_name: '',
-            district_id: '',
-            district_name: '',
-            village_id: '',
-            village_name: '',
-        }));
-    }, [wilayah.provinces]);
+    const handleProvinceChange = useCallback(
+        (value: string) => {
+            const selected = wilayah.provinces.find(
+                (p) => String(p.value) === String(value),
+            );
+            setFormData((prev) => ({
+                ...prev,
+                province_id: value,
+                province_name: selected?.label || '',
+                regency_id: '',
+                regency_name: '',
+                district_id: '',
+                district_name: '',
+                village_id: '',
+                village_name: '',
+            }));
+        },
+        [wilayah.provinces],
+    );
 
-    const handleRegencyChange = useCallback((value: string) => {
-        const selected = wilayah.cities.find(
-            (c) => String(c.value) === String(value),
-        );
-        setFormData((prev) => ({
-            ...prev,
-            regency_id: value,
-            regency_name: selected?.label || '',
-            district_id: '',
-            district_name: '',
-            village_id: '',
-            village_name: '',
-        }));
-    }, [wilayah.cities]);
+    const handleRegencyChange = useCallback(
+        (value: string) => {
+            const selected = wilayah.cities.find(
+                (c) => String(c.value) === String(value),
+            );
+            setFormData((prev) => ({
+                ...prev,
+                regency_id: value,
+                regency_name: selected?.label || '',
+                district_id: '',
+                district_name: '',
+                village_id: '',
+                village_name: '',
+            }));
+        },
+        [wilayah.cities],
+    );
 
-    const handleDistrictChange = useCallback((value: string) => {
-        const selected = wilayah.subDistricts.find(
-            (d) => String(d.value) === String(value),
-        );
-        setFormData((prev) => ({
-            ...prev,
-            district_id: value,
-            district_name: selected?.label || '',
-            village_id: '',
-            village_name: '',
-        }));
-    }, [wilayah.subDistricts]);
+    const handleDistrictChange = useCallback(
+        (value: string) => {
+            const selected = wilayah.subDistricts.find(
+                (d) => String(d.value) === String(value),
+            );
+            setFormData((prev) => ({
+                ...prev,
+                district_id: value,
+                district_name: selected?.label || '',
+                village_id: '',
+                village_name: '',
+            }));
+        },
+        [wilayah.subDistricts],
+    );
 
-    const handleVillageChange = useCallback((value: string) => {
-        const selected = wilayah.villages.find(
-            (v) => String(v.value) === String(value),
-        );
-        setFormData((prev) => ({
-            ...prev,
-            village_id: value,
-            village_name: selected?.label || '',
-        }));
-    }, [wilayah.villages]);
+    const handleVillageChange = useCallback(
+        (value: string) => {
+            const selected = wilayah.villages.find(
+                (v) => String(v.value) === String(value),
+            );
+            setFormData((prev) => ({
+                ...prev,
+                village_id: value,
+                village_name: selected?.label || '',
+            }));
+        },
+        [wilayah.villages],
+    );
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -211,7 +223,19 @@ export function AreaFormDialog({
         setIsSubmitting(true);
 
         try {
-            const payload: any = {
+            const payload: {
+                name: string;
+                description: string | null;
+                geometry_json: unknown;
+                province_id?: string;
+                province_name?: string | null;
+                regency_id?: string;
+                regency_name?: string | null;
+                district_id?: string;
+                district_name?: string | null;
+                village_id?: string;
+                village_name?: string | null;
+            } = {
                 name: formData.name,
                 description: formData.description || null,
                 geometry_json: formData.geometry_json,
@@ -241,21 +265,11 @@ export function AreaFormDialog({
 
             const method = area ? 'PUT' : 'POST';
 
-            // Get CSRF token with better error handling
-            const csrfToken = getCsrfToken();
-            console.log('[AreaFormDialog] CSRF Token for form:', csrfToken.substring(0, 10) + '...');
-
-            const response = await fetch(url, {
+            const response = await csrfFetch(url, {
                 method: method === 'PUT' ? 'POST' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrfToken,
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(
-                    method === 'PUT'
-                        ? { ...payload, _method: 'PUT' }
-                        : payload,
+                    method === 'PUT' ? { ...payload, _method: 'PUT' } : payload,
                 ),
             });
 
@@ -263,7 +277,10 @@ export function AreaFormDialog({
                 const errorData = await response.json().catch(() => ({}));
 
                 // Handle CSRF token mismatch specifically
-                if (response.status === 419 || (errorData.message && errorData.message.includes('CSRF'))) {
+                if (
+                    response.status === 419 ||
+                    (errorData.message && errorData.message.includes('CSRF'))
+                ) {
                     toast.error(handleCsrfError(response, errorData));
                     return;
                 }
@@ -281,9 +298,7 @@ export function AreaFormDialog({
         } catch (error) {
             console.error('Error saving area:', error);
             const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : 'Gagal menyimpan area';
+                error instanceof Error ? error.message : 'Gagal menyimpan area';
             toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
@@ -372,7 +387,10 @@ export function AreaFormDialog({
                                     }
                                     searchPlaceholder="Cari kota/kabupaten..."
                                     emptyMessage="Kota/Kabupaten tidak ditemukan"
-                                    disabled={!formData.province_id || wilayah.loadingCities}
+                                    disabled={
+                                        !formData.province_id ||
+                                        wilayah.loadingCities
+                                    }
                                     clearable={false}
                                     aria-label="Pilih Kota/Kabupaten"
                                 />
@@ -393,7 +411,10 @@ export function AreaFormDialog({
                                     }
                                     searchPlaceholder="Cari kecamatan..."
                                     emptyMessage="Kecamatan tidak ditemukan"
-                                    disabled={!formData.regency_id || wilayah.loadingSubDistricts}
+                                    disabled={
+                                        !formData.regency_id ||
+                                        wilayah.loadingSubDistricts
+                                    }
                                     clearable={false}
                                     aria-label="Pilih Kecamatan"
                                 />
@@ -412,7 +433,10 @@ export function AreaFormDialog({
                                     }
                                     searchPlaceholder="Cari desa/kelurahan..."
                                     emptyMessage="Desa/Kelurahan tidak ditemukan"
-                                    disabled={!formData.district_id || wilayah.loadingVillages}
+                                    disabled={
+                                        !formData.district_id ||
+                                        wilayah.loadingVillages
+                                    }
                                     clearable={false}
                                     aria-label="Pilih Desa/Kelurahan"
                                 />

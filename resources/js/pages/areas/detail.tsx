@@ -1,4 +1,7 @@
-import { AreaFeatureList, type Area } from '@/components/area/area-feature-list';
+import {
+    AreaFeatureList,
+    type Area,
+} from '@/components/area/area-feature-list';
 import {
     AreaFormDialog,
     type Area as AreaFormType,
@@ -14,11 +17,11 @@ import {
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import AppLayout from '@/layouts/app-layout';
+import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { getCsrfToken, handleCsrfError } from '@/lib/csrf';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -58,7 +61,9 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
     const [editingArea, setEditingArea] = useState<AreaFormType | null>(null);
     const [areasState, setAreasState] = useState<Area[]>(areas);
     // Map temporary layer numbers to server-assigned IDs for new shapes
-    const [resolvedLayerIds, setResolvedLayerIds] = useState<Record<number, number>>({});
+    const [resolvedLayerIds, setResolvedLayerIds] = useState<
+        Record<number, number>
+    >({});
     // In-flight guard to prevent duplicate POSTs for the same layer
     const createInFlightRef = useRef<Set<number>>(new Set());
 
@@ -84,84 +89,89 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
 
     // Handle layer creation from map
     const handleLayerCreated = useCallback(
-        async (
-            geometry: unknown,
-            layerNumber: number,
-        ) => {
-        // Generate default name
-        const defaultName = `${areaGroup.name} ${layerNumber}`;
+        async (geometry: unknown, layerNumber: number) => {
+            // Generate default name
+            const defaultName = `${areaGroup.name} ${layerNumber}`;
 
-        try {
-            // Prevent duplicate POSTs for the same layer while one is in-flight
-            if (createInFlightRef.current.has(layerNumber)) {
-                console.warn('[AreaDetail] Suppressed duplicate create for layer', layerNumber);
-                return;
-            }
-            createInFlightRef.current.add(layerNumber);
-
-            // Get CSRF token with better error handling
-            const csrfToken = getCsrfToken();
-            console.log('[AreaDetail] CSRF Token for create:', csrfToken.substring(0, 10) + '...');
-
-            const payload = {
-                name: defaultName,
-                description: null,
-                geometry_json: geometry,
-            };
-
-            const response = await fetch(`/areas/${areaGroup.id}/areas`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrfToken,
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('[AreaDetail] Create error:', response.status, errorData);
-
-                // Handle CSRF token mismatch specifically
-                if (response.status === 419) {
-                    toast.error(handleCsrfError(response, errorData));
+            try {
+                // Prevent duplicate POSTs for the same layer while one is in-flight
+                if (createInFlightRef.current.has(layerNumber)) {
+                    console.warn(
+                        '[AreaDetail] Suppressed duplicate create for layer',
+                        layerNumber,
+                    );
                     return;
                 }
+                createInFlightRef.current.add(layerNumber);
 
-                throw new Error(
-                    errorData.message ||
-                        `HTTP error! status: ${response.status}`,
+                const payload = {
+                    name: defaultName,
+                    description: null,
+                    geometry_json: geometry,
+                };
+
+                const response = await csrfFetch(
+                    `/areas/${areaGroup.id}/areas`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    },
                 );
-            }
 
-            const data = await response.json();
-            toast.success(data.message || 'Area berhasil ditambahkan');
-            // Optimistically add to local state if backend returns the new area
-            const createdArea: Area | undefined = (data?.data?.area || data?.area);
-            if (createdArea && createdArea.id) {
-                setAreasState((prev) => [...prev, createdArea]);
-                // Resolve temp layer number to server ID so edit/delete work
-                setResolvedLayerIds((prev) => ({ ...prev, [layerNumber]: createdArea.id }));
-            } else {
-                // Fallback soft reload if no payload returned
-                router.reload({ only: ['areas'] });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error(
+                        '[AreaDetail] Create error:',
+                        response.status,
+                        errorData,
+                    );
+
+                    // Handle CSRF token mismatch specifically
+                    if (response.status === 419) {
+                        toast.error(handleCsrfError(response, errorData));
+                        return;
+                    }
+
+                    throw new Error(
+                        errorData.message ||
+                            `HTTP error! status: ${response.status}`,
+                    );
+                }
+
+                const data = await response.json();
+                toast.success(data.message || 'Area berhasil ditambahkan');
+                // Optimistically add to local state if backend returns the new area
+                const createdArea: Area | undefined =
+                    data?.data?.area || data?.area;
+                if (createdArea && createdArea.id) {
+                    setAreasState((prev) => [...prev, createdArea]);
+                    // Resolve temp layer number to server ID so edit/delete work
+                    setResolvedLayerIds((prev) => ({
+                        ...prev,
+                        [layerNumber]: createdArea.id,
+                    }));
+                } else {
+                    // Fallback soft reload if no payload returned
+                    router.reload({ only: ['areas'] });
+                }
+            } catch (error) {
+                console.error('Error creating area:', error);
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : 'Gagal menyimpan area';
+                toast.error(errorMessage);
+            } finally {
+                createInFlightRef.current.delete(layerNumber);
             }
-        } catch (error) {
-            console.error('Error creating area:', error);
-            const errorMessage =
-                error instanceof Error ? error.message : 'Gagal menyimpan area';
-            toast.error(errorMessage);
-        } finally {
-            createInFlightRef.current.delete(layerNumber);
-        }
-    }, [areaGroup.name, areaGroup.id]);
+        },
+        [areaGroup.name, areaGroup.id],
+    );
 
     // Handle area form success
     const handleFormSuccess = () => {
-        // After form success, try to refresh areas but keep optimistic state
-        router.reload({ only: ['areas'] });
-        setEditingArea(null);
+        window.location.reload();
     };
 
     // Handle area edit
@@ -184,46 +194,50 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
     };
 
     // Handle area delete
-    const handleAreaDelete = useCallback(async (areaId: number) => {
-        try {
-            // Get CSRF token with better error handling
-            const csrfToken = getCsrfToken();
-            console.log('[AreaDetail] CSRF Token for delete:', csrfToken.substring(0, 10) + '...');
-
-            const response = await fetch(
-                `/areas/${areaGroup.id}/areas/${areaId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken,
+    const handleAreaDelete = useCallback(
+        async (areaId: number) => {
+            try {
+                const response = await csrfFetch(
+                    `/areas/${areaGroup.id}/areas/${areaId}`,
+                    {
+                        method: 'DELETE',
                     },
-                },
-            );
+                );
 
-            if (!response.ok) {
-                const errText = await response.text();
-                console.error('[AreaDetail] Delete error:', response.status, errText);
+                if (!response.ok) {
+                    const errText = await response.text();
+                    console.error(
+                        '[AreaDetail] Delete error:',
+                        response.status,
+                        errText,
+                    );
 
-                // Handle CSRF token mismatch specifically
-                if (response.status === 419 || errText.includes('CSRF')) {
-                    toast.error(handleCsrfError(response, { message: errText }));
-                    return;
+                    // Handle CSRF token mismatch specifically
+                    if (response.status === 419 || errText.includes('CSRF')) {
+                        toast.error(
+                            handleCsrfError(response, { message: errText }),
+                        );
+                        return;
+                    }
+
+                    throw new Error('Gagal menghapus area');
                 }
 
-                throw new Error('Gagal menghapus area');
+                const data = await response.json();
+                toast.success(data.message || 'Area berhasil dihapus');
+                // Optimistically remove from local state
+                setAreasState((prev) => prev.filter((a) => a.id !== areaId));
+            } catch (error) {
+                console.error('Error deleting area:', error);
+                const msg =
+                    error instanceof Error
+                        ? error.message
+                        : 'Gagal menghapus area';
+                toast.error(msg);
             }
-
-            const data = await response.json();
-            toast.success(data.message || 'Area berhasil dihapus');
-            // Optimistically remove from local state
-            setAreasState((prev) => prev.filter((a) => a.id !== areaId));
-        } catch (error) {
-            console.error('Error deleting area:', error);
-            const msg = error instanceof Error ? error.message : 'Gagal menghapus area';
-            toast.error(msg);
-        }
-    }, []);
+        },
+        [areaGroup.id],
+    );
 
     // Handle area select
     const handleAreaSelect = useCallback((area: Area) => {
@@ -233,19 +247,11 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
     const handleLayerEdited = useCallback(
         async (id: number, geometry: unknown) => {
             try {
-                // Get CSRF token with better error handling
-                const csrfToken = getCsrfToken();
-                console.log('[AreaDetail] CSRF Token for edit:', csrfToken.substring(0, 10) + '...');
-
-                const response = await fetch(
+                const response = await csrfFetch(
                     `/areas/${areaGroup.id}/areas/${id}`,
                     {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': csrfToken,
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             name:
                                 areasState.find((a) => a.id === id)?.name || '',
@@ -256,11 +262,17 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
 
                 if (!response.ok) {
                     const errText = await response.text();
-                    console.error('[AreaDetail] Server response error:', response.status, errText);
+                    console.error(
+                        '[AreaDetail] Server response error:',
+                        response.status,
+                        errText,
+                    );
 
                     // Handle CSRF token mismatch specifically
                     if (response.status === 419 || errText.includes('CSRF')) {
-                        toast.error(handleCsrfError(response, { message: errText }));
+                        toast.error(
+                            handleCsrfError(response, { message: errText }),
+                        );
                         return;
                     }
 
@@ -269,13 +281,15 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
 
                 const data = await response.json().catch(() => ({}));
                 toast.success(data.message || 'Area berhasil diperbarui');
-                // Optimistically update local state geometry
                 setAreasState((prev) =>
-                    prev.map((a) => (a.id === id ? { ...a, geometry_json: geometry } : a)),
+                    prev.map((a) =>
+                        a.id === id ? { ...a, geometry_json: geometry } : a,
+                    ),
                 );
             } catch (err) {
                 console.error('Error editing area:', err);
-                const msg = err instanceof Error ? err.message : 'Gagal mengedit area';
+                const msg =
+                    err instanceof Error ? err.message : 'Gagal mengedit area';
                 toast.error(msg);
             }
         },
@@ -284,8 +298,9 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
 
     // Cleanup in-flight guards on unmount
     useEffect(() => {
+        const inFlight = createInFlightRef.current;
         return () => {
-            createInFlightRef.current.clear();
+            inFlight.clear();
         };
     }, []);
 
@@ -343,19 +358,25 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
                             </CardHeader>
                             <CardContent className="h-[calc(100%-80px)]">
                                 <div className="h-full rounded-md border">
-                                     <AreaMapDisplay
-                                         features={mapFeatures}
-                                         defaultColor={
-                                             areaGroup.legend_color_hex
-                                         }
-                                         className="h-full w-full"
-                                         resolvedLayerIds={resolvedLayerIds}
-                                         onLayerCreated={handleLayerCreated}
-                                         onLayerDeleted={useCallback((id: number) => {
-                                             console.log('[AreaDetail] onLayerDeleted', id);
-                                             void handleAreaDelete(id);
-                                         }, [handleAreaDelete])}
-                                         onLayerEdited={handleLayerEdited}
+                                    <AreaMapDisplay
+                                        features={mapFeatures}
+                                        defaultColor={
+                                            areaGroup.legend_color_hex
+                                        }
+                                        className="h-full w-full"
+                                        resolvedLayerIds={resolvedLayerIds}
+                                        onLayerCreated={handleLayerCreated}
+                                        onLayerDeleted={useCallback(
+                                            (id: number) => {
+                                                console.log(
+                                                    '[AreaDetail] onLayerDeleted',
+                                                    id,
+                                                );
+                                                void handleAreaDelete(id);
+                                            },
+                                            [handleAreaDelete],
+                                        )}
+                                        onLayerEdited={handleLayerEdited}
                                     />
                                 </div>
                             </CardContent>

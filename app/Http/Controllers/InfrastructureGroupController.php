@@ -39,7 +39,7 @@ class InfrastructureGroupController extends Controller
   public function store(Request $request)
   {
     $request->validate([
-      'code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9_]+$/', 'unique:infrastructure_groups,code'],
+      'code' => ['required', 'string', 'max:40', 'unique:infrastructure_groups,code'],
       'name' => ['required', 'string', 'max:150'],
       'category' => ['required', 'string', 'in:Kesehatan,Pendidikan,Listrik,Air Bersih,Drainase,Sanitasi,Sampah,Jalan,Lainnya'],
       'type' => ['required', 'string', 'in:Marker,Polyline,Polygon'],
