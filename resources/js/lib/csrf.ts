@@ -1,76 +1,172 @@
-/**
- * CSRF Token utility functions
- * Provides robust CSRF token handling for AJAX requests
- */
+type CsrfSource = 'cookie' | 'meta' | 'stored' | 'shared';
 
-/**
- * Get CSRF token from meta tag with validation
- * @returns CSRF token string
- * @throws Error if token is not found or empty
- */
-export function getCsrfToken(): string {
-    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    if (!csrfMeta) {
-        throw new Error('CSRF token meta tag not found. Please ensure <meta name="csrf-token"> is present in your HTML.');
-    }
-    
-    const token = csrfMeta.getAttribute('content');
-    if (!token || token.trim() === '') {
-        throw new Error('CSRF token is empty or not set. Please refresh the page and try again.');
-    }
-    
-    return token;
+const STORAGE_KEY = 'csrf.token';
+
+function readCookie(name: string): string | null {
+    const match = document.cookie.match(
+        new RegExp('(^|;\\s*)' + name + '=([^;]*)'),
+    );
+    return match ? decodeURIComponent(match[2]) : null;
 }
 
-/**
- * Check if CSRF token is available
- * @returns boolean indicating if token is available
- */
-export function hasCsrfToken(): boolean {
+export function getMetaToken(): string | null {
+    const m = document.querySelector('meta[name="csrf-token"]');
+    const t = m?.getAttribute('content')?.trim();
+    return t && t.length > 0 ? t : null;
+}
+
+function getStoredToken(): string | null {
     try {
-        const token = getCsrfToken();
-        return token.length > 0;
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return typeof parsed?.token === 'string' ? parsed.token : null;
     } catch {
-        return false;
+        return null;
     }
 }
 
-/**
- * Get CSRF token headers for fetch requests
- * @returns Headers object with CSRF token
- */
+function persistToken(token: string, source: CsrfSource): void {
+    try {
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ token, source, at: Date.now() }),
+        );
+    } catch {
+        void 0;
+    }
+}
+
+function getXsrfCookieToken(): string | null {
+    return readCookie('XSRF-TOKEN');
+}
+
+export function getCsrfToken(): string {
+    const cookieToken = getXsrfCookieToken();
+    if (cookieToken) {
+        persistToken(cookieToken, 'cookie');
+        return cookieToken;
+    }
+    const stored = getStoredToken();
+    if (stored) return stored;
+    const meta = getMetaToken();
+    if (meta) {
+        persistToken(meta, 'meta');
+        return meta;
+    }
+    return '';
+}
+
+export function hasCsrfToken(): boolean {
+    return !!getCsrfToken();
+}
+
 export function getCsrfHeaders(): Record<string, string> {
-    const token = getCsrfToken();
-    return {
-        'X-CSRF-TOKEN': token,
+    const cookieToken = getXsrfCookieToken();
+    const metaToken = getMetaToken();
+    const headers: Record<string, string> = {
         'X-Requested-With': 'XMLHttpRequest',
+        Accept: 'application/json',
     };
+    if (cookieToken) headers['X-XSRF-TOKEN'] = cookieToken;
+    if (metaToken) headers['X-CSRF-TOKEN'] = metaToken;
+    return headers;
 }
 
-/**
- * Handle CSRF errors with user-friendly messages
- * @param response - Fetch response object
- * @param errorData - Optional error data from response
- * @returns string - User-friendly error message
- */
-export function handleCsrfError(response: Response, errorData?: any): string {
-    if (response.status === 419) {
-        return 'Sesi telah berakhir. Silakan refresh halaman dan coba lagi.';
+export async function tryRefreshCsrfToken(): Promise<string | null> {
+    try {
+        const url = window.location.pathname || '/';
+        await fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json',
+            },
+            credentials: 'same-origin',
+        });
+        const token = getXsrfCookieToken();
+        if (token) {
+            persistToken(token, 'cookie');
+            return token;
+        }
+        const meta = getMetaToken();
+        if (meta) {
+            persistToken(meta, 'meta');
+            return meta;
+        }
+        return null;
+    } catch {
+        return null;
     }
-    
-    if (errorData?.message?.includes('CSRF') || errorData?.error?.includes('CSRF')) {
-        return 'Token keamanan tidak valid. Silakan refresh halaman dan coba lagi.';
-    }
-    
-    return errorData?.message || 'Terjadi kesalahan. Silakan coba lagi.';
 }
 
-/**
- * Refresh CSRF token by reloading the page
- * This should be called when CSRF token is invalid or expired
- */
-export function refreshCsrfToken(): void {
-    if (confirm('Sesi Anda telah berakhir. Refresh halaman untuk melanjutkan?')) {
-        window.location.reload();
+export async function csrfFetch(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+): Promise<Response> {
+    const headers = new Headers(init?.headers || {});
+    const token = getCsrfToken();
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const at = raw ? (JSON.parse(raw)?.at as number) : 0;
+        const ageMs = at ? Date.now() - at : 0;
+        if (!token || ageMs > 30 * 60 * 1000) {
+            await tryRefreshCsrfToken();
+        }
+    } catch {
+        void 0;
+    }
+    headers.set('X-Requested-With', 'XMLHttpRequest');
+    headers.set('Accept', headers.get('Accept') || 'application/json');
+    const cookieToken = getXsrfCookieToken();
+    const metaToken = getMetaToken();
+    if (cookieToken) headers.set('X-XSRF-TOKEN', cookieToken);
+    if (metaToken) headers.set('X-CSRF-TOKEN', metaToken);
+    const resp = await fetch(input, {
+        ...init,
+        headers,
+        credentials: init?.credentials || 'same-origin',
+    });
+    if (resp.status === 419) {
+        const refreshed = await tryRefreshCsrfToken();
+        if (refreshed) {
+            return fetch(input, {
+                ...init,
+                headers,
+                credentials: init?.credentials || 'same-origin',
+            });
+        }
+    }
+    return resp;
+}
+
+export function handleCsrfError(
+    response: Response,
+    errorData?: unknown,
+): string {
+    if (response.status === 419)
+        return 'Sesi telah berakhir. Silakan coba lagi.';
+    const message =
+        typeof (errorData as Record<string, unknown>)?.message === 'string'
+            ? ((errorData as Record<string, unknown>).message as string)
+            : undefined;
+    const errorMsg =
+        typeof (errorData as Record<string, unknown>)?.error === 'string'
+            ? ((errorData as Record<string, unknown>).error as string)
+            : undefined;
+    if (message?.includes('CSRF') || errorMsg?.includes('CSRF'))
+        return 'Token tidak valid. Silakan coba lagi.';
+    return message || 'Terjadi kesalahan. Silakan coba lagi.';
+}
+
+export async function refreshCsrfToken(): Promise<void> {
+    await tryRefreshCsrfToken();
+}
+
+export function registerCsrfSync(): void {
+    try {
+        persistToken(getCsrfToken(), 'stored');
+    } catch {
+        void 0;
     }
 }

@@ -1,3 +1,4 @@
+import { csrfFetch } from '@/lib/csrf';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -372,13 +373,9 @@ export function useHouseholdDraft() {
     const loadLastDraft = useCallback(async () => {
         try {
             // Use fetch for API endpoint (not page navigation)
-            const response = await fetch('/households/draft', {
+            const response = await csrfFetch('/households/draft', {
                 method: 'GET',
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
             });
 
             if (!response.ok) {
