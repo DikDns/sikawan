@@ -11,11 +11,7 @@ import {
     type AreaFeatureGeometry,
 } from '@/components/area/area-map-display';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    ResizableHandle,
-    ResizablePanel,
-    ResizablePanelGroup,
-} from '@/components/ui/resizable';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import AppLayout from '@/layouts/app-layout';
 import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
@@ -323,20 +319,15 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
                     )}
                 </div>
 
-                {/* Main Content: Split View */}
-                <ResizablePanelGroup
-                    direction="horizontal"
-                    className="min-h-0 flex-1"
-                >
-                    {/* Left Panel: Areas List */}
-                    <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
-                        <Card className="h-full">
-                            <CardHeader>
-                                <CardTitle>
-                                    Daftar Kawasan ({areasState.length})
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="h-[calc(100%-80px)]">
+                <div className="min-h-0 flex-1 gap-4 md:flex md:flex-row md:items-stretch">
+                    <Card className="md:h-[calc(100%-196px)] md:w-1/3">
+                        <CardHeader>
+                            <CardTitle>
+                                Daftar Kawasan ({areasState.length})
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-full">
+                            <ScrollArea className="h-[calc(100%-80px)]">
                                 <AreaFeatureList
                                     areas={areasState}
                                     selectedAreaId={selectedAreaId}
@@ -344,45 +335,34 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
                                     onAreaEdit={handleAreaEditDetail}
                                     className="h-full"
                                 />
-                            </CardContent>
-                        </Card>
-                    </ResizablePanel>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
 
-                    <ResizableHandle withHandle />
-
-                    {/* Right Panel: Map Display */}
-                    <ResizablePanel defaultSize={70} minSize={50} maxSize={75}>
-                        <Card className="h-full">
-                            <CardHeader>
-                                <CardTitle>Peta Kawasan</CardTitle>
-                            </CardHeader>
-                            <CardContent className="h-[calc(100%-80px)]">
-                                <div className="h-full rounded-md border">
-                                    <AreaMapDisplay
-                                        features={mapFeatures}
-                                        defaultColor={
-                                            areaGroup.legend_color_hex
-                                        }
-                                        className="h-full w-full"
-                                        resolvedLayerIds={resolvedLayerIds}
-                                        onLayerCreated={handleLayerCreated}
-                                        onLayerDeleted={useCallback(
-                                            (id: number) => {
-                                                console.log(
-                                                    '[AreaDetail] onLayerDeleted',
-                                                    id,
-                                                );
-                                                void handleAreaDelete(id);
-                                            },
-                                            [handleAreaDelete],
-                                        )}
-                                        onLayerEdited={handleLayerEdited}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </ResizablePanel>
-                </ResizablePanelGroup>
+                    <Card className="mt-4 md:mt-0 md:h-[calc(100%-196px)] md:flex-1">
+                        <CardHeader>
+                            <CardTitle>Peta Kawasan</CardTitle>
+                        </CardHeader>
+                        <CardContent className="md:h-[calc(100%-80px)]">
+                            <div className="h-[360px] rounded-md border md:h-full">
+                                <AreaMapDisplay
+                                    features={mapFeatures}
+                                    defaultColor={areaGroup.legend_color_hex}
+                                    className="h-full w-full"
+                                    resolvedLayerIds={resolvedLayerIds}
+                                    onLayerCreated={handleLayerCreated}
+                                    onLayerDeleted={useCallback(
+                                        (id: number) => {
+                                            void handleAreaDelete(id);
+                                        },
+                                        [handleAreaDelete],
+                                    )}
+                                    onLayerEdited={handleLayerEdited}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
             {/* Area Form Dialog */}
