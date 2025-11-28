@@ -18,6 +18,11 @@ class InfrastructureGroup extends Model
     'legend_color_hex',
     'legend_icon',
     'description',
+    'infrastructure_count',
+  ];
+
+  protected $casts = [
+    'infrastructure_count' => 'integer',
   ];
 
   public function infrastructures(): HasMany

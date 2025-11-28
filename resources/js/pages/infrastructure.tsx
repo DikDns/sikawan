@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
@@ -693,7 +694,11 @@ export default function Infrastructure({ groups, stats }: Props) {
                             </FieldContent>
                         </Field>
 
-                        <div className="grid gap-3 sm:grid-cols-2">
+                        <div
+                            className={cn(
+                                !editing && 'grid gap-3 sm:grid-cols-2',
+                            )}
+                        >
                             <Field>
                                 <FieldLabel htmlFor="category">
                                     Kategori
@@ -747,40 +752,41 @@ export default function Infrastructure({ groups, stats }: Props) {
                                     />
                                 </FieldContent>
                             </Field>
-
-                            <Field>
-                                <FieldLabel htmlFor="type">Tipe</FieldLabel>
-                                <FieldContent>
-                                    <Select
-                                        value={data.type}
-                                        onValueChange={(v) =>
-                                            setData('type', v as any)
-                                        }
-                                    >
-                                        <SelectTrigger id="type">
-                                            <SelectValue placeholder="Pilih tipe" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Marker">
-                                                Marker
-                                            </SelectItem>
-                                            <SelectItem value="Polyline">
-                                                Polyline
-                                            </SelectItem>
-                                            <SelectItem value="Polygon">
-                                                Polygon
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FieldError
-                                        errors={
-                                            errors.type
-                                                ? [{ message: errors.type }]
-                                                : []
-                                        }
-                                    />
-                                </FieldContent>
-                            </Field>
+                            {!editing && (
+                                <Field>
+                                    <FieldLabel htmlFor="type">Tipe</FieldLabel>
+                                    <FieldContent>
+                                        <Select
+                                            value={data.type}
+                                            onValueChange={(v) =>
+                                                setData('type', v as any)
+                                            }
+                                        >
+                                            <SelectTrigger id="type">
+                                                <SelectValue placeholder="Pilih tipe" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Marker">
+                                                    Marker
+                                                </SelectItem>
+                                                <SelectItem value="Polyline">
+                                                    Polyline
+                                                </SelectItem>
+                                                <SelectItem value="Polygon">
+                                                    Polygon
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FieldError
+                                            errors={
+                                                errors.type
+                                                    ? [{ message: errors.type }]
+                                                    : []
+                                            }
+                                        />
+                                    </FieldContent>
+                                </Field>
+                            )}
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2">
