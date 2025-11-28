@@ -1,5 +1,6 @@
 import { AreaGroupStats } from '@/components/area-group/area-group-stats';
 import { AreaGroupTable } from '@/components/area-group/area-group-table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,6 +16,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import {
     Select,
     SelectContent,
@@ -22,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
@@ -250,12 +253,35 @@ export default function Areas({ areaGroups, stats }: Props) {
                 </Dialog>
 
                 {syncAllPolling && (
-                    <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
-                        Memantau sinkronisasi...{' '}
-                        {syncAllStatus
-                            ? `(${Math.max(0, syncAllStatus.total - syncAllStatus.pending)}/${syncAllStatus.total})`
-                            : ''}
-                    </div>
+                    <Alert>
+                        <Spinner className="text-primary" />
+                        <AlertTitle>Sinkronisasi berjalan</AlertTitle>
+                        <AlertDescription>
+                            <div>
+                                {syncAllStatus
+                                    ? `Proses: ${Math.max(0, syncAllStatus.total - syncAllStatus.pending)}/${syncAllStatus.total}`
+                                    : 'Memantau sinkronisasi...'}
+                            </div>
+                            {syncAllStatus && (
+                                <div className="mt-2">
+                                    <Progress
+                                        value={
+                                            syncAllStatus.total > 0
+                                                ? (Math.max(
+                                                      0,
+                                                      syncAllStatus.total -
+                                                          syncAllStatus.pending,
+                                                  ) /
+                                                      syncAllStatus.total /
+                                                      1) *
+                                                  100
+                                                : 0
+                                        }
+                                    />
+                                </div>
+                            )}
+                        </AlertDescription>
+                    </Alert>
                 )}
 
                 {/* Statistics Cards & Table */}
