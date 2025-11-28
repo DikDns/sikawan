@@ -6,6 +6,7 @@ import {
     MapLocateControl,
     MapMarker,
     MapPolygon,
+    MapPolyline,
     MapPopup,
     MapRectangle,
     MapTileLayer,
@@ -14,7 +15,15 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Home } from 'lucide-react';
+import {
+    Building2,
+    Droplet,
+    GraduationCap,
+    Home,
+    Hospital,
+    Trash2,
+    Zap,
+} from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -68,6 +77,27 @@ interface AreaGroupForMap {
     areas: AreaFeatureGeometry[];
 }
 
+interface InfrastructureItem {
+    id: number;
+    name: string;
+    description?: string | null;
+    geometry_type: 'Point' | 'LineString' | 'Polygon';
+    geometry_json: unknown;
+    color?: string | null;
+}
+
+interface InfrastructureGroupForMap {
+    id: number;
+    code?: string | null;
+    name: string;
+    category?: string | null;
+    type: 'Marker' | 'Polyline' | 'Polygon';
+    legend_color_hex?: string | null;
+    legend_icon?: string | null;
+    description?: string | null;
+    items: InfrastructureItem[];
+}
+
 const RLH_COLOR = '#8AD463';
 const RTLH_COLOR = '#EC6767';
 const DEFAULT_COLOR = '#8B87E8';
@@ -92,20 +122,17 @@ const HouseholdMarkerIcon = (status: HabitabilityStatus) => {
     );
 };
 
-const parsePolygon = (geometry: any) => {
-    if (
-        !geometry ||
-        geometry.type !== 'Polygon' ||
-        !Array.isArray(geometry.coordinates)
-    )
+const parsePolygon = (geometry: unknown) => {
+    const g = geometry as { type?: unknown; coordinates?: unknown };
+    if (!g || g.type !== 'Polygon' || !Array.isArray(g.coordinates))
         return null;
-    const rings = geometry.coordinates as number[][][];
+    const rings = g.coordinates as number[][][];
     return rings.map((ring) =>
         ring.map(([lng, lat]) => [lat, lng] as [number, number]),
     );
 };
 
-const parseRectangle = (geometry: any) => {
+const parseRectangle = (geometry: unknown) => {
     if (!Array.isArray(geometry) || geometry.length !== 2) return null;
     const [[west, north], [east, south]] = geometry as [
         [number, number],
@@ -117,22 +144,40 @@ const parseRectangle = (geometry: any) => {
     ] as [[number, number], [number, number]];
 };
 
+const parsePoint = (geometry: unknown) => {
+    const g = geometry as { type?: unknown; coordinates?: unknown };
+    if (!g || g.type !== 'Point' || !Array.isArray(g.coordinates)) return null;
+    const [lng, lat] = g.coordinates as [number, number];
+    return [lat, lng] as [number, number];
+};
+
+const parseLineString = (geometry: unknown) => {
+    const g = geometry as { type?: unknown; coordinates?: unknown };
+    if (!g || g.type !== 'LineString' || !Array.isArray(g.coordinates))
+        return null;
+    return (g.coordinates as [number, number][])?.map(
+        ([lng, lat]) => [lat, lng] as [number, number],
+    );
+};
+
 export default function DistributionMap() {
     const {
         households = [],
         areaGroups = [],
+        infrastructureGroups = [],
         error,
     } = usePage<{
-        flash?: any;
+        flash?: unknown;
         households: HouseholdForMap[];
         areaGroups: AreaGroupForMap[];
+        infrastructureGroups: InfrastructureGroupForMap[];
         error?: string;
     }>().props;
 
     useEffect(() => {
         const id = setInterval(() => {
             router.reload({
-                only: ['households', 'areaGroups'],
+                only: ['households', 'areaGroups', 'infrastructureGroups'],
             });
         }, 60000);
         return () => clearInterval(id);
@@ -167,14 +212,54 @@ export default function DistributionMap() {
         () => areaGroups.map((g) => `Kawasan ${g.name}`),
         [areaGroups],
     );
+    const psuLayerNames = useMemo(
+        () => infrastructureGroups.map((g) => `PSU ${g.name}`),
+        [infrastructureGroups],
+    );
     const defaultLayerGroups = useMemo(
         () => [
             'Rumah Layak Huni',
             'Rumah Tidak Layak Huni',
             ...groupLayerNames,
+            ...psuLayerNames,
         ],
-        [groupLayerNames],
+        [groupLayerNames, psuLayerNames],
     );
+
+    function PSUMarkerIcon(group: InfrastructureGroupForMap) {
+        const color = group.legend_color_hex || DEFAULT_COLOR;
+        const name = (group.legend_icon || '').toLowerCase();
+        let iconEl = <Building2 className="size-6" style={{ color }} />;
+        if (name === 'hospital')
+            iconEl = <Hospital className="size-6" style={{ color }} />;
+        else if (name === 'graduation-cap')
+            iconEl = <GraduationCap className="size-6" style={{ color }} />;
+        else if (name === 'zap')
+            iconEl = <Zap className="size-6" style={{ color }} />;
+        else if (name === 'droplet')
+            iconEl = <Droplet className="size-6" style={{ color }} />;
+        else if (name === 'trash-2')
+            iconEl = <Trash2 className="size-6" style={{ color }} />;
+        else if (name === 'building-2')
+            iconEl = <Building2 className="size-6" style={{ color }} />;
+        return (
+            <div
+                style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 28,
+                    height: 28,
+                    backgroundColor: '#ffffff',
+                    borderRadius: 9999,
+                    border: '2px solid #0f172a',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                }}
+            >
+                {iconEl}
+            </div>
+        );
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -322,46 +407,24 @@ export default function DistributionMap() {
                             </MapLayerGroup>
 
                             {areaGroups.map((group) => {
-                                const groupColor = group.legend_color_hex;
                                 const groupLayerName = `Kawasan ${group.name}`;
-                                const groupShape = (() => {
-                                    const raw =
-                                        typeof group.geometry_json === 'string'
-                                            ? JSON.parse(
-                                                  group.geometry_json as string,
-                                              )
-                                            : group.geometry_json;
-                                    if (!raw) return null;
-                                    const poly = parsePolygon(raw);
-                                    if (poly)
-                                        return {
-                                            type: 'polygon' as const,
-                                            positions: poly,
-                                        };
-                                    const rect = parseRectangle(raw);
-                                    if (rect)
-                                        return {
-                                            type: 'rectangle' as const,
-                                            bounds: rect,
-                                        };
-                                    return null;
-                                })();
                                 return (
                                     <MapLayerGroup
                                         key={`group-${group.id}`}
                                         name={groupLayerName}
                                     >
                                         {group.areas.map((area) => {
-                                            const raw =
+                                            const raw: unknown =
                                                 typeof area.geometry_json ===
                                                 'string'
                                                     ? JSON.parse(
                                                           area.geometry_json as string,
                                                       )
                                                     : area.geometry_json;
-                                            const color = area.color;
-
-                                            console.log(color);
+                                            const color =
+                                                area.color ||
+                                                group.legend_color_hex ||
+                                                DEFAULT_COLOR;
                                             const poly = parsePolygon(raw);
                                             const rect = !poly
                                                 ? parseRectangle(raw)
@@ -477,6 +540,126 @@ export default function DistributionMap() {
                                     </MapLayerGroup>
                                 );
                             })}
+
+                            {infrastructureGroups.map((group) => (
+                                <MapLayerGroup
+                                    key={`psu-group-${group.id}`}
+                                    name={`PSU ${group.name}`}
+                                >
+                                    {group.items.map((item) => {
+                                        let raw: unknown = item.geometry_json;
+                                        if (typeof raw === 'string') {
+                                            try {
+                                                raw = JSON.parse(raw);
+                                            } catch {
+                                                raw = null;
+                                            }
+                                        }
+                                        const color =
+                                            item.color ||
+                                            group.legend_color_hex ||
+                                            DEFAULT_COLOR;
+                                        if (item.geometry_type === 'Point') {
+                                            const pos = parsePoint(raw);
+                                            if (!pos) return null;
+                                            return (
+                                                <MapMarker
+                                                    key={`psu-point-${item.id}`}
+                                                    position={pos}
+                                                    icon={PSUMarkerIcon(group)}
+                                                    iconAnchor={[12, 12]}
+                                                    popupAnchor={[0, -12]}
+                                                    aria-label={`PSU ${group.name}: ${item.name}`}
+                                                >
+                                                    <MapPopup>
+                                                        <div
+                                                            className="space-y-2"
+                                                            aria-label="Informasi PSU"
+                                                        >
+                                                            <div className="font-medium">
+                                                                {item.name}
+                                                            </div>
+                                                            <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                                {item.description ||
+                                                                    '-'}
+                                                            </div>
+                                                        </div>
+                                                    </MapPopup>
+                                                </MapMarker>
+                                            );
+                                        }
+                                        if (
+                                            item.geometry_type === 'LineString'
+                                        ) {
+                                            const positions =
+                                                parseLineString(raw);
+                                            if (!positions) return null;
+                                            return (
+                                                <MapPolyline
+                                                    key={`psu-line-${item.id}`}
+                                                    positions={positions}
+                                                    pathOptions={{
+                                                        color,
+                                                        weight: 4,
+                                                        opacity: 1,
+                                                        fillOpacity: 0,
+                                                    }}
+                                                    className={`stroke-4 stroke-${color} transition-all duration-300 hover:opacity-80`}
+                                                >
+                                                    <MapPopup>
+                                                        <div
+                                                            className="space-y-2"
+                                                            aria-label="Informasi PSU"
+                                                        >
+                                                            <div className="font-medium">
+                                                                {item.name}
+                                                            </div>
+                                                            <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                                {item.description ||
+                                                                    '-'}
+                                                            </div>
+                                                        </div>
+                                                    </MapPopup>
+                                                </MapPolyline>
+                                            );
+                                        }
+                                        if (item.geometry_type === 'Polygon') {
+                                            const positions = parsePolygon(raw);
+                                            if (!positions) return null;
+                                            return (
+                                                <MapPolygon
+                                                    key={`psu-poly-${item.id}`}
+                                                    positions={positions}
+                                                    pathOptions={{
+                                                        color,
+                                                        fillColor: color,
+                                                        weight: 2,
+                                                        opacity: 0.9,
+                                                        fillOpacity: 0.2,
+                                                    }}
+                                                    className={`cursor-pointer fill-[${color}] stroke-[${color}] stroke-2 transition-all duration-300 hover:opacity-80`}
+                                                >
+                                                    <MapPopup>
+                                                        <div
+                                                            className="space-y-2"
+                                                            aria-label="Informasi PSU"
+                                                        >
+                                                            <div className="font-medium">
+                                                                {item.name}
+                                                            </div>
+                                                            <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                                {item.description ||
+                                                                    '-'}
+                                                            </div>
+                                                        </div>
+                                                    </MapPopup>
+                                                </MapPolygon>
+                                            );
+                                        }
+                                        return null;
+                                    })}
+                                </MapLayerGroup>
+                            ))}
                         </MapLayers>
                     </Map>
                 </div>

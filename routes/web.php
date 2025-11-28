@@ -7,6 +7,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SuperAdmin\LogController;
 use App\Http\Controllers\PublicDistributionMapController;
+use App\Http\Controllers\DistributionMapController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -24,76 +25,7 @@ Route::get('peta-sebaran', [PublicDistributionMapController::class, 'index'])
 Route::middleware(['auth', 'verified'])->group(function () {
   Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-  Route::get('distribution-map', function () {
-    try {
-      $households = \App\Models\Household\Household::query()
-        ->where('is_draft', false)
-        ->whereNotNull('latitude')
-        ->whereNotNull('longitude')
-        ->orderByDesc('updated_at')
-        ->limit(2000)
-        ->get()
-        ->map(function ($h) {
-          return [
-            'id' => $h->id,
-            'head_name' => $h->head_name,
-            'address_text' => $h->address_text,
-            'latitude' => (float) $h->latitude,
-            'longitude' => (float) $h->longitude,
-            'habitability_status' => $h->habitability_status, // RLH | RTLH
-            'province_name' => $h->province_name,
-            'regency_name' => $h->regency_name,
-            'district_name' => $h->district_name,
-            'village_name' => $h->village_name,
-          ];
-        });
-
-      $areaGroups = \App\Models\AreaGroup::with('areas')
-        ->orderBy('name')
-        ->get()
-        ->map(function ($group) {
-          return [
-            'id' => $group->id,
-            'code' => $group->code,
-            'name' => $group->name,
-            'description' => $group->description,
-            'legend_color_hex' => $group->legend_color_hex,
-            'legend_icon' => $group->legend_icon,
-            'geometry_json' => $group->geometry_json,
-            'centroid_lat' => $group->centroid_lat,
-            'centroid_lng' => $group->centroid_lng,
-            'areas' => $group->areas->map(function ($area) use ($group) {
-              return [
-                'id' => $area->id,
-                'name' => $area->name,
-                'description' => $area->description,
-                'geometry_json' => $area->geometry_json,
-                'province_id' => $area->province_id,
-                'province_name' => $area->province_name,
-                'regency_id' => $area->regency_id,
-                'regency_name' => $area->regency_name,
-                'district_id' => $area->district_id,
-                'district_name' => $area->district_name,
-                'village_id' => $area->village_id,
-                'village_name' => $area->village_name,
-                'color' => $group->legend_color_hex,
-              ];
-            }),
-          ];
-        });
-
-      return Inertia::render('distribution-map', [
-        'households' => $households,
-        'areaGroups' => $areaGroups,
-      ]);
-    } catch (\Throwable $e) {
-      return Inertia::render('distribution-map', [
-        'households' => [],
-        'areaGroups' => [],
-        'error' => 'Gagal memuat data: ' . $e->getMessage(),
-      ]);
-    }
-  })->name('distribution-map');
+  Route::get('distribution-map', [DistributionMapController::class, 'index'])->name('distribution-map');
 
   // Households Routes
   Route::get('households', [App\Http\Controllers\HouseholdController::class, 'index'])->name('households.index');

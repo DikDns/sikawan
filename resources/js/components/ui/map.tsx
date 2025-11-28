@@ -108,7 +108,7 @@ function Map({
 }) {
     return (
         <LeafletMapContainer
-            center={DEFAULT_CENTER}
+            center={_center ?? DEFAULT_CENTER}
             zoom={zoom}
             attributionControl={false}
             zoomControl={false}
@@ -515,7 +515,7 @@ function MapPolyline({
     return (
         <LeafletPolyline
             className={cn(
-                "fill-foreground stroke-foreground stroke-4",
+                "stroke-foreground stroke-4",
                 className
             )}
             {...props}
