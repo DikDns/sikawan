@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import {
+    DEFAULT_CENTER,
     Map,
     MapDrawControl,
     MapDrawDelete,
@@ -7,11 +8,16 @@ import {
     MapDrawPolygon,
     MapDrawRectangle,
     MapDrawUndo,
+    MapLayerGroup,
+    MapMarker,
+    MapPopup,
     MapTileLayer,
     useLeaflet,
 } from '@/components/ui/map';
+import { type HouseholdForMap } from '@/pages/areas/detail';
 import { usePage } from '@inertiajs/react';
 import type { LatLngExpression } from 'leaflet';
+import { Home } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Area as AreaDetail } from './area-feature-list';
 
@@ -35,6 +41,7 @@ export interface AreaMapDisplayProps {
     onLayerEdited?: (id: number, geometry: unknown) => void;
     // Mapping from temporary client layer number to server-assigned ID
     resolvedLayerIds?: Record<number, number>;
+    households?: HouseholdForMap[];
 }
 
 export function AreaMapDisplay({
@@ -47,6 +54,7 @@ export function AreaMapDisplay({
     onLayerDeleted,
     onLayerEdited,
     resolvedLayerIds,
+    households = [],
 }: AreaMapDisplayProps) {
     const { L } = useLeaflet();
     const page = usePage();
@@ -73,7 +81,7 @@ export function AreaMapDisplay({
         );
 
         if (validCentroids.length === 0) {
-            return [-4.2327, 103.6141] as LatLngExpression; // Default to Muara Enim
+            return DEFAULT_CENTER;
         }
 
         const avgLat =
@@ -550,7 +558,9 @@ export function AreaMapDisplay({
             Object.values(pendingCreateTimeoutsRef.current).forEach((t) => {
                 try {
                     clearTimeout(t);
-                } catch {}
+                } catch (e) {
+                    void e;
+                }
             });
             pendingCreateTimeoutsRef.current = {};
             pendingCreateGeometryRef.current = {};
@@ -565,10 +575,130 @@ export function AreaMapDisplay({
 
     if (!L) return null;
 
+    type HabitabilityStatus = 'RLH' | 'RTLH' | null;
+    const RLH_COLOR = '#8AD463';
+    const RTLH_COLOR = '#EC6767';
+    const DEFAULT_COLOR = '#8B87E8';
+    const getStatusColor = (status: HabitabilityStatus) => {
+        if (status === 'RLH') return RLH_COLOR;
+        if (status === 'RTLH') return RTLH_COLOR;
+        return DEFAULT_COLOR;
+    };
+
+    const HouseholdMarkerIcon = (status: HabitabilityStatus) => {
+        const color = getStatusColor(status);
+        return (
+            <div
+                className="flex size-8 items-center justify-center rounded-full border bg-background shadow-sm"
+                style={{ borderColor: color }}
+                aria-label="Lokasi rumah"
+                tabIndex={0}
+            >
+                <Home className="size-5" style={{ color }} />
+            </div>
+        );
+    };
+
     return (
         <div className={className}>
             <Map center={mapCenter} zoom={zoom} className="h-full w-full">
                 <MapTileLayer />
+                <MapLayerGroup name="Rumah Layak Huni">
+                    {households
+                        .filter((h) => h.habitability_status === 'RLH')
+                        .map((h) => (
+                            <MapMarker
+                                key={`rlh-${h.id}`}
+                                position={[h.latitude, h.longitude]}
+                                icon={HouseholdMarkerIcon('RLH')}
+                                iconAnchor={[12, 12]}
+                                popupAnchor={[0, -12]}
+                                aria-label={`Rumah RLH: ${h.head_name}`}
+                            >
+                                <MapPopup>
+                                    <div
+                                        className="space-y-2"
+                                        aria-label="Informasi rumah"
+                                    >
+                                        <div className="font-medium">
+                                            {h.head_name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {h.address_text}
+                                        </div>
+                                        <div className="text-xs">
+                                            Status: RLH
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                Provinsi:{' '}
+                                                {h.province_name || '-'}
+                                            </div>
+                                            <div>
+                                                Kab/Kota:{' '}
+                                                {h.regency_name || '-'}
+                                            </div>
+                                            <div>
+                                                Kecamatan:{' '}
+                                                {h.district_name || '-'}
+                                            </div>
+                                            <div>
+                                                Desa: {h.village_name || '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </MapPopup>
+                            </MapMarker>
+                        ))}
+                </MapLayerGroup>
+                <MapLayerGroup name="Rumah Tidak Layak Huni">
+                    {households
+                        .filter((h) => h.habitability_status === 'RTLH')
+                        .map((h) => (
+                            <MapMarker
+                                key={`rtlh-${h.id}`}
+                                position={[h.latitude, h.longitude]}
+                                icon={HouseholdMarkerIcon('RTLH')}
+                                iconAnchor={[12, 12]}
+                                popupAnchor={[0, -12]}
+                                aria-label={`Rumah Tidak Layak Huni: ${h.head_name}`}
+                            >
+                                <MapPopup>
+                                    <div
+                                        className="space-y-2"
+                                        aria-label="Informasi rumah"
+                                    >
+                                        <div className="font-medium">
+                                            {h.head_name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {h.address_text}
+                                        </div>
+                                        <div className="text-xs">
+                                            Status: RTLH
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                Provinsi:{' '}
+                                                {h.province_name || '-'}
+                                            </div>
+                                            <div>
+                                                Kab/Kota:{' '}
+                                                {h.regency_name || '-'}
+                                            </div>
+                                            <div>
+                                                Kecamatan:{' '}
+                                                {h.district_name || '-'}
+                                            </div>
+                                            <div>
+                                                Desa: {h.village_name || '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </MapPopup>
+                            </MapMarker>
+                        ))}
+                </MapLayerGroup>
                 <MapDrawControl
                     onLayersChange={handleLayersChange}
                     initialShapes={initialShapes}

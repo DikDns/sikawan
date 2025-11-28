@@ -49,9 +49,28 @@ interface AreaGroup {
 interface Props {
     areaGroup: AreaGroup;
     areas: Area[];
+    households?: HouseholdForMap[];
 }
 
-export default function AreaDetail({ areaGroup, areas }: Props) {
+type HabitabilityStatus = 'RLH' | 'RTLH' | null;
+export interface HouseholdForMap {
+    id: number;
+    head_name: string;
+    address_text: string;
+    latitude: number;
+    longitude: number;
+    habitability_status: HabitabilityStatus;
+    province_name?: string | null;
+    regency_name?: string | null;
+    district_name?: string | null;
+    village_name?: string | null;
+}
+
+export default function AreaDetail({
+    areaGroup,
+    areas,
+    households = [],
+}: Props) {
     const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingArea, setEditingArea] = useState<AreaFormType | null>(null);
@@ -358,6 +377,7 @@ export default function AreaDetail({ areaGroup, areas }: Props) {
                                         [handleAreaDelete],
                                     )}
                                     onLayerEdited={handleLayerEdited}
+                                    households={households}
                                 />
                             </div>
                         </CardContent>

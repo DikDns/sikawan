@@ -9,7 +9,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 export type AreaGroup = {
     id?: number;

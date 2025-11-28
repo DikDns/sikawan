@@ -18,7 +18,6 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { getCsrfToken } from '@/lib/csrf';
 import { Plus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -67,7 +66,6 @@ export default function Areas({ areaGroups, stats }: Props) {
 
     const handleDelete = (id: number) => {
         router.delete(`/areas/${id}`, {
-            data: { _token: getCsrfToken() },
             preserveState: true,
             preserveScroll: true,
         });

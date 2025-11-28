@@ -95,7 +95,7 @@ import {
     useMapEvents,
 } from "react-leaflet"
 
-const DEFAULT_CENTER: LatLngExpression = [-3.6632234, 103.7781606]
+export const DEFAULT_CENTER: LatLngExpression = [-3.6632234, 103.7781606]
 
 function Map({
     zoom = 10,

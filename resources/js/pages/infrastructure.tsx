@@ -47,7 +47,6 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { getCsrfToken } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -159,7 +158,6 @@ export default function Infrastructure({ groups, stats }: Props) {
 
     const handleDelete = (id: number) => {
         router.delete(`/infrastructure/${id}`, {
-            data: { _token: getCsrfToken() },
             preserveState: true,
             preserveScroll: true,
         });
