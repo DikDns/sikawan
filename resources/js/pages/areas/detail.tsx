@@ -407,7 +407,7 @@ export default function AreaDetail({
                 </div>
 
                 <div className="min-h-0 flex-1 gap-4 md:flex md:flex-row md:items-stretch">
-                    <Card className="md:h-full md:w-1/3">
+                    <Card className="md:h-full md:max-h-[500px] md:w-1/3">
                         <CardHeader>
                             <CardTitle>
                                 Daftar Kawasan ({areasState.length})
