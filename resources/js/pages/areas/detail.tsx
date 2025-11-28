@@ -64,6 +64,7 @@ export interface HouseholdForMap {
     regency_name?: string | null;
     district_name?: string | null;
     village_name?: string | null;
+    updated_at?: string | null;
 }
 
 export default function AreaDetail({
@@ -81,6 +82,16 @@ export default function AreaDetail({
     >({});
     // In-flight guard to prevent duplicate POSTs for the same layer
     const createInFlightRef = useRef<Set<number>>(new Set());
+
+    const [relatedHouseholds, setRelatedHouseholds] = useState<
+        HouseholdForMap[]
+    >([]);
+    const [relatedLoading, setRelatedLoading] = useState(false);
+    const [relatedError, setRelatedError] = useState<string | null>(null);
+    const [syncStatus, setSyncStatus] = useState<{
+        status: string;
+        last_at: string | null;
+    } | null>(null);
 
     // keep local state in sync if server prop changes
     useEffect(() => {
@@ -259,6 +270,63 @@ export default function AreaDetail({
         setSelectedAreaId(area.id);
     }, []);
 
+    const selectedArea = useMemo(
+        () =>
+            selectedAreaId
+                ? areasState.find((a) => a.id === selectedAreaId) || null
+                : null,
+        [areasState, selectedAreaId],
+    );
+
+    useEffect(() => {
+        const load = async () => {
+            if (!selectedAreaId) {
+                setRelatedHouseholds([]);
+                setSyncStatus(null);
+                return;
+            }
+            setRelatedLoading(true);
+            setRelatedError(null);
+            try {
+                const res = await csrfFetch(
+                    `/areas/${selectedAreaId}/households?limit=50`,
+                    { method: 'GET' },
+                );
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    setRelatedError(handleCsrfError(res, data));
+                    setRelatedHouseholds([]);
+                    setSyncStatus(null);
+                    return;
+                }
+                const data = await res.json();
+                const list: HouseholdForMap[] = (data?.data || []).map(
+                    (h: any) => ({
+                        id: h.id,
+                        head_name: h.head_name,
+                        address_text: '',
+                        latitude: 0,
+                        longitude: 0,
+                        habitability_status: h.habitability_status ?? null,
+                        updated_at: h.updated_at ?? null,
+                    }),
+                );
+                setRelatedHouseholds(list);
+                setSyncStatus({
+                    status: data?.sync?.status ?? 'unknown',
+                    last_at: data?.sync?.last_at ?? null,
+                });
+            } catch (e) {
+                setRelatedError('Gagal memuat data rumah');
+                setRelatedHouseholds([]);
+                setSyncStatus(null);
+            } finally {
+                setRelatedLoading(false);
+            }
+        };
+        void load();
+    }, [selectedAreaId]);
+
     const handleLayerEdited = useCallback(
         async (id: number, geometry: unknown) => {
             try {
@@ -339,7 +407,7 @@ export default function AreaDetail({
                 </div>
 
                 <div className="min-h-0 flex-1 gap-4 md:flex md:flex-row md:items-stretch">
-                    <Card className="md:h-[calc(100%-196px)] md:w-1/3">
+                    <Card className="md:h-full md:w-1/3">
                         <CardHeader>
                             <CardTitle>
                                 Daftar Kawasan ({areasState.length})
@@ -358,7 +426,7 @@ export default function AreaDetail({
                         </CardContent>
                     </Card>
 
-                    <Card className="mt-4 md:mt-0 md:h-[calc(100%-196px)] md:flex-1">
+                    <Card className="mt-4 md:mt-0 md:h-full md:max-h-[500px] md:flex-1">
                         <CardHeader>
                             <CardTitle>Peta Kawasan</CardTitle>
                         </CardHeader>
@@ -383,6 +451,121 @@ export default function AreaDetail({
                         </CardContent>
                     </Card>
                 </div>
+            </div>
+
+            <div className="p-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {selectedAreaId
+                                ? `Rumah di ${selectedArea?.name ?? `#${selectedAreaId}`}`
+                                : 'Rumah di Kawasan'}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {!selectedAreaId ? (
+                            <div className="text-sm text-muted-foreground">
+                                Belum ada kawasan terpilih. Pilih salah satu
+                                kawasan dari daftar kawasan untuk menampilkan
+                                data rumah.
+                            </div>
+                        ) : relatedLoading ? (
+                            <div className="text-sm text-muted-foreground">
+                                Memuat data untuk Kawasan{' '}
+                                {selectedArea?.name ?? `#${selectedAreaId}`}...
+                            </div>
+                        ) : relatedError ? (
+                            <div className="text-sm text-red-600">
+                                {relatedError}
+                            </div>
+                        ) : relatedHouseholds.length === 0 ? (
+                            <div className="text-sm text-muted-foreground">
+                                Data rumah tidak ditemukan untuk area ini.
+                                Jalankan sinkronisasi dari halaman Kawasan jika
+                                perlu.
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                                {relatedHouseholds.map((h) => (
+                                    <div
+                                        key={h.id}
+                                        className="rounded-md border p-3"
+                                    >
+                                        <div className="text-xs text-muted-foreground">
+                                            Nomor rumah
+                                        </div>
+                                        <div className="font-medium">
+                                            {h.id}
+                                        </div>
+                                        <div className="mt-2 text-xs text-muted-foreground">
+                                            Nama penghuni
+                                        </div>
+                                        <div>{h.head_name || '-'}</div>
+                                        <div className="mt-2 text-xs text-muted-foreground">
+                                            Status hunian
+                                        </div>
+                                        <div className="font-medium">
+                                            {h.habitability_status || '-'}
+                                        </div>
+                                        <div className="mt-2 text-xs text-muted-foreground">
+                                            Tanggal terakhir update
+                                        </div>
+                                        <div>
+                                            {h.updated_at
+                                                ? new Date(
+                                                      h.updated_at,
+                                                  ).toLocaleString()
+                                                : '-'}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="p-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {selectedAreaId
+                                ? `Status Sinkronisasi ${selectedArea?.name ?? `#${selectedAreaId}`}`
+                                : 'Status Sinkronisasi'}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {!selectedAreaId ? (
+                            <div className="text-sm text-muted-foreground">
+                                Pilih kawasan terlebih dahulu untuk melihat
+                                status sinkronisasi.
+                            </div>
+                        ) : syncStatus ? (
+                            <div className="flex flex-col gap-1 text-sm">
+                                <div>
+                                    <span className="text-muted-foreground">
+                                        Status:
+                                    </span>{' '}
+                                    {syncStatus.status}
+                                </div>
+                                <div>
+                                    <span className="text-muted-foreground">
+                                        Terakhir:
+                                    </span>{' '}
+                                    {syncStatus.last_at
+                                        ? new Date(
+                                              syncStatus.last_at,
+                                          ).toLocaleString()
+                                        : '-'}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-sm text-muted-foreground">
+                                Belum ada informasi sinkronisasi
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Area Form Dialog */}

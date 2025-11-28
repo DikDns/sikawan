@@ -8,6 +8,8 @@ use App\Models\Household\Household;
 use App\Jobs\SyncAreaHouseholdsJob;
 use App\Jobs\SyncAllEligibleAreasJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class AreaController extends Controller
@@ -135,6 +137,63 @@ class AreaController extends Controller
     return response()->json([
       'message' => 'Sinkronisasi seluruh kawasan yang memenuhi kriteria sedang diproses',
     ], 202);
+  }
+
+  /**
+   * Fetch households related to a specific area
+   */
+  public function householdsByArea(Request $request, $areaId)
+  {
+    $area = Area::find($areaId);
+    if (! $area) {
+      return response()->json([
+        'message' => 'Area tidak ditemukan',
+      ], 404);
+    }
+
+    $validator = Validator::make($request->all(), [
+      'limit' => 'sometimes|integer|min:1|max:200',
+    ]);
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Parameter tidak valid',
+        'errors' => $validator->errors(),
+      ], 422);
+    }
+
+    $limit = (int) ($request->input('limit', 50));
+    $limit = max(1, min(200, $limit));
+
+    try {
+      $rows = Household::query()
+        ->where('area_id', $area->id)
+        ->orderByDesc('updated_at')
+        ->limit($limit)
+        ->get(['id', 'head_name', 'habitability_status', 'updated_at'])
+        ->map(function ($h) {
+          return [
+            'id' => $h->id,
+            'head_name' => $h->head_name,
+            'habitability_status' => $h->habitability_status,
+            'updated_at' => optional($h->updated_at)->toIso8601String(),
+          ];
+        });
+
+      $status = Cache::get('area-sync-status-' . $area->id, 'unknown');
+      $last = Cache::get('area-sync-last-' . $area->id);
+
+      return response()->json([
+        'data' => $rows,
+        'sync' => [
+          'status' => $status,
+          'last_at' => $last instanceof \Carbon\Carbon ? $last->toIso8601String() : $last,
+        ],
+      ]);
+    } catch (\Throwable $e) {
+      return response()->json([
+        'message' => 'Terjadi kesalahan saat mengambil data',
+      ], 500);
+    }
   }
 
   /**

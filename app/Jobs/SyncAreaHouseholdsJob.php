@@ -30,8 +30,11 @@ class SyncAreaHouseholdsJob implements ShouldQueue
     }
 
     try {
+      Cache::forever('area-sync-status-' . $this->areaId, 'running');
+      Cache::forever('area-sync-start-' . $this->areaId, now());
       $area = Area::find($this->areaId);
       if (! $area) {
+        Cache::forever('area-sync-status-' . $this->areaId, 'not_found');
         return;
       }
 
@@ -61,11 +64,13 @@ class SyncAreaHouseholdsJob implements ShouldQueue
         }
       }
       if (! $geometry) {
+        Cache::forever('area-sync-status-' . $area->id, 'skipped');
         return;
       }
 
       $bounds = $this->computeBounds($geometry);
       if (! $bounds) {
+        Cache::forever('area-sync-status-' . $area->id, 'skipped');
         return;
       }
 
@@ -131,6 +136,8 @@ class SyncAreaHouseholdsJob implements ShouldQueue
       if (! empty($toDetach)) {
         Household::whereIn('id', $toDetach)->update(['area_id' => null]);
       }
+      Cache::forever('area-sync-status-' . $area->id, 'completed');
+      Cache::forever('area-sync-last-' . $area->id, now());
     } finally {
       $lock->release();
     }
