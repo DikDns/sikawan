@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -7,7 +8,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { Edit, MoreVertical, Trash2 } from 'lucide-react';
+import { Edit, MoreVertical } from 'lucide-react';
 
 export interface AreaFeatureCardProps {
     id: number;
@@ -17,6 +18,8 @@ export interface AreaFeatureCardProps {
     regencyName?: string | null;
     districtName?: string | null;
     villageName?: string | null;
+    isSlum?: boolean;
+    areaTotalM2?: number | null;
     onClick?: () => void;
     onEdit?: () => void;
     className?: string;
@@ -29,6 +32,8 @@ export function AreaFeatureCard({
     regencyName,
     districtName,
     villageName,
+    isSlum,
+    areaTotalM2,
     onClick,
     onEdit,
     className,
@@ -40,6 +45,13 @@ export function AreaFeatureCard({
         provinceName,
     ].filter(Boolean);
 
+    const formatArea = (m2: number) => {
+        if (m2 >= 10000) {
+            return `${(m2 / 10000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} Ha`;
+        }
+        return `${m2.toLocaleString('id-ID', { maximumFractionDigits: 0 })} m²`;
+    };
+
     return (
         <Card
             className={cn(
@@ -50,15 +62,30 @@ export function AreaFeatureCard({
         >
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                        <CardTitle className="text-base">{name}</CardTitle>
+                    <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                            <CardTitle className="text-base">{name}</CardTitle>
+                            {isSlum && (
+                                <Badge
+                                    variant="destructive"
+                                    className="text-xs"
+                                >
+                                    Kumuh
+                                </Badge>
+                            )}
+                        </div>
                         {description && (
-                            <p className="mt-1 text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                                 {description}
                             </p>
                         )}
+                        {areaTotalM2 && areaTotalM2 > 0 && (
+                            <p className="text-xs font-medium text-muted-foreground">
+                                Luas: {formatArea(areaTotalM2)}
+                            </p>
+                        )}
                         {locationParts.length > 0 && (
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                                 {locationParts.join(', ')}
                             </p>
                         )}

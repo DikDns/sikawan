@@ -15,6 +15,8 @@ export interface Area {
     district_name?: string | null;
     village_id?: string | null;
     village_name?: string | null;
+    is_slum?: boolean;
+    area_total_m2?: number | null;
 }
 
 export interface AreaFeatureListProps {
@@ -51,6 +53,8 @@ export function AreaFeatureList({
                             regencyName={area.regency_name}
                             districtName={area.district_name}
                             villageName={area.village_name}
+                            isSlum={area.is_slum}
+                            areaTotalM2={area.area_total_m2}
                             onClick={() => onAreaSelect?.(area)}
                             onEdit={() => onAreaEdit?.(area)}
                             className={

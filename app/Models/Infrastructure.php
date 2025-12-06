@@ -17,6 +17,7 @@ class Infrastructure extends Model
     'description',
     'geometry_type',
     'geometry_json',
+    'condition_status',
   ];
 
   protected $casts = [

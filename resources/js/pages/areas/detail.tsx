@@ -215,6 +215,8 @@ export default function AreaDetail({
             district_name: area.district_name || null,
             village_id: area.village_id || null,
             village_name: area.village_name || null,
+            is_slum: area.is_slum,
+            area_total_m2: area.area_total_m2,
         });
         setIsDialogOpen(true);
     };
@@ -459,34 +461,30 @@ export default function AreaDetail({
                         <CardTitle>
                             {selectedAreaId
                                 ? `Rumah di ${selectedArea?.name ?? `#${selectedAreaId}`}`
-                                : 'Rumah di Kawasan'}
+                                : `Semua Rumah di Kawasan Ini (${households.length})`}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {!selectedAreaId ? (
-                            <div className="text-sm text-muted-foreground">
-                                Belum ada kawasan terpilih. Pilih salah satu
-                                kawasan dari daftar kawasan untuk menampilkan
-                                data rumah.
-                            </div>
-                        ) : relatedLoading ? (
+                        {selectedAreaId && relatedLoading ? (
                             <div className="text-sm text-muted-foreground">
                                 Memuat data untuk Kawasan{' '}
                                 {selectedArea?.name ?? `#${selectedAreaId}`}...
                             </div>
-                        ) : relatedError ? (
+                        ) : selectedAreaId && relatedError ? (
                             <div className="text-sm text-red-600">
                                 {relatedError}
                             </div>
-                        ) : relatedHouseholds.length === 0 ? (
+                        ) : (selectedAreaId ? relatedHouseholds : households)
+                              .length === 0 ? (
                             <div className="text-sm text-muted-foreground">
-                                Data rumah tidak ditemukan untuk area ini.
-                                Jalankan sinkronisasi dari halaman Kawasan jika
-                                perlu.
+                                Data rumah tidak ditemukan.
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                                {relatedHouseholds.map((h) => (
+                                {(selectedAreaId
+                                    ? relatedHouseholds
+                                    : households
+                                ).map((h) => (
                                     <div
                                         key={h.id}
                                         className="rounded-md border p-3"
@@ -508,14 +506,10 @@ export default function AreaDetail({
                                             {h.habitability_status || '-'}
                                         </div>
                                         <div className="mt-2 text-xs text-muted-foreground">
-                                            Tanggal terakhir update
+                                            Lokasi
                                         </div>
-                                        <div>
-                                            {h.updated_at
-                                                ? new Date(
-                                                      h.updated_at,
-                                                  ).toLocaleString()
-                                                : '-'}
+                                        <div className="text-xs">
+                                            {h.village_name}, {h.district_name}
                                         </div>
                                     </div>
                                 ))}

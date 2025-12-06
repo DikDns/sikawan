@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\AuditLog;
+use App\Helpers\ActivityLogFormatter;
 use Illuminate\Support\Facades\Auth;
 
 class ModelObserver
@@ -11,12 +12,14 @@ class ModelObserver
     protected function makeLog(string $action, Model $model, array $meta): void
     {
         try {
+            $description = ActivityLogFormatter::format($action, get_class($model), $meta);
             AuditLog::create([
                 'user_id' => Auth::id(),
                 'action' => $action,
                 'entity_type' => get_class($model),
                 'entity_id' => $model->getKey(),
                 'metadata_json' => $meta,
+                'description' => $description,
             ]);
         } catch (\Throwable $e) {}
     }

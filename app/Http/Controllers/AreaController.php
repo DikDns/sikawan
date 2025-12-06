@@ -83,10 +83,16 @@ class AreaController extends Controller
         'district_name' => $area->district_name,
         'village_id' => $area->village_id,
         'village_name' => $area->village_name,
+        'is_slum' => $area->is_slum,
+        'area_total_m2' => $area->area_total_m2,
       ];
     });
 
+    // Get area IDs for filtering households
+    $areaIds = $areaGroup->areas->pluck('id');
+
     $households = Household::query()
+      ->whereIn('area_id', $areaIds)
       ->where('is_draft', false)
       ->whereNotNull('latitude')
       ->whereNotNull('longitude')
@@ -232,6 +238,8 @@ class AreaController extends Controller
       'district_name' => 'nullable|string|max:150',
       'village_id' => 'nullable|string|max:10',
       'village_name' => 'nullable|string|max:150',
+      'is_slum' => 'nullable|boolean',
+      'area_total_m2' => 'nullable|numeric|min:0',
     ]);
 
     $areaGroup = AreaGroup::findOrFail($areaGroupId);
@@ -248,6 +256,8 @@ class AreaController extends Controller
       'district_name' => $request->district_name,
       'village_id' => $request->village_id,
       'village_name' => $request->village_name,
+      'is_slum' => $request->boolean('is_slum'),
+      'area_total_m2' => $request->area_total_m2,
     ]);
 
     return response()->json([
@@ -265,6 +275,8 @@ class AreaController extends Controller
         'district_name' => $area->district_name,
         'village_id' => $area->village_id,
         'village_name' => $area->village_name,
+        'is_slum' => $area->is_slum,
+        'area_total_m2' => $area->area_total_m2,
       ],
     ], 201);
   }
@@ -286,6 +298,8 @@ class AreaController extends Controller
       'district_name' => 'nullable|string|max:150',
       'village_id' => 'nullable|string|max:10',
       'village_name' => 'nullable|string|max:150',
+      'is_slum' => 'nullable|boolean',
+      'area_total_m2' => 'nullable|numeric|min:0',
     ]);
 
     $area = Area::where('area_group_id', $areaGroupId)
@@ -303,6 +317,8 @@ class AreaController extends Controller
       'district_name' => $request->district_name,
       'village_id' => $request->village_id,
       'village_name' => $request->village_name,
+      'is_slum' => $request->boolean('is_slum'),
+      'area_total_m2' => $request->area_total_m2,
     ]);
 
     return response()->json([
@@ -320,6 +336,8 @@ class AreaController extends Controller
         'district_name' => $area->district_name,
         'village_id' => $area->village_id,
         'village_name' => $area->village_name,
+        'is_slum' => $area->is_slum,
+        'area_total_m2' => $area->area_total_m2,
       ],
     ]);
   }

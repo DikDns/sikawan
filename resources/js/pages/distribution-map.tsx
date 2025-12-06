@@ -184,27 +184,27 @@ export default function DistributionMap() {
     }, []);
 
     const center = useMemo(() => {
-        if (households.length > 0) {
-            const lat =
-                households.reduce((s, h) => s + h.latitude, 0) /
-                households.length;
-            const lng =
-                households.reduce((s, h) => s + h.longitude, 0) /
-                households.length;
-            return [lat, lng] as [number, number];
-        }
-        const withCentroid = areaGroups.filter(
-            (g) => g.centroid_lat && g.centroid_lng,
-        );
-        if (withCentroid.length > 0) {
-            const lat =
-                withCentroid.reduce((s, g) => s + (g.centroid_lat || 0), 0) /
-                withCentroid.length;
-            const lng =
-                withCentroid.reduce((s, g) => s + (g.centroid_lng || 0), 0) /
-                withCentroid.length;
-            return [lat, lng] as [number, number];
-        }
+        // if (households.length > 0) {
+        //     const lat =
+        //         households.reduce((s, h) => s + h.latitude, 0) /
+        //         households.length;
+        //     const lng =
+        //         households.reduce((s, h) => s + h.longitude, 0) /
+        //         households.length;
+        //     return [lat, lng] as [number, number];
+        // }
+        // const withCentroid = areaGroups.filter(
+        //     (g) => g.centroid_lat && g.centroid_lng,
+        // );
+        // if (withCentroid.length > 0) {
+        //     const lat =
+        //         withCentroid.reduce((s, g) => s + (g.centroid_lat || 0), 0) /
+        //         withCentroid.length;
+        //     const lng =
+        //         withCentroid.reduce((s, g) => s + (g.centroid_lng || 0), 0) /
+        //         withCentroid.length;
+        //     return [lat, lng] as [number, number];
+        // }
         return [-4.2327, 103.6141] as [number, number];
     }, [households, areaGroups]);
 

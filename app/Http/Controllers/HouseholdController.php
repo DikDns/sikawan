@@ -117,9 +117,39 @@ class HouseholdController extends Controller
   public function index(Request $request)
   {
     $user = $request->user();
+    $habitabilityStatus = $request->query('habitability_status');
+    $provinceId = $request->query('province_id');
+    $regencyId = $request->query('regency_id');
+    $districtId = $request->query('district_id');
+    $villageId = $request->query('village_id');
+    $areaId = $request->query('area_id');
 
     $query = Household::with(['score'])
       ->where('is_draft', false);
+
+    if ($habitabilityStatus) {
+      $query->where('habitability_status', $habitabilityStatus);
+    }
+
+    if ($provinceId) {
+      $query->where('province_id', $provinceId);
+    }
+
+    if ($regencyId) {
+      $query->where('regency_id', $regencyId);
+    }
+
+    if ($districtId) {
+      $query->where('district_id', $districtId);
+    }
+
+    if ($villageId) {
+      $query->where('village_id', $villageId);
+    }
+
+    if ($areaId) {
+      $query->where('area_id', $areaId);
+    }
 
     $households = $query->orderBy('created_at', 'desc')
       ->get()
@@ -153,9 +183,16 @@ class HouseholdController extends Controller
       'rtlh' => (clone $statsQuery)->where('habitability_status', 'RTLH')->count(),
     ];
 
+    // Fetch all areas for filter dropdown
+    $areas = \App\Models\Area::orderBy('name')
+      ->get(['id', 'name'])
+      ->map(fn($area) => ['value' => (string) $area->id, 'label' => $area->name]);
+
     return Inertia::render('households', [
       'households' => $households,
       'stats' => $stats,
+      'filters' => $request->only(['habitability_status', 'province_id', 'regency_id', 'district_id', 'village_id', 'area_id']),
+      'areas' => $areas,
     ]);
   }
 
