@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Pager } from '@/components/ui/pagination';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Select,
     SelectContent,
@@ -125,7 +126,17 @@ export default function SuperadminLogs() {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
+            timeZone: 'Asia/Jakarta',
         });
+    };
+
+    // Helper untuk mendapatkan nama entity yang ramah pengguna
+    const getEntityDisplayName = (
+        entityType: string | null | undefined,
+    ): string => {
+        if (!entityType) return '-';
+        const shortName = entityType.split('\\').pop() || '';
+        return entityNames[shortName] || shortName;
     };
 
     return (
@@ -168,7 +179,7 @@ export default function SuperadminLogs() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">
-                                    Model
+                                    Jenis Data
                                 </label>
                                 <Select
                                     value={model}
@@ -177,7 +188,7 @@ export default function SuperadminLogs() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Semua model" />
+                                        <SelectValue placeholder="Semua jenis data" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">
@@ -312,71 +323,220 @@ export default function SuperadminLogs() {
                                                                     )}
                                                                 </SheetDescription>
                                                             </SheetHeader>
-                                                            <div className="mt-6 space-y-4">
-                                                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                                                    <div>
-                                                                        <p className="font-medium text-muted-foreground">
-                                                                            User
-                                                                        </p>
-                                                                        <p>
-                                                                            {row.user_name ||
-                                                                                '-'}
-                                                                        </p>
+                                                            <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+                                                                <div className="mt-6 space-y-4 px-4">
+                                                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                                                        <div>
+                                                                            <p className="font-medium text-muted-foreground">
+                                                                                User
+                                                                            </p>
+                                                                            <p>
+                                                                                {row.user_name ||
+                                                                                    '-'}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-medium text-muted-foreground">
+                                                                                Aksi
+                                                                            </p>
+                                                                            <Badge
+                                                                                className={
+                                                                                    actionColors[
+                                                                                        row
+                                                                                            .action
+                                                                                    ] ||
+                                                                                    ''
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    row.action
+                                                                                }
+                                                                            </Badge>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-medium text-muted-foreground">
+                                                                                Jenis
+                                                                                Data
+                                                                            </p>
+                                                                            <p>
+                                                                                {getEntityDisplayName(
+                                                                                    row.entity_type,
+                                                                                )}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-medium text-muted-foreground">
+                                                                                ID
+                                                                            </p>
+                                                                            <p>
+                                                                                {row.entity_id ??
+                                                                                    '-'}
+                                                                            </p>
+                                                                        </div>
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="font-medium text-muted-foreground">
-                                                                            Aksi
-                                                                        </p>
-                                                                        <Badge
-                                                                            className={
-                                                                                actionColors[
-                                                                                    row
-                                                                                        .action
-                                                                                ] ||
-                                                                                ''
-                                                                            }
-                                                                        >
-                                                                            {
-                                                                                row.action
-                                                                            }
-                                                                        </Badge>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="font-medium text-muted-foreground">
-                                                                            Model
-                                                                        </p>
-                                                                        <p>
-                                                                            {row.entity_type
-                                                                                ?.split(
-                                                                                    '\\',
-                                                                                )
-                                                                                .pop()}
-                                                                        </p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="font-medium text-muted-foreground">
-                                                                            ID
-                                                                        </p>
-                                                                        <p>
-                                                                            {row.entity_id ??
-                                                                                '-'}
-                                                                        </p>
-                                                                    </div>
+                                                                    {row.metadata_json && (
+                                                                        <div className="space-y-3">
+                                                                            <p className="font-medium text-muted-foreground">
+                                                                                Data
+                                                                                Perubahan
+                                                                            </p>
+                                                                            {row.action ===
+                                                                                'UPDATE' &&
+                                                                            row
+                                                                                .metadata_json
+                                                                                .before &&
+                                                                            row
+                                                                                .metadata_json
+                                                                                .after ? (
+                                                                                <div className="space-y-3">
+                                                                                    {/* Before Section */}
+                                                                                    <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30">
+                                                                                        <div className="border-b border-red-200 px-3 py-2 dark:border-red-900">
+                                                                                            <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                                                                                                SEBELUM
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="p-3">
+                                                                                            <div className="space-y-1.5">
+                                                                                                {Object.entries(
+                                                                                                    row
+                                                                                                        .metadata_json
+                                                                                                        .before,
+                                                                                                ).map(
+                                                                                                    ([
+                                                                                                        key,
+                                                                                                        value,
+                                                                                                    ]) => (
+                                                                                                        <div
+                                                                                                            key={
+                                                                                                                key
+                                                                                                            }
+                                                                                                            className="flex flex-col gap-0.5 text-xs"
+                                                                                                        >
+                                                                                                            <span className="font-medium text-muted-foreground">
+                                                                                                                {
+                                                                                                                    key
+                                                                                                                }
+                                                                                                            </span>
+                                                                                                            <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
+                                                                                                                {typeof value ===
+                                                                                                                'object'
+                                                                                                                    ? JSON.stringify(
+                                                                                                                          value,
+                                                                                                                      )
+                                                                                                                    : String(
+                                                                                                                          value ??
+                                                                                                                              '-',
+                                                                                                                      )}
+                                                                                                            </span>
+                                                                                                        </div>
+                                                                                                    ),
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    {/* After Section */}
+                                                                                    <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30">
+                                                                                        <div className="border-b border-green-200 px-3 py-2 dark:border-green-900">
+                                                                                            <span className="text-xs font-semibold text-green-700 dark:text-green-400">
+                                                                                                SESUDAH
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="p-3">
+                                                                                            <div className="space-y-1.5">
+                                                                                                {Object.entries(
+                                                                                                    row
+                                                                                                        .metadata_json
+                                                                                                        .after,
+                                                                                                ).map(
+                                                                                                    ([
+                                                                                                        key,
+                                                                                                        value,
+                                                                                                    ]) => (
+                                                                                                        <div
+                                                                                                            key={
+                                                                                                                key
+                                                                                                            }
+                                                                                                            className="flex flex-col gap-0.5 text-xs"
+                                                                                                        >
+                                                                                                            <span className="font-medium text-muted-foreground">
+                                                                                                                {
+                                                                                                                    key
+                                                                                                                }
+                                                                                                            </span>
+                                                                                                            <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
+                                                                                                                {typeof value ===
+                                                                                                                'object'
+                                                                                                                    ? JSON.stringify(
+                                                                                                                          value,
+                                                                                                                      )
+                                                                                                                    : String(
+                                                                                                                          value ??
+                                                                                                                              '-',
+                                                                                                                      )}
+                                                                                                            </span>
+                                                                                                        </div>
+                                                                                                    ),
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="rounded-lg border bg-muted/50 p-3">
+                                                                                    <div className="space-y-1.5">
+                                                                                        {typeof row.metadata_json ===
+                                                                                            'object' &&
+                                                                                        row.metadata_json !==
+                                                                                            null ? (
+                                                                                            Object.entries(
+                                                                                                row.metadata_json,
+                                                                                            ).map(
+                                                                                                ([
+                                                                                                    key,
+                                                                                                    value,
+                                                                                                ]) => (
+                                                                                                    <div
+                                                                                                        key={
+                                                                                                            key
+                                                                                                        }
+                                                                                                        className="flex flex-col gap-0.5 text-xs"
+                                                                                                    >
+                                                                                                        <span className="font-medium text-muted-foreground">
+                                                                                                            {
+                                                                                                                key
+                                                                                                            }
+                                                                                                        </span>
+                                                                                                        <span className="rounded bg-background px-2 py-1 break-all">
+                                                                                                            {typeof value ===
+                                                                                                            'object'
+                                                                                                                ? JSON.stringify(
+                                                                                                                      value,
+                                                                                                                      null,
+                                                                                                                      2,
+                                                                                                                  )
+                                                                                                                : String(
+                                                                                                                      value ??
+                                                                                                                          '-',
+                                                                                                                  )}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                ),
+                                                                                            )
+                                                                                        ) : (
+                                                                                            <span className="text-xs text-muted-foreground">
+                                                                                                {String(
+                                                                                                    row.metadata_json,
+                                                                                                )}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                                <div>
-                                                                    <p className="mb-2 font-medium text-muted-foreground">
-                                                                        Data
-                                                                        Perubahan
-                                                                    </p>
-                                                                    <pre className="max-h-[400px] overflow-auto rounded-lg bg-muted p-4 text-xs">
-                                                                        {JSON.stringify(
-                                                                            row.metadata_json,
-                                                                            null,
-                                                                            2,
-                                                                        )}
-                                                                    </pre>
-                                                                </div>
-                                                            </div>
+                                                            </ScrollArea>
                                                         </SheetContent>
                                                     </Sheet>
                                                     <Button

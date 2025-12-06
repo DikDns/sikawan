@@ -44,7 +44,56 @@ class LogController extends Controller
     });
 
     $users = User::select('id', 'name')->orderBy('name')->get();
-    $models = collect([AuditLog::class, \App\Models\Area::class, \App\Models\AreaGroup::class, \App\Models\Infrastructure::class, \App\Models\InfrastructureGroup::class, \App\Models\Message::class, \App\Models\Media::class, \App\Models\RelocationAssessment::class, \App\Models\Report::class, \App\Models\User::class, \App\Models\Household\Assistance::class, \App\Models\Household\Household::class, \App\Models\Household\Member::class, \App\Models\Household\Photo::class, \App\Models\Household\Score::class, \App\Models\Household\TechnicalData::class, \App\Models\Wilayah\City::class, \App\Models\Wilayah\Province::class, \App\Models\Wilayah\SubDistrict::class, \App\Models\Wilayah\Village::class])->map(fn($c) => ['name' => class_basename($c), 'value' => $c]);
+
+    // Mapping nama model teknis ke nama yang ramah pengguna
+    $entityNames = [
+      'AuditLog' => 'Log Aktivitas',
+      'Area' => 'Kawasan',
+      'AreaGroup' => 'Kelompok Kawasan',
+      'Infrastructure' => 'PSU',
+      'InfrastructureGroup' => 'Kelompok PSU',
+      'Message' => 'Pesan',
+      'Media' => 'Media',
+      'RelocationAssessment' => 'Penilaian Relokasi',
+      'Report' => 'Laporan',
+      'User' => 'Pengguna',
+      'Assistance' => 'Bantuan',
+      'Household' => 'Rumah',
+      'Member' => 'Anggota Keluarga',
+      'Photo' => 'Foto',
+      'Score' => 'Skor',
+      'TechnicalData' => 'Data Teknis',
+      'City' => 'Kota/Kabupaten',
+      'Province' => 'Provinsi',
+      'SubDistrict' => 'Kecamatan',
+      'Village' => 'Desa/Kelurahan',
+    ];
+
+    $models = collect([
+      AuditLog::class,
+      \App\Models\Area::class,
+      \App\Models\AreaGroup::class,
+      \App\Models\Infrastructure::class,
+      \App\Models\InfrastructureGroup::class,
+      \App\Models\Message::class,
+      \App\Models\Media::class,
+      \App\Models\RelocationAssessment::class,
+      \App\Models\Report::class,
+      \App\Models\User::class,
+      \App\Models\Household\Assistance::class,
+      \App\Models\Household\Household::class,
+      \App\Models\Household\Member::class,
+      \App\Models\Household\Photo::class,
+      \App\Models\Household\Score::class,
+      \App\Models\Household\TechnicalData::class,
+      \App\Models\Wilayah\City::class,
+      \App\Models\Wilayah\Province::class,
+      \App\Models\Wilayah\SubDistrict::class,
+      \App\Models\Wilayah\Village::class,
+    ])->map(fn($c) => [
+      'name' => $entityNames[class_basename($c)] ?? class_basename($c),
+      'value' => $c,
+    ])->sortBy('name')->values();
 
     return Inertia::render('superadmin/logs', [
       'logs' => [
