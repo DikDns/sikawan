@@ -21,7 +21,7 @@ class PermissionsFromRoutesSeeder extends Seeder
             ->unique();
 
         foreach ($routes as $routeName) {
-            Permission::firstOrCreate(['name' => $routeName]);
+            Permission::firstOrCreate(['name' => $this->formatLabel($routeName)]);
         }
 
         $extraPermissions = [
@@ -33,7 +33,33 @@ class PermissionsFromRoutesSeeder extends Seeder
         ];
 
         foreach ($extraPermissions as $perm) {
-            Permission::firstOrCreate(['name' => $perm]);
+            Permission::firstOrCreate(['name' => $this->formatLabel($perm)]);
         }
+    }
+
+    private function formatLabel(string $routeName): string
+    {
+        $parts = explode('.', $routeName);
+
+        if (count($parts) === 1) {
+            return ucfirst(str_replace(['-', '_'], ' ', $parts[0]));
+        }
+        [$resource, $action] = $parts;
+
+        $actionMap = [
+            'index'   => 'Halaman',
+            'create'  => 'Tambah',
+            'store'   => 'Simpan',
+            'edit'    => 'Edit',
+            'update'  => 'Perbarui',
+            'destroy' => 'Hapus',
+            'delete'  => 'Hapus',
+            'show'    => 'Lihat',
+        ];
+
+        $resourceLabel = ucfirst(str_replace(['-', '_'], ' ', $resource));
+        $actionLabel = $actionMap[$action] ?? ucfirst($action);
+
+        return "{$actionLabel} {$resourceLabel}";
     }
 }
