@@ -94,83 +94,94 @@ class InfrastructureGroupSeeder extends Seeder
         $centerLat = -3.6632;
         $centerLng = 103.7782;
 
-        foreach ($groups as $groupData) {
+        $conditions = ['baik', 'baik', 'baik', 'rusak_ringan', 'rusak_berat'];
+
+        foreach ($groups as $groupIndex => $groupData) {
             $group = new InfrastructureGroup($groupData);
             if (\Illuminate\Support\Facades\Schema::hasColumn('infrastructure_groups', 'infrastructure_count')) {
                 $group->infrastructure_count = 0;
             }
             $group->save();
 
-            if ($group->type === 'Marker') {
-                // Points around Muara Enim
-                $points = [
-                    [$centerLng + 0.005, $centerLat + 0.003],
-                    [$centerLng - 0.008, $centerLat - 0.005],
-                    [$centerLng + 0.012, $centerLat - 0.002],
-                    [$centerLng - 0.003, $centerLat + 0.008],
-                ];
-                $conditions = ['baik', 'baik', 'rusak_ringan', 'rusak_berat'];
+            // Generate unique random offset for each group
+            $groupOffsetLat = ($groupIndex * 0.008) - 0.02;
+            $groupOffsetLng = ($groupIndex * 0.006) - 0.015;
 
-                foreach ($points as $idx => $lngLat) {
+            if ($group->type === 'Marker') {
+                // Random number of points (3-6) for each group
+                $pointCount = rand(3, 6);
+
+                for ($idx = 0; $idx < $pointCount; $idx++) {
+                    // Generate random offset for each point
+                    $randomLat = $centerLat + $groupOffsetLat + (rand(-800, 800) / 100000);
+                    $randomLng = $centerLng + $groupOffsetLng + (rand(-800, 800) / 100000);
+
                     Infrastructure::create([
                         'infrastructure_group_id' => $group->id,
                         'name' => $group->name . ' #' . ($idx + 1),
-                        'description' => null,
+                        'description' => $this->generateDescription($group->code, $idx),
                         'geometry_type' => 'Point',
                         'geometry_json' => [
                             'type' => 'Point',
-                            'coordinates' => $lngLat,
+                            'coordinates' => [$randomLng, $randomLat],
                         ],
-                        'condition_status' => $conditions[$idx],
+                        'condition_status' => $conditions[array_rand($conditions)],
                     ]);
                 }
             } elseif ($group->type === 'Polyline') {
-                // Lines around Muara Enim
-                $lines = [
-                    [
-                        [$centerLng - 0.010, $centerLat + 0.005],
-                        [$centerLng - 0.005, $centerLat + 0.003],
-                        [$centerLng, $centerLat],
-                    ],
-                    [
-                        [$centerLng + 0.005, $centerLat - 0.005],
-                        [$centerLng + 0.010, $centerLat - 0.003],
-                        [$centerLng + 0.015, $centerLat - 0.001],
-                    ],
-                ];
-                $conditions = ['baik', 'rusak_ringan'];
+                // Random number of lines (2-4) for each group
+                $lineCount = rand(2, 4);
 
-                foreach ($lines as $idx => $coords) {
+                for ($idx = 0; $idx < $lineCount; $idx++) {
+                    // Generate random line with 3-5 points
+                    $pointsInLine = rand(3, 5);
+                    $lineCoords = [];
+
+                    $startLat = $centerLat + $groupOffsetLat + (rand(-500, 500) / 100000);
+                    $startLng = $centerLng + $groupOffsetLng + (rand(-500, 500) / 100000);
+
+                    for ($p = 0; $p < $pointsInLine; $p++) {
+                        $lineCoords[] = [
+                            $startLng + ($p * rand(2, 8) / 1000),
+                            $startLat + ($p * rand(-3, 3) / 1000),
+                        ];
+                    }
+
                     Infrastructure::create([
                         'infrastructure_group_id' => $group->id,
                         'name' => $group->name . ' Jalur #' . ($idx + 1),
-                        'description' => null,
+                        'description' => $this->generateDescription($group->code, $idx),
                         'geometry_type' => 'LineString',
                         'geometry_json' => [
                             'type' => 'LineString',
-                            'coordinates' => $coords,
+                            'coordinates' => $lineCoords,
                         ],
-                        'condition_status' => $conditions[$idx],
+                        'condition_status' => $conditions[array_rand($conditions)],
                     ]);
                 }
             } else {
-                // Polygon for area-type infrastructure
+                // Polygon for area-type infrastructure - random polygon for each
+                $polygonOffset = rand(-500, 500) / 100000;
+                $polygonSize = rand(5, 15) / 1000;
+
                 $polygon = [
-                    [$centerLng - 0.010, $centerLat + 0.010],
-                    [$centerLng - 0.005, $centerLat + 0.008],
-                    [$centerLng, $centerLat + 0.012],
-                    [$centerLng - 0.008, $centerLat + 0.015],
+                    [$centerLng + $groupOffsetLng + $polygonOffset, $centerLat + $groupOffsetLat + $polygonOffset],
+                    [$centerLng + $groupOffsetLng + $polygonOffset + $polygonSize, $centerLat + $groupOffsetLat + $polygonOffset],
+                    [$centerLng + $groupOffsetLng + $polygonOffset + $polygonSize, $centerLat + $groupOffsetLat + $polygonOffset + $polygonSize],
+                    [$centerLng + $groupOffsetLng + $polygonOffset, $centerLat + $groupOffsetLat + $polygonOffset + $polygonSize],
+                    [$centerLng + $groupOffsetLng + $polygonOffset, $centerLat + $groupOffsetLat + $polygonOffset], // Close polygon
                 ];
+
                 Infrastructure::create([
                     'infrastructure_group_id' => $group->id,
                     'name' => $group->name . ' Area',
-                    'description' => null,
+                    'description' => $this->generateDescription($group->code, 0),
                     'geometry_type' => 'Polygon',
                     'geometry_json' => [
                         'type' => 'Polygon',
                         'coordinates' => [$polygon],
                     ],
-                    'condition_status' => 'baik',
+                    'condition_status' => $conditions[array_rand($conditions)],
                 ]);
             }
 
@@ -181,5 +192,68 @@ class InfrastructureGroupSeeder extends Seeder
         }
 
         $this->command->info('Infrastructure groups seeded successfully for Muara Enim!');
+    }
+
+    /**
+     * Generate description based on infrastructure type
+     */
+    private function generateDescription(string $code, int $index): ?string
+    {
+        $descriptions = [
+            'WATER_PIPE' => [
+                'Pipa distribusi air bersih utama',
+                'Pipa cabang distribusi air',
+                'Jalur pipa air ke permukiman',
+                'Pipa air bersih zona timur',
+            ],
+            'POWER_POLE' => [
+                'Tiang listrik tegangan menengah',
+                'Tiang distribusi listrik perumahan',
+                'Tiang listrik zona industri',
+                'Tiang listrik jalan utama',
+            ],
+            'SCHOOL' => [
+                'SMA Negeri dengan fasilitas lengkap',
+                'SMA Swasta terakreditasi A',
+                'SMK Kejuruan bidang teknik',
+                'Madrasah Aliyah Negeri',
+            ],
+            'HOSPITAL' => [
+                'Rumah sakit umum daerah tipe B',
+                'Rumah sakit swasta',
+                'Rumah sakit ibu dan anak',
+                'Klinik spesialis',
+            ],
+            'PUSKESMAS' => [
+                'Puskesmas rawat inap',
+                'Puskesmas pembantu',
+                'Puskesmas keliling',
+                'Pos kesehatan desa',
+            ],
+            'SD' => [
+                'SD Negeri dengan 12 rombel',
+                'SD Swasta terakreditasi A',
+                'Madrasah Ibtidaiyah',
+                'SD Inpres',
+            ],
+            'POWER_LINE' => [
+                'Jaringan listrik tegangan tinggi',
+                'Jaringan distribusi tegangan menengah',
+                'Jaringan listrik perumahan',
+                'Jaringan listrik zona komersial',
+            ],
+            'DRAINAGE' => [
+                'Saluran drainase primer',
+                'Saluran drainase sekunder',
+                'Gorong-gorong jalan utama',
+                'Saluran pembuangan air hujan',
+            ],
+        ];
+
+        if (isset($descriptions[$code])) {
+            return $descriptions[$code][$index % count($descriptions[$code])];
+        }
+
+        return null;
     }
 }

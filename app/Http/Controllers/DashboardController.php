@@ -20,6 +20,7 @@ class DashboardController extends Controller
       $end = $request->query('end_date');
       $region = $request->query('region');
       $economicYear = $request->query('economic_year');
+      $regionYear = $request->query('region_year'); // New: year filter for region statistics
 
       $householdsQuery = Household::query();
       if ($start) {
@@ -32,7 +33,6 @@ class DashboardController extends Controller
       $housesTotal = (clone $householdsQuery)->count();
       $rlhTotal = (clone $householdsQuery)->where('habitability_status', 'RLH')->count();
       $rtlhTotal = (clone $householdsQuery)->where('habitability_status', 'RTLH')->count();
-      $newHouseNeededTotal = 0;
 
       $groupsTotal = InfrastructureGroup::count();
       $areasTotal = AreaGroup::count();
@@ -60,8 +60,7 @@ class DashboardController extends Controller
         $years[$row->y] = [
           'rumah' => (int) $row->c,
           'rlh' => (int) (clone $householdsQuery)->whereRaw('strftime("%Y", created_at) = ?', [$row->y])->where('habitability_status', 'RLH')->count(),
-          'rtuh' => (int) (clone $householdsQuery)->whereRaw('strftime("%Y", created_at) = ?', [$row->y])->where('habitability_status', 'RTLH')->count(),
-          'rumahBaru' => 0,
+          'rtlh' => (int) (clone $householdsQuery)->whereRaw('strftime("%Y", created_at) = ?', [$row->y])->where('habitability_status', 'RTLH')->count(),
         ];
       }
       $analysisData = [];
@@ -74,11 +73,6 @@ class DashboardController extends Controller
           ['name' => 'Belum Dioperasikan', 'value' => $rtlhTotal, 'fill' => '#ef4444'],
           ['name' => 'Sedang Dioperasikan', 'value' => 0, 'fill' => '#fbbf24'],
           ['name' => 'Selesai', 'value' => $rlhTotal, 'fill' => '#10b981'],
-        ],
-        'rumahBaru' => [
-          ['name' => 'Butuh Dibangun', 'value' => $newHouseNeededTotal, 'fill' => '#6366f1'],
-          ['name' => 'Sedang Dibangun', 'value' => 0, 'fill' => '#fbbf24'],
-          ['name' => 'Selesai', 'value' => 0, 'fill' => '#10b981'],
         ],
       ];
 
@@ -134,12 +128,27 @@ class DashboardController extends Controller
         ['indicator' => 'Akses Kesehatan', 'value' => $healthAccessPct],
       ];
 
-      // Region stats from Area model
-      $areasWithHouseholds = Area::withCount([
-        'households',
-        'households as rlh_count' => fn($q) => $q->where('habitability_status', 'RLH'),
-        'households as rtlh_count' => fn($q) => $q->where('habitability_status', 'RTLH'),
-      ])->has('households')
+      // Region stats from Area model with year filter
+      $regionYearFilter = $regionYear ?: (count($availableYears) > 0 ? $availableYears[0] : null);
+
+      $areasWithHouseholdsQuery = Area::query();
+
+      if ($regionYearFilter) {
+        $areasWithHouseholdsQuery->withCount([
+          'households' => fn($q) => $q->whereRaw('strftime("%Y", created_at) = ?', [$regionYearFilter]),
+          'households as rlh_count' => fn($q) => $q->whereRaw('strftime("%Y", created_at) = ?', [$regionYearFilter])->where('habitability_status', 'RLH'),
+          'households as rtlh_count' => fn($q) => $q->whereRaw('strftime("%Y", created_at) = ?', [$regionYearFilter])->where('habitability_status', 'RTLH'),
+        ]);
+      } else {
+        $areasWithHouseholdsQuery->withCount([
+          'households',
+          'households as rlh_count' => fn($q) => $q->where('habitability_status', 'RLH'),
+          'households as rtlh_count' => fn($q) => $q->where('habitability_status', 'RTLH'),
+        ]);
+      }
+
+      $areasWithHouseholds = $areasWithHouseholdsQuery
+        ->has('households')
         ->orderByDesc('households_count')
         ->limit(5)
         ->get();
@@ -154,13 +163,22 @@ class DashboardController extends Controller
           'data' => [
             ['label' => 'RLH', 'value' => (int) $area->rlh_count, 'color' => '#B2F02C'],
             ['label' => 'RTLH', 'value' => (int) $area->rtlh_count, 'color' => '#FFAA22'],
-            ['label' => 'Butuh Rumah Baru', 'value' => 0, 'color' => '#655B9C'],
           ],
         ];
       }
 
-      // Area summary rows (no PSU column)
-      $areaSummaryRows = Area::withCount('households')
+      // Area summary rows with year filter
+      $areaSummaryQuery = Area::query();
+
+      if ($regionYearFilter) {
+        $areaSummaryQuery->withCount([
+          'households' => fn($q) => $q->whereRaw('strftime("%Y", created_at) = ?', [$regionYearFilter]),
+        ]);
+      } else {
+        $areaSummaryQuery->withCount('households');
+      }
+
+      $areaSummaryRows = $areaSummaryQuery
         ->orderByDesc('households_count')
         ->limit(10)
         ->get()
@@ -177,25 +195,26 @@ class DashboardController extends Controller
         'economicData' => $economicData,
         'availableYears' => $availableYears,
         'selectedEconomicYear' => $economicYear,
+        'selectedRegionYear' => $regionYearFilter,
         'areaSummaryRows' => $areaSummaryRows,
         'regionStats' => $regionStats,
         'slumAreaTotalM2' => $slumAreaTotalM2,
         'householdsInSlumArea' => $householdsInSlumArea,
         'rtlhTotal' => $rtlhTotal,
-        'newHouseNeededTotal' => $newHouseNeededTotal,
       ]);
     } catch (\Throwable $e) {
       return Inertia::render('dashboard', [
         'error' => 'Gagal memuat analytics: ' . $e->getMessage(),
         'statCardsData' => [],
         'analysisData' => [],
-        'chartSectionData' => ['rtlh' => [], 'rumahBaru' => []],
+        'chartSectionData' => ['rtlh' => []],
         'psuData' => [],
         'improvedPSUData' => [],
         'bottomStatsData' => ['population' => 0, 'kk' => 0],
         'economicData' => [],
         'availableYears' => [],
         'selectedEconomicYear' => null,
+        'selectedRegionYear' => null,
         'areaSummaryRows' => [],
         'regionStats' => [],
         'slumAreaTotalM2' => 0,

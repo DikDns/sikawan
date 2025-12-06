@@ -12,6 +12,7 @@ use App\Models\Area;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class HouseholdSeeder extends Seeder
 {
@@ -96,22 +97,62 @@ class HouseholdSeeder extends Seeder
                     'lat' => -3.7200,
                     'lng' => 103.7400,
                 ],
+                [
+                    'province_id' => '16',
+                    'province_name' => 'SUMATERA SELATAN',
+                    'regency_id' => '1603',
+                    'regency_name' => 'MUARA ENIM',
+                    'district_id' => '1603050',
+                    'district_name' => 'MUARA ENIM',
+                    'village_id' => '1603050002',
+                    'village_name' => 'PASAR I',
+                    'lat' => -3.6610,
+                    'lng' => 103.7760,
+                ],
+                [
+                    'province_id' => '16',
+                    'province_name' => 'SUMATERA SELATAN',
+                    'regency_id' => '1603',
+                    'regency_name' => 'MUARA ENIM',
+                    'district_id' => '1603050',
+                    'district_name' => 'MUARA ENIM',
+                    'village_id' => '1603050003',
+                    'village_name' => 'AIR LINTANG',
+                    'lat' => -3.6650,
+                    'lng' => 103.7800,
+                ],
+                [
+                    'province_id' => '16',
+                    'province_name' => 'SUMATERA SELATAN',
+                    'regency_id' => '1603',
+                    'regency_name' => 'MUARA ENIM',
+                    'district_id' => '1603040',
+                    'district_name' => 'LAWANG KIDUL',
+                    'village_id' => '1603040002',
+                    'village_name' => 'LAWANG KIDUL',
+                    'lat' => -3.6480,
+                    'lng' => 103.7630,
+                ],
             ];
 
-            $names = [
-                'Budi Santoso', 'Siti Nurjanah', 'Ahmad Hidayat', 'Dewi Lestari',
-                'Joko Widodo', 'Sri Rahayu', 'Hendra Gunawan', 'Rina Wijaya',
-                'Agus Setiawan', 'Maya Sari', 'Rudi Hartono', 'Ani Susanti',
-                'Bambang Prasetyo', 'Lina Marlina', 'Dedi Kurniawan', 'Fitri Handayani',
-                'Eko Wahyudi', 'Yuli Astuti', 'Fauzi Rahman', 'Nurul Hidayah',
-                'Tono Sumarno', 'Ratna Dewi', 'Wawan Setiawan', 'Evi Susanti',
-                'Indra Kusuma', 'Diah Permata', 'Riko Saputra', 'Linda Wati',
-                'Doni Prasetya', 'Mega Sari', 'Yoga Pratama', 'Siska Amelia',
-                'Adi Nugroho', 'Rina Anggraini', 'Hadi Wijaya', 'Lisa Melati',
-                'Budi Cahyono', 'Dewi Fortuna', 'Andi Saputra', 'Nina Kartika',
-                'Rahmat Hidayat', 'Sari Indah', 'Dimas Prasetyo', 'Ayu Lestari',
-                'Fajar Ramadhan', 'Wulan Dari', 'Heru Sutanto', 'Dina Mariana',
-                'Yanto Wijaya', 'Ika Puspita', 'Rian Pratama', 'Tari Rahmawati',
+            $firstNames = [
+                'Budi', 'Siti', 'Ahmad', 'Dewi', 'Joko', 'Sri', 'Hendra', 'Rina',
+                'Agus', 'Maya', 'Rudi', 'Ani', 'Bambang', 'Lina', 'Dedi', 'Fitri',
+                'Eko', 'Yuli', 'Fauzi', 'Nurul', 'Tono', 'Ratna', 'Wawan', 'Evi',
+                'Indra', 'Diah', 'Riko', 'Linda', 'Doni', 'Mega', 'Yoga', 'Siska',
+                'Adi', 'Rina', 'Hadi', 'Lisa', 'Cahyo', 'Dewi', 'Andi', 'Nina',
+                'Rahmat', 'Sari', 'Dimas', 'Ayu', 'Fajar', 'Wulan', 'Heru', 'Dina',
+                'Yanto', 'Ika', 'Rian', 'Tari', 'Surya', 'Endang', 'Wahyu', 'Retno',
+                'Bayu', 'Kartika', 'Putra', 'Melati', 'Arif', 'Wati', 'Darmawan', 'Yuni',
+                'Sugeng', 'Murni', 'Teguh', 'Lestari', 'Gunawan', 'Hartini', 'Subur', 'Sumiati',
+            ];
+
+            $lastNames = [
+                'Santoso', 'Nurjanah', 'Hidayat', 'Lestari', 'Widodo', 'Rahayu', 'Gunawan', 'Wijaya',
+                'Setiawan', 'Sari', 'Hartono', 'Susanti', 'Prasetyo', 'Marlina', 'Kurniawan', 'Handayani',
+                'Wahyudi', 'Astuti', 'Rahman', 'Hidayah', 'Sumarno', 'Dewi', 'Kusuma', 'Permata',
+                'Saputra', 'Wati', 'Pratama', 'Amelia', 'Nugroho', 'Anggraini', 'Utomo', 'Melati',
+                'Cahyono', 'Fortuna', 'Ramadhan', 'Kartika', 'Sutanto', 'Mariana', 'Puspita', 'Rahmawati',
             ];
 
             $occupations = [
@@ -130,20 +171,42 @@ class HouseholdSeeder extends Seeder
                 'Jl. Merdeka', 'Jl. Sudirman', 'Jl. Gatot Subroto', 'Jl. Ahmad Yani',
                 'Jl. Diponegoro', 'Jl. Veteran', 'Jl. Pahlawan', 'Jl. Kemerdekaan',
                 'Jl. Mawar', 'Jl. Melati', 'Jl. Anggrek', 'Jl. Kenanga',
+                'Jl. Flamboyan', 'Jl. Dahlia', 'Jl. Cempaka', 'Jl. Teratai',
+                'Jl. Kartini', 'Jl. Hasanuddin', 'Jl. Imam Bonjol', 'Jl. Cut Nyak Dien',
             ];
 
             // Get available areas to link households (for dashboard regionStats)
             $areas = Area::all();
             $areaIds = $areas->pluck('id')->toArray();
 
-            // Generate 50 households
-            for ($i = 0; $i < 50; $i++) {
+            // Years range: 2020-2025
+            $startYear = 2020;
+            $endYear = 2025;
+
+            // Generate 200 households
+            $totalHouseholds = 200;
+
+            for ($i = 0; $i < $totalHouseholds; $i++) {
                 $location = $locations[$i % count($locations)];
                 $isMBR = rand(0, 10) > 3;
                 $isRTLH = rand(0, 10) > 6;
                 $memberTotal = rand(2, 7);
                 $maleCount = rand(1, $memberTotal - 1);
                 $femaleCount = $memberTotal - $maleCount;
+
+                // Generate random created_at between 2020-2025
+                $randomYear = rand($startYear, $endYear);
+                $randomMonth = rand(1, 12);
+                $randomDay = rand(1, 28); // Use 28 to avoid invalid dates
+                $randomHour = rand(6, 22);
+                $randomMinute = rand(0, 59);
+                $createdAt = Carbon::create($randomYear, $randomMonth, $randomDay, $randomHour, $randomMinute);
+
+                // Survey date should be around the created date
+                $surveyDate = $createdAt->copy()->subDays(rand(0, 30));
+
+                // Generate unique name
+                $headName = $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
 
                 $household = Household::create([
                     'created_by' => $creator->id,
@@ -158,7 +221,7 @@ class HouseholdSeeder extends Seeder
                     'village_id' => $location['village_id'],
                     'village_name' => $location['village_name'],
                     'rt_rw' => sprintf('%03d/%03d', rand(1, 15), rand(1, 10)),
-                    'survey_date' => now()->subDays(rand(1, 365)),
+                    'survey_date' => $surveyDate,
                     'address_text' => $streets[array_rand($streets)] . ' No. ' . rand(1, 200) . ', RT ' . sprintf('%03d', rand(1, 15)) . '/RW ' . sprintf('%03d', rand(1, 10)) . ', ' . $location['village_name'] . ', ' . $location['district_name'],
                     'latitude' => $location['lat'] + (rand(-500, 500) / 10000),
                     'longitude' => $location['lng'] + (rand(-500, 500) / 10000),
@@ -166,7 +229,7 @@ class HouseholdSeeder extends Seeder
                     'ownership_status_land' => ['OWN', 'RENT', 'OTHER'][rand(0, 2)],
                     'building_legal_status' => ['IMB', 'NONE'][rand(0, 1)],
                     'land_legal_status' => ['SHM', 'HGB', 'SURAT_PEMERINTAH', 'PERJANJIAN', 'LAINNYA', 'TIDAK_TAHU'][rand(0, 5)],
-                    'head_name' => $names[$i % count($names)],
+                    'head_name' => $headName,
                     'nik' => '1603' . str_pad($i + 1, 12, '0', STR_PAD_LEFT),
                     'status_mbr' => $isMBR ? 'MBR' : 'NON_MBR',
                     'kk_count' => rand(1, 2),
@@ -179,10 +242,11 @@ class HouseholdSeeder extends Seeder
                     'education_facility_location' => ['Dalam Kelurahan/Kecamatan', 'Luar Kelurahan/Kecamatan'][rand(0, 1)],
                     'health_facility_used' => ['Puskesmas', 'Rumah Sakit', 'Klinik', 'Praktik Dokter'][rand(0, 3)],
                     'health_facility_location' => ['Dalam Kelurahan/Kecamatan', 'Luar Kelurahan/Kecamatan'][rand(0, 1)],
-                    'created_at' => now()->subDays(rand(1, 365)), // Spread over last year
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                     'habitability_status' => $isRTLH ? 'RTLH' : 'RLH',
                     'eligibility_score_total' => $isRTLH ? rand(0, 50) : rand(51, 100),
-                    'eligibility_computed_at' => now(),
+                    'eligibility_computed_at' => $createdAt,
                 ]);
 
                 $buildingLength = rand(6, 15);
@@ -235,14 +299,18 @@ class HouseholdSeeder extends Seeder
 
                 $relationships = ['HEAD', 'SPOUSE', 'CHILD', 'CHILD', 'OTHER'];
                 for ($j = 0; $j < min($memberTotal, 5); $j++) {
+                    $memberName = $j === 0
+                        ? $headName
+                        : $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
+
                     Member::create([
                         'household_id' => $household->id,
-                        'name' => $j === 0 ? $household->head_name : $names[rand(0, count($names) - 1)],
+                        'name' => $memberName,
                         'nik' => '1603' . str_pad(($i * 10 + $j + 1), 12, '0', STR_PAD_LEFT),
                         'relationship' => $relationships[$j] ?? 'OTHER',
                         'gender' => rand(0, 1) ? 'MALE' : 'FEMALE',
                         'is_disabled' => rand(0, 10) > 8,
-                        'birth_date' => now()->subYears(rand(1, 60)),
+                        'birth_date' => $createdAt->copy()->subYears(rand(1, 60)),
                         'occupation' => $j === 0 ? $household->main_occupation : ($j === 1 ? 'Ibu Rumah Tangga' : ($j > 1 ? 'Pelajar' : $occupations[array_rand($occupations)])),
                     ]);
                 }
@@ -260,14 +328,15 @@ class HouseholdSeeder extends Seeder
                     'score_a5' => rand(0, 1),
                     'total_score' => $household->eligibility_score_total,
                     'habitability_status' => $household->habitability_status,
-                    'computed_at' => now(),
+                    'computed_at' => $createdAt,
                     'computation_notes' => 'Computed by seeder',
                 ]);
 
+                // 30% chance to have assistance
                 if (rand(0, 10) < 3) {
                     $assistanceCount = rand(1, 2);
                     for ($k = 0; $k < $assistanceCount; $k++) {
-                        $startDate = now()->subMonths(rand(1, 24));
+                        $startDate = $createdAt->copy()->addMonths(rand(1, 12));
                         $isCompleted = rand(0, 1);
                         Assistance::create([
                             'household_id' => $household->id,
@@ -276,7 +345,7 @@ class HouseholdSeeder extends Seeder
                             'funding_source' => ['APBN', 'APBD', 'CSR', 'Swadaya'][rand(0, 3)],
                             'status' => $isCompleted ? 'SELESAI' : ['PROSES', 'DIBATALKAN'][rand(0, 1)],
                             'started_at' => $startDate,
-                            'completed_at' => $isCompleted ? $startDate->addMonths(rand(3, 12)) : null,
+                            'completed_at' => $isCompleted ? $startDate->copy()->addMonths(rand(3, 12)) : null,
                             'cost_amount_idr' => rand(10, 150) * 1000000,
                             'description' => 'Bantuan untuk perbaikan ' . ['atap', 'dinding', 'lantai', 'kamar mandi', 'dapur'][rand(0, 4)],
                             'document_path' => rand(0, 1) ? 'documents/assistance_' . uniqid() . '.pdf' : null,
@@ -284,9 +353,10 @@ class HouseholdSeeder extends Seeder
                     }
                 }
 
+                // 50% chance to have photos
                 if (rand(0, 1)) {
                     $photoCount = rand(2, 5);
-                    $photoFolderRel = 'households/' . date('Y/m') . '/' . $household->id;
+                    $photoFolderRel = 'households/' . $createdAt->format('Y/m') . '/' . $household->id;
                     $photoFolderAbs = storage_path('app/public/' . $photoFolderRel);
 
                     if (!file_exists($photoFolderAbs)) {
@@ -304,7 +374,7 @@ class HouseholdSeeder extends Seeder
 
                         // Copy real photo or create placeholder
                         if ($useRealPhotos && file_exists($seedPhotoSource . '/' . $fileName)) {
-                             copy($seedPhotoSource . '/' . $fileName, $destPath);
+                            copy($seedPhotoSource . '/' . $fileName, $destPath);
                         } else {
                             // Create a placeholder image
                             $image = imagecreatetruecolor(640, 480);
@@ -325,11 +395,14 @@ class HouseholdSeeder extends Seeder
                     }
                 }
 
-                $this->command->info("Created household #{$household->id}: {$household->head_name}");
+                // Progress output every 20 households
+                if (($i + 1) % 20 === 0) {
+                    $this->command->info("Created {$i}/{$totalHouseholds} households...");
+                }
             }
 
             DB::commit();
-            $this->command->info('Successfully seeded 50 households in Muara Enim!');
+            $this->command->info("Successfully seeded {$totalHouseholds} households in Muara Enim (2020-2025)!");
 
         } catch (\Exception $e) {
             DB::rollBack();

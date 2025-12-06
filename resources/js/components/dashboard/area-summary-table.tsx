@@ -1,4 +1,12 @@
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { DashboardProps } from '@/types';
+import { router, usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 
 export interface AreaSummaryRow {
@@ -7,8 +15,22 @@ export interface AreaSummaryRow {
 }
 
 export function AreaSummaryTable({ rows }: { rows?: AreaSummaryRow[] }) {
+    const { availableYears = [], selectedRegionYear } =
+        usePage<DashboardProps>().props;
+
     const data = rows && rows.length > 0 ? rows : [];
-    const currentYear = new Date().getFullYear();
+    const currentYear =
+        selectedRegionYear ||
+        availableYears[0] ||
+        new Date().getFullYear().toString();
+
+    const handleYearChange = (year: string) => {
+        router.get(
+            '/dashboard',
+            { region_year: year },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
 
     return (
         <div className="rounded-lg border border-border bg-card p-6">
@@ -21,14 +43,36 @@ export function AreaSummaryTable({ rows }: { rows?: AreaSummaryRow[] }) {
                         {data.length}
                     </p>
                 </div>
-                <Button
-                    variant="outline"
-                    className="gap-2 bg-transparent font-semibold text-secondary"
-                    disabled
-                >
-                    {currentYear}
-                    <ChevronDown className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="outline"
+                            className="gap-2 bg-transparent font-semibold text-secondary"
+                        >
+                            {currentYear}
+                            <ChevronDown className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {availableYears.length > 0 ? (
+                            availableYears.map((year) => (
+                                <DropdownMenuItem
+                                    key={year}
+                                    onClick={() => handleYearChange(year)}
+                                    className={
+                                        year === currentYear ? 'bg-accent' : ''
+                                    }
+                                >
+                                    {year}
+                                </DropdownMenuItem>
+                            ))
+                        ) : (
+                            <DropdownMenuItem disabled>
+                                Tidak ada data
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
 
             <div className="overflow-x-auto">
@@ -44,19 +88,30 @@ export function AreaSummaryTable({ rows }: { rows?: AreaSummaryRow[] }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {data.map((row, idx) => (
-                            <tr
-                                key={idx}
-                                className="border-b border-border transition-colors hover:bg-muted"
-                            >
-                                <td className="px-4 py-3 text-sm text-foreground">
-                                    {row.name}
-                                </td>
-                                <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
-                                    {row.rumah}
+                        {data.length > 0 ? (
+                            data.map((row, idx) => (
+                                <tr
+                                    key={idx}
+                                    className="border-b border-border transition-colors hover:bg-muted"
+                                >
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {row.name}
+                                    </td>
+                                    <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
+                                        {row.rumah}
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    colSpan={2}
+                                    className="px-4 py-8 text-center text-sm text-muted-foreground"
+                                >
+                                    Tidak ada data untuk tahun {currentYear}
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </div>

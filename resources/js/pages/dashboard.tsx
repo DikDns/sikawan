@@ -42,7 +42,6 @@ export default function Dashboard() {
         slumAreaTotalM2 = 0,
         householdsInSlumArea = 0,
         rtlhTotal = 0,
-        newHouseNeededTotal = 0,
     } = usePage<DashboardProps>().props;
 
     return (
@@ -96,9 +95,7 @@ export default function Dashboard() {
 
                     <ChartSection
                         rtlhData={chartSectionData?.rtlh}
-                        rumahBaruData={chartSectionData?.rumahBaru}
                         rtlhTotal={rtlhTotal}
-                        newHouseNeededTotal={newHouseNeededTotal}
                     />
                     <AnalysisChart data={analysisData} />
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

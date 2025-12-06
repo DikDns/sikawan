@@ -50,12 +50,10 @@ export interface DashboardProps {
         year: string;
         rumah: number;
         rlh: number;
-        rtuh: number;
-        rumahBaru: number;
+        rtlh: number;
     }[];
     chartSectionData: {
         rtlh: { name: string; value: number; fill: string }[];
-        rumahBaru: { name: string; value: number; fill: string }[];
     };
     psuData: { name: string; value: number; color: string }[];
     improvedPSUData: { name: string; value: number; color: string }[];
@@ -63,6 +61,7 @@ export interface DashboardProps {
     economicData: { indicator: string; value: string }[];
     availableYears: string[];
     selectedEconomicYear: string | null;
+    selectedRegionYear: string | null;
     areaSummaryRows: { name: string; rumah: number }[];
     regionStats: {
         region: { name: string; houses: string };
@@ -71,6 +70,5 @@ export interface DashboardProps {
     slumAreaTotalM2: number;
     householdsInSlumArea: number;
     rtlhTotal: number;
-    newHouseNeededTotal: number;
     [key: string]: unknown;
 }

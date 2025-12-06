@@ -66,16 +66,9 @@ export function AnalysisChart({ data }: { data?: any[] }) {
                         />
                         <Line
                             type="monotone"
-                            dataKey="rtuh"
+                            dataKey="rtlh"
                             stroke="#ef4444"
                             name="RTLH"
-                            strokeWidth={2}
-                        />
-                        <Line
-                            type="monotone"
-                            dataKey="rumahBaru"
-                            stroke="#8b5cf6"
-                            name="Butuh Rumah Baru"
                             strokeWidth={2}
                         />
                     </LineChart>
