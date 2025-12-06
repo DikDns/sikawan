@@ -21,6 +21,19 @@ class PermissionsFromRoutesSeeder extends Seeder
             ->unique();
 
         foreach ($routes as $routeName) {
+            $exclude = [
+                'distribution-map.public',
+                'home',
+                'login',
+                'password.confirm',
+                'password.confirmation',
+                'password.request',
+                'password.reset',
+                'storage.local',
+                'verification.notice',
+                'verification.verify',
+            ];
+            if (in_array($routeName, $exclude)) continue;
             Permission::firstOrCreate(['name' => $routeName]);
         }
 
@@ -28,8 +41,12 @@ class PermissionsFromRoutesSeeder extends Seeder
             'messages.show',
             'messages.destroy',
             'levels.update',
-            'levels.destroy',
             'levels.show',
+            'levels.destroy',
+            'reports.store',
+            'reports.destroy',
+            'reports.update',
+            'users.destroy',
             'logs',
         ];
 

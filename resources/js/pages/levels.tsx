@@ -30,8 +30,14 @@ import EditLevel from "@/components/level/edit-level";
 import { useCan } from '@/utils/permissions';
 
 const breadcrumbs: BreadcrumbItem[] = [
-  { title: "Dashboard", href: "/dashboard" },
-  { title: "Levels", href: "/levels" },
+  {
+    title: "Dashboard",
+    href: "/dashboard"
+  },
+  {
+    title: "Levels",
+    href: "/levels"
+  },
 ];
 
 interface Permission {

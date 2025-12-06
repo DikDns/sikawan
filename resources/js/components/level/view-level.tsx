@@ -145,7 +145,7 @@ export default function ViewRole({
                 </div>
 
                 <DialogFooter className="px-6 py-4 border-t bg-background sticky bottom-0">
-                    <Button onClick={() => onOpenChange(false)}>Tutup</Button>
+                    <Button className="cursor-pointer" onClick={() => onOpenChange(false)}>Tutup</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
