@@ -18,15 +18,15 @@
 
 3. Sedang
 
-- (6) Tambahkan total luasan kawasan kumuh di dashboard (agregasi area)
-- (7) Tambahkan jumlah pemukiman dalam kawasan kumuh di dashboard (agregasi hitung)
-- (16) Log activity: detail ubah dengan bahasa user, jangan bahasa coding
-- (13) Tag Kawasan: ditambahkan kolom titik koordinat (bisa input koordinat)
-- (14) Tag PSU: ditambahkan kolom titik koordinat
+- (6) Tambahkan total luasan kawasan kumuh di dashboard (agregasi area) (DONE)
+- (7) Tambahkan jumlah pemukiman dalam kawasan kumuh di dashboard (agregasi hitung) (DONE)
+- (16) Log activity: detail ubah dengan bahasa user, jangan bahasa coding (DONE)
+- (14) Tag PSU: ditambahkan kolom titik koordinat (bisa input koordinat ketika awal create PSU)
 
 4. Sulit
 
 - (17) Menu Settings (untuk mengatur approval penambahan data)
+- (13) Tag Kawasan: ditambahkan kolom titik koordinat (bisa input koordinat ketika awal create group area, nyambung ke 18)
 - (18) Poligon kawasan bisa langsung tergambar dari koordinat yang diinputkan
 
 5. Paling Sulit
