@@ -81,7 +81,9 @@ export function MapPicker({
     villageId,
     villageName,
 }: MapPickerProps) {
-    const [mapCenter, setMapCenter] = useState<[number, number]>([-3.0, 104.0]); // Muara Enim default
+    const [mapCenter, setMapCenter] = useState<[number, number]>([
+        -4.2327, 103.6141,
+    ]); // Muara Enim default
     const [mapZoom, setMapZoom] = useState<number>(10);
     const [markerPosition, setMarkerPosition] = useState<
         [number, number] | null

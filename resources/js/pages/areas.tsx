@@ -1,21 +1,22 @@
-import { Badge } from '@/components/ui/badge';
+import { AreaGroupStats } from '@/components/area-group/area-group-stats';
+import { AreaGroupTable } from '@/components/area-group/area-group-table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Card,
-    CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import {
     Select,
     SelectContent,
@@ -23,29 +24,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
+import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import {
-    Edit,
-    Eye,
-    Home,
-    Layers,
-    MapPin,
-    MoreVertical,
-    Plus,
-    Search,
-    Trash2,
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -61,27 +47,34 @@ interface AreaGroup {
     id: number;
     code: string; // 'SLUM','SETTLEMENT','DISASTER_RISK','PRIORITY_DEV'
     name: string; // area_groups.name
-    description: string | null;
+    description: string | null; // area_groups.description
+    areas_count: number; // count of area_features in this group
     legend_color_hex: string; // area_groups.legend_color_hex
     legend_icon: string | null;
-    is_active: boolean;
-    feature_count: number; // COUNT dari area_features
-    household_count: number; // SUM household_count dari area_features
-    family_count: number; // SUM family_count dari area_features
+    geometry_json: unknown | null;
+    centroid_lat: number | null;
+    centroid_lng: number | null;
 }
 
 interface Props {
     areaGroups: AreaGroup[];
     stats: {
         totalGroups: number;
-        totalFeatures: number;
-        totalHouseholds: number;
     };
 }
 
 export default function Areas({ areaGroups, stats }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
+    const [syncAllOpen, setSyncAllOpen] = useState(false);
+    const [syncAllPolling, setSyncAllPolling] = useState(false);
+    const [syncAllStatus, setSyncAllStatus] = useState<{
+        status: string;
+        total: number;
+        pending: number;
+    } | null>(null);
+
+    useSyncAllPolling(syncAllPolling, setSyncAllPolling, setSyncAllStatus);
 
     // Action handlers
     const handleView = (id: number) => {
@@ -89,18 +82,18 @@ export default function Areas({ areaGroups, stats }: Props) {
     };
 
     const handleEdit = (id: number) => {
-        console.log('Edit area group:', id);
-        // TODO: Navigate to edit page or open edit modal
+        router.visit(`/areas/${id}/edit`);
     };
 
     const handleDelete = (id: number) => {
-        console.log('Delete area group:', id);
-        // TODO: Show confirmation dialog and delete
+        router.delete(`/areas/${id}`, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const handleAdd = () => {
-        console.log('Add new area group');
-        // TODO: Navigate to add page or open add modal
+        router.visit('/areas/create');
     };
 
     // Filter and search
@@ -115,10 +108,7 @@ export default function Areas({ areaGroups, stats }: Props) {
                         .includes(searchQuery.toLowerCase())) ||
                 group.id.toString().includes(searchQuery);
 
-            const matchesFilter =
-                filterType === 'all' ||
-                (filterType === 'has_household' && group.household_count > 0) ||
-                (filterType === 'no_household' && group.household_count === 0);
+            const matchesFilter = filterType === 'all';
 
             return matchesSearch && matchesFilter;
         });
@@ -136,341 +126,210 @@ export default function Areas({ areaGroups, stats }: Props) {
                     </p>
                 </div>
 
-                {/* Statistics Cards */}
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Kelompok Kawasan
-                            </CardTitle>
-                            <Layers className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.totalGroups.toLocaleString()}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Total kelompok kawasan
-                            </p>
-                        </CardContent>
-                    </Card>
+                {/* Statistics Cards & Table */}
+                <AreaGroupStats stats={stats} />
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Area Terdaftar
-                            </CardTitle>
-                            <MapPin className="h-4 w-4 text-blue-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.totalFeatures.toLocaleString()}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Total fitur kawasan
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Rumah di Kawasan
-                            </CardTitle>
-                            <Home className="h-4 w-4 text-green-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.totalHouseholds.toLocaleString()}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Total rumah tercakup
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Table Card */}
+                {/* Toolbar (Search + Add) */}
                 <Card>
                     <CardHeader>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                <div>
-                                    <CardTitle>Daftar Kawasan</CardTitle>
-                                    <CardDescription>
-                                        Menampilkan {filteredAreaGroups.length}{' '}
-                                        dari {areaGroups.length} kelompok
-                                        kawasan
-                                    </CardDescription>
-                                </div>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <CardTitle>Daftar Kawasan</CardTitle>
+                                <CardDescription>
+                                    Menampilkan {filteredAreaGroups.length} dari{' '}
+                                    {areaGroups.length} kelompok kawasan
+                                </CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2">
                                 <Button
+                                    type="button"
                                     onClick={handleAdd}
                                     className="gap-2 sm:w-auto"
                                 >
                                     <Plus className="h-4 w-4" />
                                     <span>Tambah Kawasan</span>
                                 </Button>
-                            </div>
-                            {/* Search and Filter */}
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="relative flex-1">
-                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        type="text"
-                                        placeholder="Cari berdasarkan nama atau kode kawasan..."
-                                        value={searchQuery}
-                                        onChange={(e) =>
-                                            setSearchQuery(e.target.value)
-                                        }
-                                        className="pl-9"
-                                    />
-                                </div>
-                                <Select
-                                    value={filterType}
-                                    onValueChange={setFilterType}
+                                <Button
+                                    type="button"
+                                    onClick={() => setSyncAllOpen(true)}
+                                    variant="secondary"
+                                    className="gap-2 sm:w-auto"
+                                    aria-label="Sinkronisasi Rumah"
                                 >
-                                    <SelectTrigger className="w-full sm:w-[200px]">
-                                        <SelectValue placeholder="Filter Kawasan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            Semua Kawasan
-                                        </SelectItem>
-                                        <SelectItem value="has_household">
-                                            Ada Rumah
-                                        </SelectItem>
-                                        <SelectItem value="no_household">
-                                            Tanpa Rumah
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                    <span>Sinkronisasi Rumah</span>
+                                </Button>
                             </div>
+                        </div>
+                        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <div className="relative flex-1">
+                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    type="text"
+                                    placeholder="Cari berdasarkan nama kawasan..."
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    className="pl-9"
+                                />
+                            </div>
+                            <Select
+                                value={filterType}
+                                onValueChange={setFilterType}
+                            >
+                                <SelectTrigger className="w-full sm:w-[200px]">
+                                    <SelectValue placeholder="Filter Kawasan" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        Semua Kawasan
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        {/* Desktop Table View */}
-                        <div className="hidden overflow-x-auto md:block">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Id Kawasan</TableHead>
-                                        <TableHead>Nama Kawasan</TableHead>
-                                        <TableHead>Jumlah</TableHead>
-                                        <TableHead>Legend</TableHead>
-                                        <TableHead className="text-right">
-                                            Aksi
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredAreaGroups.map((group) => (
-                                        <TableRow key={group.id}>
-                                            <TableCell className="font-medium">
-                                                {group.id}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div>
-                                                    <div className="font-medium">
-                                                        {group.name}
-                                                    </div>
-                                                    {group.description && (
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {group.description}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-1 text-sm">
-                                                    <div>
-                                                        {group.feature_count}{' '}
-                                                        item
-                                                    </div>
-                                                    <div className="text-muted-foreground">
-                                                        {group.household_count}{' '}
-                                                        rumah •{' '}
-                                                        {group.family_count} KK
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <div
-                                                        className="h-6 w-6 rounded border"
-                                                        style={{
-                                                            backgroundColor:
-                                                                group.legend_color_hex,
-                                                        }}
-                                                    />
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {group.code}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                        >
-                                                            <MoreVertical className="h-4 w-4" />
-                                                            <span className="sr-only">
-                                                                Open menu
-                                                            </span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>
-                                                            Aksi
-                                                        </DropdownMenuLabel>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleView(
-                                                                    group.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Lihat Detail
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    group.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    group.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Hapus
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        {/* Mobile Card View */}
-                        <div className="space-y-4 md:hidden">
-                            {filteredAreaGroups.map((group) => (
-                                <Card key={group.id}>
-                                    <CardHeader className="pb-3">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex-1">
-                                                <div className="mb-2 flex items-center gap-2">
-                                                    <div
-                                                        className="h-4 w-4 rounded border"
-                                                        style={{
-                                                            backgroundColor:
-                                                                group.legend_color_hex,
-                                                        }}
-                                                    />
-                                                    <CardTitle className="text-base">
-                                                        {group.name}
-                                                    </CardTitle>
-                                                </div>
-                                                <CardDescription className="text-xs">
-                                                    ID: {group.id} • Code:{' '}
-                                                    {group.code}
-                                                </CardDescription>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <MoreVertical className="h-4 w-4" />
-                                                        <span className="sr-only">
-                                                            Open menu
-                                                        </span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>
-                                                        Aksi
-                                                    </DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleView(group.id)
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        Lihat Detail
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleEdit(group.id)
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                group.id,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Hapus
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        {group.description && (
-                                            <p className="text-sm text-muted-foreground">
-                                                {group.description}
-                                            </p>
-                                        )}
-                                        <div className="flex flex-wrap gap-2">
-                                            <Badge variant="default">
-                                                {group.feature_count} Item
-                                            </Badge>
-                                            <Badge variant="secondary">
-                                                {group.household_count} Rumah
-                                            </Badge>
-                                            <Badge variant="secondary">
-                                                {group.family_count} KK
-                                            </Badge>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    </CardContent>
                 </Card>
+
+                <Dialog open={syncAllOpen} onOpenChange={setSyncAllOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>
+                                Sinkronisasi Rumah dan Kawasan
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-3">
+                            <div className="text-sm text-muted-foreground">
+                                Tindakan ini akan menyinkronkan semua Rumah dan
+                                Kawasan yang memiliki geometri dan minimal satu
+                                data wilayah terisi.
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setSyncAllOpen(false)}
+                            >
+                                Batal
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={async () => {
+                                    try {
+                                        const res = await csrfFetch(
+                                            '/areas/sync-all',
+                                            { method: 'POST' },
+                                        );
+                                        if (!res.ok) {
+                                            const data = await res
+                                                .json()
+                                                .catch(() => ({}));
+                                            toast.error(
+                                                handleCsrfError(res, data),
+                                            );
+                                            return;
+                                        }
+                                        const data = await res
+                                            .json()
+                                            .catch(() => ({}));
+                                        toast.success(
+                                            data.message ||
+                                                'Sinkronisasi semua kawasan dimulai',
+                                        );
+                                        setSyncAllOpen(false);
+                                        setSyncAllPolling(true);
+                                    } catch {
+                                        toast.error(
+                                            'Terjadi kesalahan jaringan',
+                                        );
+                                    }
+                                }}
+                                className="gap-2"
+                            >
+                                Mulai Sinkronisasi
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {syncAllPolling && (
+                    <Alert>
+                        <Spinner className="text-primary" />
+                        <AlertTitle>Sinkronisasi berjalan</AlertTitle>
+                        <AlertDescription>
+                            <div>
+                                {syncAllStatus
+                                    ? `Proses: ${Math.max(0, syncAllStatus.total - syncAllStatus.pending)}/${syncAllStatus.total}`
+                                    : 'Memantau sinkronisasi...'}
+                            </div>
+                            {syncAllStatus && (
+                                <div className="mt-2">
+                                    <Progress
+                                        value={
+                                            syncAllStatus.total > 0
+                                                ? (Math.max(
+                                                      0,
+                                                      syncAllStatus.total -
+                                                          syncAllStatus.pending,
+                                                  ) /
+                                                      syncAllStatus.total /
+                                                      1) *
+                                                  100
+                                                : 0
+                                        }
+                                    />
+                                </div>
+                            )}
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {/* Statistics Cards & Table */}
+                <AreaGroupTable
+                    groups={filteredAreaGroups}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                />
             </div>
         </AppLayout>
     );
+}
+
+// Polling status sinkronisasi
+function useSyncAllPolling(
+    polling: boolean,
+    setPolling: (v: boolean) => void,
+    setStatus: (
+        s: { status: string; total: number; pending: number } | null,
+    ) => void,
+) {
+    useEffect(() => {
+        let timer: any;
+        const poll = async () => {
+            try {
+                const res = await csrfFetch('/areas/sync-all/status', {
+                    method: 'GET',
+                });
+                const data = await res.json().catch(() => ({}));
+                const status = String(data?.status || 'idle');
+                const total = Number(data?.total || 0);
+                const pending = Number(data?.pending || 0);
+                setStatus({ status, total, pending });
+                if (status === 'completed' || (total > 0 && pending <= 0)) {
+                    toast.success('Sinkronisasi semua kawasan selesai');
+                    setPolling(false);
+                }
+            } catch (e) {
+                // swallow errors, continue polling a few times
+            }
+        };
+        if (polling) {
+            poll();
+            timer = setInterval(poll, 3000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [polling, setPolling, setStatus]);
 }

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,11 +12,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Core permissions and roles
         $this->call([
             PermissionsFromRoutesSeeder::class,
             RoleSeeder::class,
         ]);
 
+        // Create superadmin user
         $user = User::firstOrCreate(
             ['email' => 'superadmin@sikawan.com'],
             [
@@ -28,10 +29,16 @@ class DatabaseSeeder extends Seeder
         );
         $user->assignRole('superadmin');
 
-        // Seed households and related data
+        // Seed main data
+        // Order matters: AreaGroupSeeder creates Areas first,
+        // then HouseholdSeeder can link households to areas
         $this->call([
-            HouseholdSeeder::class,
             AreaGroupSeeder::class,
+            InfrastructureGroupSeeder::class,
+            HouseholdSeeder::class,
+            ReportSeeder::class,
         ]);
+
+        $this->command->info('All seeders completed successfully!');
     }
 }

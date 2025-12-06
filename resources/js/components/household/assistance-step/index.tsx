@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { AssistanceCard } from './components/assistance-card';
 import { AssistanceFormDialog } from './components/assistance-form-dialog';
 import type { Assistance, AssistanceStepProps } from './types';
+import { csrfFetch } from '@/lib/csrf';
 
 export default function AssistanceStep({ householdId }: AssistanceStepProps) {
     const [assistances, setAssistances] = useState<Assistance[]>([]);
@@ -27,13 +28,9 @@ export default function AssistanceStep({ householdId }: AssistanceStepProps) {
         setError(null);
 
         try {
-            const response = await fetch(
+            const response = await csrfFetch(
                 `/households/${householdId}/assistances`,
-                {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                },
+                { method: 'GET' },
             );
 
             if (!response.ok) {
@@ -72,19 +69,9 @@ export default function AssistanceStep({ householdId }: AssistanceStepProps) {
         }
 
         try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(
+            const response = await csrfFetch(
                 `/households/${householdId}/assistances/${assistanceId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
-                },
+                { method: 'DELETE' },
             );
 
             if (!response.ok) {
@@ -115,19 +102,11 @@ export default function AssistanceStep({ householdId }: AssistanceStepProps) {
         if (!householdId) return;
 
         try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(
+            const response = await csrfFetch(
                 `/households/${householdId}/assistances/${assistanceId}/status`,
                 {
                     method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus }),
                 },
             );

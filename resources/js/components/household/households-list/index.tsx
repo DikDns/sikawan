@@ -6,18 +6,56 @@ import HouseholdsSearch from './households-search';
 import HouseholdsStats from './households-stats';
 import HouseholdsTable from './households-table';
 
+interface AreaOption {
+    value: string;
+    label: string;
+}
+
 interface Props {
     households: HouseholdListItem[];
     stats: HouseholdStats;
+    areas?: AreaOption[];
+    filters?: {
+        habitability_status?: string;
+        province_id?: string;
+        regency_id?: string;
+        district_id?: string;
+        village_id?: string;
+        area_id?: string;
+    };
 }
 
-export default function HouseholdsList({ households, stats }: Props) {
+export default function HouseholdsList({
+    households,
+    stats,
+    filters,
+    areas,
+}: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [householdToDelete, setHouseholdToDelete] = useState<number | null>(
         null,
     );
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleFilterChange = (newValues: Record<string, string | null>) => {
+        const updatedFilters: Record<string, string | null> = {
+            ...filters,
+            ...newValues,
+        };
+
+        // Remove null/undefined values to keep URL clean
+        Object.keys(updatedFilters).forEach((key) => {
+            if (!updatedFilters[key]) {
+                delete updatedFilters[key];
+            }
+        });
+
+        router.get('/households', updatedFilters as any, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
 
     const filteredHouseholds = useMemo(() => {
         return households.filter((household) => {
@@ -84,6 +122,9 @@ export default function HouseholdsList({ households, stats }: Props) {
             <HouseholdsSearch
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                areas={areas}
             />
             <HouseholdsTable
                 households={filteredHouseholds}

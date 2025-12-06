@@ -12,6 +12,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import {
+    FACILITY_LOCATION_OPTIONS,
+    HEALTH_FACILITY_USED_OPTIONS,
     HOUSEHOLD_STATUS_OPTIONS,
     INCOME_OPTIONS,
     MAIN_OCCUPATION_OPTIONS,
@@ -223,6 +225,84 @@ export function HouseholdDataSection({
                             readOnly
                             className="bg-muted"
                         />
+                    </FieldContent>
+                </Field>
+
+                <Field className="w-full">
+                    <FieldLabel>Lokasi Fasilitas Pendidikan Dasar</FieldLabel>
+                    <FieldContent>
+                        <Select
+                            value={formData.educationFacilityLocation || ''}
+                            onValueChange={(value) =>
+                                updateField('educationFacilityLocation', value)
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih Lokasi Fasilitas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {FACILITY_LOCATION_OPTIONS.map((option) => (
+                                    <SelectItem
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </FieldContent>
+                </Field>
+
+                <Field className="w-full">
+                    <FieldLabel>Fasilitas Kesehatan yang Digunakan</FieldLabel>
+                    <FieldContent>
+                        <Select
+                            value={formData.healthFacilityUsed || ''}
+                            onValueChange={(value) =>
+                                updateField('healthFacilityUsed', value)
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih Fasilitas Kesehatan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {HEALTH_FACILITY_USED_OPTIONS.map((option) => (
+                                    <SelectItem
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </FieldContent>
+                </Field>
+
+                <Field className="w-full">
+                    <FieldLabel>Lokasi Fasilitas Kesehatan</FieldLabel>
+                    <FieldContent>
+                        <Select
+                            value={formData.healthFacilityLocation || ''}
+                            onValueChange={(value) =>
+                                updateField('healthFacilityLocation', value)
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih Lokasi Fasilitas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {FACILITY_LOCATION_OPTIONS.map((option) => (
+                                    <SelectItem
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </FieldContent>
                 </Field>
             </div>

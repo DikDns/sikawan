@@ -15,16 +15,40 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface AreaOption {
+    value: string;
+    label: string;
+}
+
 interface Props {
     households: HouseholdListItem[];
     stats: HouseholdStats;
+    areas?: AreaOption[];
+    filters?: {
+        habitability_status?: string;
+        province_id?: string;
+        regency_id?: string;
+        district_id?: string;
+        village_id?: string;
+        area_id?: string;
+    };
 }
 
-export default function Households({ households, stats }: Props) {
+export default function Households({
+    households,
+    stats,
+    filters,
+    areas,
+}: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Data Rumah" />
-            <HouseholdsList households={households} stats={stats} />
+            <HouseholdsList
+                households={households}
+                stats={stats}
+                filters={filters}
+                areas={areas}
+            />
         </AppLayout>
     );
 }

@@ -10,6 +10,7 @@ import {
     type HouseholdDraftData,
 } from '@/hooks/use-household-draft';
 import AppLayout from '@/layouts/app-layout';
+import { csrfFetch } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
@@ -112,19 +113,11 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
             // Save draft first
             await saveDraft();
 
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(
+            const response = await csrfFetch(
                 `/households/${draftData.householdId}/finalize`,
                 {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                 },
             );
 

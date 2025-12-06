@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ASSISTANCE_STATUSES, ASSISTANCE_TYPES } from '@/constants/assistance';
+import { csrfFetch, getMetaToken } from '@/lib/csrf';
 import { FileUp, Loader2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -135,18 +136,11 @@ export function AssistanceFormDialog({
 
             const method = assistance ? 'PUT' : 'POST';
 
-            // Add CSRF token
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(url, {
+            const response = await csrfFetch(url, {
                 method: method === 'PUT' ? 'POST' : 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
                 body: (() => {
+                    const metaToken = getMetaToken();
+                    if (metaToken) formPayload.append('_token', metaToken);
                     if (method === 'PUT') {
                         formPayload.append('_method', 'PUT');
                     }
@@ -156,6 +150,12 @@ export function AssistanceFormDialog({
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                if (response.status === 419) {
+                    toast.error(
+                        errorData.message || 'Sesi berakhir. Coba lagi.',
+                    );
+                    return;
+                }
                 throw new Error(
                     errorData.message ||
                         `HTTP error! status: ${response.status}`,

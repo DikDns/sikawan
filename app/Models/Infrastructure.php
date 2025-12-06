@@ -9,20 +9,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Infrastructure extends Model
 {
-    use HasFactory;
+  use HasFactory;
 
-    protected $fillable = [
-        'infrastructure_group_id','type','name','attributes_json','geometry_type','geometry_json','latitude','longitude','title','is_visible','order_index'
-    ];
+  protected $fillable = [
+    'infrastructure_group_id',
+    'name',
+    'description',
+    'geometry_type',
+    'geometry_json',
+    'condition_status',
+  ];
 
-    protected $casts = [
-        'attributes_json' => 'array',
-        'geometry_json' => 'array',
-        'latitude' => 'decimal:6',
-        'longitude' => 'decimal:6',
-        'is_visible' => 'boolean',
-    ];
+  protected $casts = [
+    'attributes_json' => 'array',
+    'geometry_json' => 'array',
+  ];
 
-    public function group(): BelongsTo { return $this->belongsTo(InfrastructureGroup::class, 'infrastructure_group_id'); }
-    public function photos(): HasMany { return $this->hasMany(InfrastructurePhoto::class); }
+  public function group(): BelongsTo
+  {
+    return $this->belongsTo(InfrastructureGroup::class, 'infrastructure_group_id');
+  }
 }

@@ -1,3 +1,4 @@
+import DeleteUser from '@/components/delete-user';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +34,8 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { useCan } from '@/utils/permissions';
+import type { PageProps as InertiaPageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
     Edit,
@@ -45,11 +48,8 @@ import {
     UserCog,
     Users as UsersIcon,
 } from 'lucide-react';
-import React, { useMemo, useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import DeleteUser from '@/components/delete-user';
-import type { PageProps as InertiaPageProps } from '@inertiajs/core';
-import { useCan } from '@/utils/permissions';
+import React, { useEffect, useMemo, useState } from 'react';
+import { toast, Toaster } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -99,8 +99,6 @@ export default function Users() {
     const user = auth.user;
     const can = useCan();
 
-    console.log(user?.permissions);
-
     useEffect(() => {
         if (!hasShownToast.current && (flash?.success || flash?.error)) {
             if (flash?.success) toast.success(flash.success);
@@ -134,7 +132,9 @@ export default function Users() {
     // Calculate statistics
     const stats = useMemo(() => {
         const totalUsers = users.length;
-        const adminUsers = users.filter((u) => u.roles?.[0]?.name === 'admin').length;
+        const adminUsers = users.filter(
+            (u) => u.roles?.[0]?.name === 'admin',
+        ).length;
         const operatorUsers = users.filter(
             (u: User) => u.roles?.[0]?.name === 'operator',
         ).length;
@@ -152,8 +152,8 @@ export default function Users() {
             new Set(
                 users
                     .map((u) => u.roles?.[0]?.name)
-                    .filter((v): v is string => typeof v === "string")
-            )
+                    .filter((v): v is string => typeof v === 'string'),
+            ),
         );
         return uniqueLevels.sort();
     }, [users]);
@@ -181,12 +181,17 @@ export default function Users() {
             operator: <UsersIcon className="h-4 w-4 text-green-600" />,
         };
 
-        return levelName ? iconMap[levelName] ?? <User className="h-4 w-4" /> : <User className="h-4 w-4" />;
+        return levelName ? (
+            (iconMap[levelName] ?? <User className="h-4 w-4" />)
+        ) : (
+            <User className="h-4 w-4" />
+        );
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Pengguna" />
+            <Toaster richColors position="top-right" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
                 {/* Header */}
                 <div>
@@ -336,7 +341,9 @@ export default function Users() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    {getLevelIcon(user?.roles?.[0].name)}
+                                                    {getLevelIcon(
+                                                        user?.roles?.[0].name,
+                                                    )}
                                                     <span className="font-medium">
                                                         {user.name}
                                                     </span>
@@ -346,10 +353,12 @@ export default function Users() {
                                             <TableCell>
                                                 <Badge
                                                     variant={
-                                                        user.roles?.[0]?.name ===
+                                                        user.roles?.[0]
+                                                            ?.name ===
                                                         'superadmin'
                                                             ? 'destructive'
-                                                            : user.roles?.[0]?.name ===
+                                                            : user.roles?.[0]
+                                                                    ?.name ===
                                                                 'admin'
                                                               ? 'default'
                                                               : 'secondary'
@@ -366,7 +375,9 @@ export default function Users() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                {(can('users.view') || can('users.edit') || can('users.delete')) ? (
+                                                {can('users.view') ||
+                                                can('users.edit') ||
+                                                can('users.delete') ? (
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger
                                                             asChild
@@ -387,7 +398,9 @@ export default function Users() {
                                                                 Aksi
                                                             </DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
-                                                            {can('users.view') && (
+                                                            {can(
+                                                                'users.view',
+                                                            ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
                                                                         handleView(
@@ -400,7 +413,9 @@ export default function Users() {
                                                                     Lihat Detail
                                                                 </DropdownMenuItem>
                                                             )}
-                                                            {can('users.edit') && (
+                                                            {can(
+                                                                'users.edit',
+                                                            ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
                                                                         handleEdit(
@@ -414,7 +429,9 @@ export default function Users() {
                                                                 </DropdownMenuItem>
                                                             )}
                                                             <DropdownMenuSeparator />
-                                                            {can('users.delete') && (
+                                                            {can(
+                                                                'users.delete',
+                                                            ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
                                                                         handleDelete(
@@ -430,7 +447,9 @@ export default function Users() {
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 ) : (
-                                                    <span className="text-muted-foreground text-sm">-</span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        -
+                                                    </span>
                                                 )}
                                             </TableCell>
                                         </TableRow>
@@ -447,7 +466,9 @@ export default function Users() {
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="flex-1">
                                                 <div className="mb-2 flex items-center gap-2">
-                                                    {getLevelIcon(user.roles?.[0].name)}
+                                                    {getLevelIcon(
+                                                        user.roles?.[0].name,
+                                                    )}
                                                     <CardTitle className="text-base">
                                                         {user.name}
                                                     </CardTitle>
@@ -460,7 +481,12 @@ export default function Users() {
                                                 <DeleteUser
                                                     open={dialog.open}
                                                     onOpenChange={(open) =>
-                                                        setDialog({ open, id: open ? dialog.id : null })
+                                                        setDialog({
+                                                            open,
+                                                            id: open
+                                                                ? dialog.id
+                                                                : null,
+                                                        })
                                                     }
                                                     userId={dialog.id}
                                                 />
@@ -521,16 +547,22 @@ export default function Users() {
                                         <div className="flex flex-wrap gap-2">
                                             <Badge
                                                 variant={
-                                                    user?.roles?.[0].name === 'superadmin'
+                                                    user?.roles?.[0].name ===
+                                                    'superadmin'
                                                         ? 'destructive'
-                                                        : user?.roles?.[0].name === 'admin'
-                                                            ? 'default'
-                                                            : user?.roles?.[0].name === 'operator'
-                                                                ? 'secondary'
-                                                                : 'outline'
+                                                        : user?.roles?.[0]
+                                                                .name ===
+                                                            'admin'
+                                                          ? 'default'
+                                                          : user?.roles?.[0]
+                                                                  .name ===
+                                                              'operator'
+                                                            ? 'secondary'
+                                                            : 'outline'
                                                 }
                                             >
-                                                {user?.roles?.[0].name || 'Tidak ada role'}
+                                                {user?.roles?.[0].name ||
+                                                    'Tidak ada role'}
                                             </Badge>
                                             <Badge variant="outline">
                                                 {new Date(

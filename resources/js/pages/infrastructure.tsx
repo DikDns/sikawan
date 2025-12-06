@@ -8,6 +8,14 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -15,6 +23,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Field,
+    FieldContent,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -31,20 +45,22 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import {
     Building2,
     Droplet,
     Edit,
-    Eye,
     GraduationCap,
     Hospital,
     MoreVertical,
     Network,
     Plus,
     Search,
+    SquareArrowUpRight,
     Trash2,
     Zap,
 } from 'lucide-react';
@@ -65,201 +81,143 @@ const breadcrumbs: BreadcrumbItem[] = [
 // Ref: infrastructure_groups and infrastructures tables
 interface InfrastructureGroup {
     id: number;
-    code: string; // 'WATER_PIPE','POWER_POLE','SCHOOL','HOSPITAL', etc
-    name: string; // infrastructure_groups.name
-    category: string; // 'Air Bersih','Listrik','Pendidikan','Kesehatan'
-    jenis: 'PRASARANA' | 'SARANA'; // infrastructure_groups.jenis
-    legend_color_hex: string; // infrastructure_groups.legend_color_hex
-    legend_icon: string; // infrastructure_groups.legend_icon
-    infrastructure_count: number; // COUNT dari infrastructures
+    code: string;
+    name: string;
+    category: string;
+    type: 'Marker' | 'Polyline' | 'Polygon';
+    legend_color_hex: string | null;
+    legend_icon: string | null;
+    infrastructure_count: number;
+    description: string;
 }
 
-// Helper function to get icon based on code
-const getInfraIcon = (code: string) => {
-    const iconMap: Record<string, React.ReactNode> = {
-        WATER_PIPE: <Droplet className="h-4 w-4" />,
-        POWER_POLE: <Zap className="h-4 w-4" />,
-        POWER_LINE: <Zap className="h-4 w-4" />,
-        HOSPITAL: <Hospital className="h-4 w-4" />,
-        SCHOOL: <GraduationCap className="h-4 w-4" />,
-        SMA: <GraduationCap className="h-4 w-4" />,
-        SD: <GraduationCap className="h-4 w-4" />,
-        PUSKESMAS: <Hospital className="h-4 w-4" />,
+interface Props {
+    groups: InfrastructureGroup[];
+    stats: {
+        totalGroups: number;
     };
-    return iconMap[code] || <Building2 className="h-4 w-4" />;
+}
+
+const getCategoryIcon = (category: string, legendIcon?: string | null) => {
+    if (legendIcon === 'hospital') return <Hospital className="h-4 w-4" />;
+    if (legendIcon === 'graduation-cap')
+        return <GraduationCap className="h-4 w-4" />;
+    if (legendIcon === 'zap') return <Zap className="h-4 w-4" />;
+    if (legendIcon === 'droplet') return <Droplet className="h-4 w-4" />;
+    if (legendIcon === 'building-2') return <Building2 className="h-4 w-4" />;
+    if (legendIcon === 'trash-2') return <Trash2 className="h-4 w-4" />;
+    const byCategory: Record<string, React.ReactNode> = {
+        Kesehatan: <Hospital className="h-4 w-4" />,
+        Pendidikan: <GraduationCap className="h-4 w-4" />,
+        Listrik: <Zap className="h-4 w-4" />,
+        'Air Bersih': <Droplet className="h-4 w-4" />,
+        Drainase: <Droplet className="h-4 w-4" />,
+        Sampah: <Trash2 className="h-4 w-4" />,
+        Lainnya: <Building2 className="h-4 w-4" />,
+    };
+    return byCategory[category] || <Building2 className="h-4 w-4" />;
 };
 
-// Mock data - fully consistent with SCHEMA_DB.md
-const MOCK_INFRASTRUCTURE_GROUPS: InfrastructureGroup[] = [
-    {
-        id: 1501341233,
-        code: 'WATER_PIPE',
-        name: 'Jalur Pipa Air',
-        category: 'Air Bersih',
-        jenis: 'PRASARANA',
-        legend_color_hex: '#00D9FF',
-        legend_icon: 'droplet',
-        infrastructure_count: 4,
-    },
-    {
-        id: 1501341234,
-        code: 'POWER_POLE',
-        name: 'Tiang PLN',
-        category: 'Listrik',
-        jenis: 'PRASARANA',
-        legend_color_hex: '#FFD700',
-        legend_icon: 'zap',
-        infrastructure_count: 4,
-    },
-    {
-        id: 1501341235,
-        code: 'SCHOOL',
-        name: 'Sekolah Menengah Atas',
-        category: 'Pendidikan',
-        jenis: 'SARANA',
-        legend_color_hex: '#4C6EF5',
-        legend_icon: 'graduation-cap',
-        infrastructure_count: 4,
-    },
-    {
-        id: 1501341236,
-        code: 'HOSPITAL',
-        name: 'Rumah Sakit',
-        category: 'Kesehatan',
-        jenis: 'SARANA',
-        legend_color_hex: '#FF6B9D',
-        legend_icon: 'hospital',
-        infrastructure_count: 4,
-    },
-    {
-        id: 1501341237,
-        code: 'PUSKESMAS',
-        name: 'Puskesmas',
-        category: 'Kesehatan',
-        jenis: 'SARANA',
-        legend_color_hex: '#FA5252',
-        legend_icon: 'hospital',
-        infrastructure_count: 8,
-    },
-    {
-        id: 1501341238,
-        code: 'SD',
-        name: 'Sekolah Dasar',
-        category: 'Pendidikan',
-        jenis: 'SARANA',
-        legend_color_hex: '#20C997',
-        legend_icon: 'graduation-cap',
-        infrastructure_count: 15,
-    },
-    {
-        id: 1501341239,
-        code: 'POWER_LINE',
-        name: 'Jaringan Listrik',
-        category: 'Listrik',
-        jenis: 'PRASARANA',
-        legend_color_hex: '#FFA94D',
-        legend_icon: 'zap',
-        infrastructure_count: 12,
-    },
-    {
-        id: 1501341240,
-        code: 'DRAINAGE',
-        name: 'Saluran Drainase',
-        category: 'Drainase',
-        jenis: 'PRASARANA',
-        legend_color_hex: '#74C0FC',
-        legend_icon: 'droplet',
-        infrastructure_count: 6,
-    },
-];
-
-export default function Infrastructure() {
+export default function Infrastructure({ groups, stats }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterJenis, setFilterJenis] = useState<string>('all');
+    const [filterType, setFilterType] = useState<string>('all');
     const [filterCategory, setFilterCategory] = useState<string>('all');
+    const [openForm, setOpenForm] = useState(false);
+    const [editing, setEditing] = useState<InfrastructureGroup | null>(null);
+    const { data, setData, post, put, processing, errors, reset } = useForm({
+        code: '',
+        name: '',
+        category: 'Kesehatan',
+        type: 'Marker' as 'Marker' | 'Polyline' | 'Polygon',
+        legend_color_hex: '#20C997',
+        legend_icon: 'building-2' as string,
+        description: '' as string | null,
+    });
 
     // Action handlers
     const handleView = (id: number) => {
-        console.log('View infrastructure group:', id);
-        // TODO: Navigate to detail page showing all infrastructures in this group
+        router.visit(`/infrastructure/${id}`);
     };
 
     const handleEdit = (id: number) => {
-        console.log('Edit infrastructure group:', id);
-        // TODO: Navigate to edit page or open edit modal
+        const found = groups.find((g) => g.id === id) || null;
+        setEditing(found);
+        if (found) {
+            setData({
+                code: found.code,
+                name: found.name,
+                category: found.category,
+                type: found.type,
+                legend_color_hex: found.legend_color_hex || '',
+                legend_icon: (found.legend_icon || 'building-2') as string,
+                description: found.description || '',
+            });
+        }
+        setOpenForm(true);
     };
 
     const handleDelete = (id: number) => {
-        console.log('Delete infrastructure group:', id);
-        // TODO: Show confirmation dialog and delete
+        router.delete(`/infrastructure/${id}`, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const handleAdd = () => {
-        console.log('Add new infrastructure group');
-        // TODO: Navigate to add page or open add modal
+        setEditing(null);
+        reset();
+        setData({
+            code: '',
+            name: '',
+            category: 'Kesehatan',
+            type: 'Marker',
+            legend_color_hex: '#20C997',
+            legend_icon: 'building-2',
+            description: '',
+        });
+        setOpenForm(true);
     };
 
     // Calculate statistics
-    const stats = useMemo(() => {
-        const totalGroups = MOCK_INFRASTRUCTURE_GROUPS.length;
-        const totalPrasarana = MOCK_INFRASTRUCTURE_GROUPS.filter(
-            (g) => g.jenis === 'PRASARANA',
-        ).reduce((sum, g) => sum + g.infrastructure_count, 0);
-        const totalSarana = MOCK_INFRASTRUCTURE_GROUPS.filter(
-            (g) => g.jenis === 'SARANA',
-        ).reduce((sum, g) => sum + g.infrastructure_count, 0);
-        const totalInfrastructure = MOCK_INFRASTRUCTURE_GROUPS.reduce(
-            (sum, g) => sum + g.infrastructure_count,
-            0,
-        );
-
-        return {
-            totalGroups,
-            totalPrasarana,
-            totalSarana,
-            totalInfrastructure,
-        };
-    }, []);
+    // Removed unused totalInfrastructure to satisfy lint rules
 
     // Get unique categories for filter
     const categories = useMemo(() => {
         const uniqueCategories = Array.from(
-            new Set(MOCK_INFRASTRUCTURE_GROUPS.map((g) => g.category)),
+            new Set(groups.map((g) => g.category)),
         );
         return uniqueCategories.sort();
-    }, []);
+    }, [groups]);
 
     // Filter and search
     const filteredGroups = useMemo(() => {
-        return MOCK_INFRASTRUCTURE_GROUPS.filter((group) => {
+        return groups.filter((group) => {
+            const q = searchQuery.toLowerCase();
             const matchesSearch =
-                group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                group.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                group.category
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
+                group.name.toLowerCase().includes(q) ||
+                group.code.toLowerCase().includes(q) ||
+                group.category.toLowerCase().includes(q) ||
                 group.id.toString().includes(searchQuery);
 
-            const matchesJenis =
-                filterJenis === 'all' || group.jenis === filterJenis;
-
+            const matchesType =
+                filterType === 'all' || group.type === filterType;
             const matchesCategory =
                 filterCategory === 'all' || group.category === filterCategory;
 
-            return matchesSearch && matchesJenis && matchesCategory;
+            return matchesSearch && matchesType && matchesCategory;
         });
-    }, [searchQuery, filterJenis, filterCategory]);
+    }, [groups, searchQuery, filterType, filterCategory]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Data PSU" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
                 {/* Header */}
-                    <div>
+                <div>
                     <h1 className="text-2xl font-bold">Data PSU</h1>
-                        <p className="text-muted-foreground">
+                    <p className="text-muted-foreground">
                         Kelola data Prasarana, Sarana, dan Utilitas
-                        </p>
+                    </p>
                 </div>
 
                 {/* Statistics Cards */}
@@ -284,16 +242,23 @@ export default function Infrastructure() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
-                                    Prasarana
+                                Marker
                             </CardTitle>
                             <Building2 className="h-4 w-4 text-blue-600" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {stats.totalPrasarana.toLocaleString()}
+                                {groups
+                                    .filter((g) => g.type === 'Marker')
+                                    .reduce(
+                                        (sum, g) =>
+                                            sum + (g.infrastructure_count || 0),
+                                        0,
+                                    )
+                                    .toLocaleString()}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Total prasarana terdaftar
+                                Total titik
                             </p>
                         </CardContent>
                     </Card>
@@ -301,20 +266,31 @@ export default function Infrastructure() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
-                                Sarana
+                                Jaringan
                             </CardTitle>
                             <Hospital className="h-4 w-4 text-green-600" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {stats.totalSarana.toLocaleString()}
+                                {groups
+                                    .filter(
+                                        (g) =>
+                                            g.type === 'Polyline' ||
+                                            g.type === 'Polygon',
+                                    )
+                                    .reduce(
+                                        (sum, g) =>
+                                            sum + (g.infrastructure_count || 0),
+                                        0,
+                                    )
+                                    .toLocaleString()}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Total sarana terdaftar
+                                Total jaringan
                             </p>
                         </CardContent>
                     </Card>
-                        </div>
+                </div>
 
                 {/* Table Card */}
                 <Card>
@@ -325,10 +301,10 @@ export default function Infrastructure() {
                                     <CardTitle>Daftar PSU</CardTitle>
                                     <CardDescription>
                                         Menampilkan {filteredGroups.length} dari{' '}
-                                        {MOCK_INFRASTRUCTURE_GROUPS.length}{' '}
+                                        {stats.totalGroups.toLocaleString()}{' '}
                                         kelompok PSU
                                     </CardDescription>
-                    </div>
+                                </div>
                                 <Button
                                     onClick={handleAdd}
                                     className="gap-2 sm:w-auto"
@@ -350,7 +326,7 @@ export default function Infrastructure() {
                                         }
                                         className="pl-9"
                                     />
-                        </div>
+                                </div>
                                 <div className="flex gap-2">
                                     <Select
                                         value={filterCategory}
@@ -374,25 +350,28 @@ export default function Infrastructure() {
                                         </SelectContent>
                                     </Select>
                                     <Select
-                                        value={filterJenis}
-                                        onValueChange={setFilterJenis}
+                                        value={filterType}
+                                        onValueChange={setFilterType}
                                     >
                                         <SelectTrigger className="w-full sm:w-[160px]">
-                                            <SelectValue placeholder="Jenis" />
+                                            <SelectValue placeholder="Tipe" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">
-                                                Semua Jenis
+                                                Semua Tipe
                                             </SelectItem>
-                                            <SelectItem value="PRASARANA">
-                                                Prasarana
+                                            <SelectItem value="Marker">
+                                                Marker
                                             </SelectItem>
-                                            <SelectItem value="SARANA">
-                                                Sarana
+                                            <SelectItem value="Polyline">
+                                                Polyline
+                                            </SelectItem>
+                                            <SelectItem value="Polygon">
+                                                Polygon
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
-                    </div>
+                                </div>
                             </div>
                         </div>
                     </CardHeader>
@@ -405,7 +384,7 @@ export default function Infrastructure() {
                                         <TableHead>Id PSU</TableHead>
                                         <TableHead>Nama PSU</TableHead>
                                         <TableHead>Kategori</TableHead>
-                                        <TableHead>Jenis</TableHead>
+                                        <TableHead>Tipe</TableHead>
                                         <TableHead>Jumlah</TableHead>
                                         <TableHead>Legend</TableHead>
                                         <TableHead className="text-right">
@@ -421,25 +400,21 @@ export default function Infrastructure() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    {getInfraIcon(group.code)}
+                                                    {getCategoryIcon(
+                                                        group.category,
+                                                        group.legend_icon,
+                                                    )}
                                                     <span className="font-medium">
                                                         {group.name}
                                                     </span>
-                    </div>
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 {group.category}
                                             </TableCell>
                                             <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        group.jenis ===
-                                                        'PRASARANA'
-                                                            ? 'default'
-                                                            : 'secondary'
-                                                    }
-                                                >
-                                                    {group.jenis}
+                                                <Badge variant="outline">
+                                                    {group.type}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
@@ -454,13 +429,14 @@ export default function Infrastructure() {
                                                         className="h-6 w-6 rounded border"
                                                         style={{
                                                             backgroundColor:
-                                                                group.legend_color_hex,
+                                                                group.legend_color_hex ||
+                                                                undefined,
                                                         }}
                                                     />
                                                     <span className="text-xs text-muted-foreground">
                                                         {group.code}
                                                     </span>
-                </div>
+                                                </div>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
@@ -491,7 +467,7 @@ export default function Infrastructure() {
                                                             }
                                                             className="cursor-pointer"
                                                         >
-                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            <SquareArrowUpRight className="mr-2 h-4 w-4" />
                                                             Lihat Detail
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
@@ -538,11 +514,13 @@ export default function Infrastructure() {
                                                         className="flex h-8 w-8 items-center justify-center rounded border"
                                                         style={{
                                                             backgroundColor:
-                                                                group.legend_color_hex,
+                                                                group.legend_color_hex ||
+                                                                '#e2e8f0',
                                                         }}
                                                     >
-                                                        {getInfraIcon(
-                                                            group.code,
+                                                        {getCategoryIcon(
+                                                            group.category,
+                                                            group.legend_icon,
                                                         )}
                                                     </div>
                                                     <CardTitle className="text-base">
@@ -578,7 +556,7 @@ export default function Infrastructure() {
                                                         }
                                                         className="cursor-pointer"
                                                     >
-                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        <SquareArrowUpRight className="mr-2 h-4 w-4" />
                                                         Lihat Detail
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
@@ -616,27 +594,330 @@ export default function Infrastructure() {
                                             </span>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
-                                            <Badge
-                                                variant={
-                                                    group.jenis === 'PRASARANA'
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {group.jenis}
+                                            <Badge variant="outline">
+                                                {group.type}
                                             </Badge>
                                             <Badge variant="outline">
                                                 {group.infrastructure_count}{' '}
                                                 Item
                                             </Badge>
-                    </div>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))}
-                </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
+            {/* Create/Edit Dialog */}
+            <Dialog open={openForm} onOpenChange={setOpenForm}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {editing
+                                ? 'Edit Kelompok PSU'
+                                : 'Tambah Kelompok PSU'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Isi detail kelompok PSU untuk ditampilkan di tabel.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            if (editing) {
+                                put(`/infrastructure/${editing.id}`, {
+                                    onSuccess: () => {
+                                        setOpenForm(false);
+                                        setEditing(null);
+                                        router.reload({
+                                            only: ['groups', 'stats'],
+                                        });
+                                    },
+                                });
+                            } else {
+                                post('/infrastructure', {
+                                    onSuccess: () => {
+                                        setOpenForm(false);
+                                        setEditing(null);
+                                        router.reload({
+                                            only: ['groups', 'stats'],
+                                        });
+                                    },
+                                });
+                            }
+                        }}
+                        className="space-y-4"
+                    >
+                        <Field>
+                            <FieldLabel htmlFor="code">Kode</FieldLabel>
+                            <FieldContent>
+                                <Input
+                                    id="code"
+                                    value={data.code}
+                                    onChange={(e) =>
+                                        setData('code', e.target.value)
+                                    }
+                                    placeholder="Mis. POWER_LINE"
+                                />
+                                <FieldError
+                                    errors={
+                                        errors.code
+                                            ? [{ message: errors.code }]
+                                            : []
+                                    }
+                                />
+                            </FieldContent>
+                        </Field>
+
+                        <Field>
+                            <FieldLabel htmlFor="name">Nama</FieldLabel>
+                            <FieldContent>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(e) =>
+                                        setData('name', e.target.value)
+                                    }
+                                    placeholder="Nama kelompok PSU"
+                                />
+                                <FieldError
+                                    errors={
+                                        errors.name
+                                            ? [{ message: errors.name }]
+                                            : []
+                                    }
+                                />
+                            </FieldContent>
+                        </Field>
+
+                        <div
+                            className={cn(
+                                !editing && 'grid gap-3 sm:grid-cols-2',
+                            )}
+                        >
+                            <Field>
+                                <FieldLabel htmlFor="category">
+                                    Kategori
+                                </FieldLabel>
+                                <FieldContent>
+                                    <Select
+                                        value={data.category}
+                                        onValueChange={(v) =>
+                                            setData('category', v)
+                                        }
+                                    >
+                                        <SelectTrigger id="category">
+                                            <SelectValue placeholder="Pilih kategori" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Kesehatan">
+                                                Kesehatan
+                                            </SelectItem>
+                                            <SelectItem value="Pendidikan">
+                                                Pendidikan
+                                            </SelectItem>
+                                            <SelectItem value="Listrik">
+                                                Listrik
+                                            </SelectItem>
+                                            <SelectItem value="Air Bersih">
+                                                Air Bersih
+                                            </SelectItem>
+                                            <SelectItem value="Drainase">
+                                                Drainase
+                                            </SelectItem>
+                                            <SelectItem value="Sanitasi">
+                                                Sanitasi
+                                            </SelectItem>
+                                            <SelectItem value="Sampah">
+                                                Sampah
+                                            </SelectItem>
+                                            <SelectItem value="Jalan">
+                                                Jalan
+                                            </SelectItem>
+                                            <SelectItem value="Lainnya">
+                                                Lainnya
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FieldError
+                                        errors={
+                                            errors.category
+                                                ? [{ message: errors.category }]
+                                                : []
+                                        }
+                                    />
+                                </FieldContent>
+                            </Field>
+                            {!editing && (
+                                <Field>
+                                    <FieldLabel htmlFor="type">Tipe</FieldLabel>
+                                    <FieldContent>
+                                        <Select
+                                            value={data.type}
+                                            onValueChange={(v) =>
+                                                setData(
+                                                    'type',
+                                                    v as
+                                                        | 'Marker'
+                                                        | 'Polyline'
+                                                        | 'Polygon',
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger id="type">
+                                                <SelectValue placeholder="Pilih tipe" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Marker">
+                                                    Marker
+                                                </SelectItem>
+                                                <SelectItem value="Polyline">
+                                                    Polyline
+                                                </SelectItem>
+                                                <SelectItem value="Polygon">
+                                                    Polygon
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FieldError
+                                            errors={
+                                                errors.type
+                                                    ? [{ message: errors.type }]
+                                                    : []
+                                            }
+                                        />
+                                    </FieldContent>
+                                </Field>
+                            )}
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <Field>
+                                <FieldLabel htmlFor="legend_color_hex">
+                                    Warna Legend
+                                </FieldLabel>
+                                <FieldContent>
+                                    <Input
+                                        id="legend_color_hex"
+                                        type="color"
+                                        value={data.legend_color_hex || ''}
+                                        onChange={(e) =>
+                                            setData(
+                                                'legend_color_hex',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                    <FieldError
+                                        errors={
+                                            errors.legend_color_hex
+                                                ? [
+                                                      {
+                                                          message:
+                                                              errors.legend_color_hex,
+                                                      },
+                                                  ]
+                                                : []
+                                        }
+                                    />
+                                </FieldContent>
+                            </Field>
+
+                            <Field>
+                                <FieldLabel htmlFor="legend_icon">
+                                    Ikon Legend
+                                </FieldLabel>
+                                <FieldContent>
+                                    <Select
+                                        value={data.legend_icon || ''}
+                                        onValueChange={(v) =>
+                                            setData('legend_icon', v)
+                                        }
+                                    >
+                                        <SelectTrigger id="legend_icon">
+                                            <SelectValue placeholder="Pilih ikon" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="hospital">
+                                                <Hospital /> (Kesehatan)
+                                            </SelectItem>
+                                            <SelectItem value="graduation-cap">
+                                                <GraduationCap /> (Pendidikan)
+                                            </SelectItem>
+                                            <SelectItem value="zap">
+                                                <Zap /> (Listrik)
+                                            </SelectItem>
+                                            <SelectItem value="droplet">
+                                                <Droplet /> (Air)
+                                            </SelectItem>
+                                            <SelectItem value="trash-2">
+                                                <Trash2 /> (Sampah)
+                                            </SelectItem>
+                                            <SelectItem value="building-2">
+                                                <Building2 /> (Lainnya)
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FieldError
+                                        errors={
+                                            errors.legend_icon
+                                                ? [
+                                                      {
+                                                          message:
+                                                              errors.legend_icon,
+                                                      },
+                                                  ]
+                                                : []
+                                        }
+                                    />
+                                </FieldContent>
+                            </Field>
+                        </div>
+
+                        <Field>
+                            <FieldLabel htmlFor="description">
+                                Deskripsi
+                            </FieldLabel>
+                            <FieldContent>
+                                <Textarea
+                                    id="description"
+                                    value={data.description || ''}
+                                    onChange={(e) =>
+                                        setData('description', e.target.value)
+                                    }
+                                    placeholder="Deskripsi singkat kelompok PSU"
+                                    className="min-h-24"
+                                />
+                                <FieldError
+                                    errors={
+                                        errors.description
+                                            ? [{ message: errors.description }]
+                                            : []
+                                    }
+                                />
+                            </FieldContent>
+                        </Field>
+
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setOpenForm(false);
+                                    setEditing(null);
+                                }}
+                            >
+                                Batal
+                            </Button>
+                            <Button type="submit" disabled={processing}>
+                                {editing ? 'Simpan Perubahan' : 'Tambah'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

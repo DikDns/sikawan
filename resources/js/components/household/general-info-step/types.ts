@@ -33,6 +33,11 @@ export interface GeneralInfoData {
     femaleMembers?: number;
     disabledMembers?: number;
     totalMembers?: number;
+
+    // Akses Fasilitas
+    educationFacilityLocation?: string;
+    healthFacilityUsed?: string;
+    healthFacilityLocation?: string;
 }
 
 export type GeneralInfoDataSerialized = Omit<

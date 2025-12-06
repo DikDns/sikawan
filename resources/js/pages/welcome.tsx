@@ -11,14 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { login } from '@/routes';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
-import { usePage } from '@inertiajs/react';
 
 export default function Welcome() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { flash } = usePage<{ flash?:any }>().props;
+    const { flash } = usePage<{ flash?: any }>().props;
     const hasShownToast = React.useRef(false);
 
     useEffect(() => {
@@ -30,10 +29,10 @@ export default function Welcome() {
     }, [flash]);
 
     const { data, setData, processing, reset, errors, post } = useForm({
-        name: "",
-        email: "",
-        subject: "",
-        content: "",
+        name: '',
+        email: '',
+        subject: '',
+        content: '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -41,8 +40,8 @@ export default function Welcome() {
 
         post('/messages/store', {
             onSuccess: () => reset(),
-        })
-    }
+        });
+    };
     return (
         <>
             <Head>
@@ -62,22 +61,21 @@ export default function Welcome() {
                                 <div className="flex items-center gap-2">
                                     <img
                                         src="/images/sikawan-logo.png"
-                                        alt="SI-KAWAN"
+                                        alt="SIHUMA"
                                         className="h-8 w-8"
                                     />
                                     <span className="text-lg font-semibold text-primary">
-                                        SI-KAWAN
+                                        SIHUMA
                                     </span>
                                 </div>
                                 <nav className="flex items-center gap-2">
                                     <Button variant="ghost" asChild>
-                                        <Link href="#">Home</Link>
+                                        <Link href="/">Home</Link>
                                     </Button>
                                     <Button variant="ghost" asChild>
-                                        <Link href="#">Features</Link>
-                                    </Button>
-                                    <Button variant="ghost" asChild>
-                                        <Link href="#">Pricing</Link>
+                                        <Link href="/peta-sebaran">
+                                            Peta Sebaran
+                                        </Link>
                                     </Button>
                                     <Button asChild>
                                         <Link href={login()}>Login</Link>
@@ -97,11 +95,11 @@ export default function Welcome() {
                                 <div className="mb-6 flex items-center gap-2">
                                     <img
                                         src="/images/sikawan-logo.png"
-                                        alt="SI-KAWAN"
+                                        alt="SIHUMA"
                                         className="h-8 w-8"
                                     />
                                     <span className="text-lg font-extrabold tracking-wide text-lime-300">
-                                        SI-KAWAN
+                                        SIHUMA
                                     </span>
                                 </div>
                                 <h1 className="mb-4 text-3xl font-bold text-white lg:text-4xl">
@@ -116,7 +114,7 @@ export default function Welcome() {
                                     className="mt-6 w-fit bg-lime-300 font-semibold text-[#552C91] hover:bg-lime-400 hover:text-[#552C91]"
                                     asChild
                                 >
-                                    <Link href="#">
+                                    <Link href="/peta-sebaran">
                                         Jelajahi Peta
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -177,7 +175,7 @@ export default function Welcome() {
                                 <div className="space-y-4 text-base text-muted-foreground">
                                     <p>
                                         <span className="font-semibold text-secondary">
-                                            SI-KAWAN (Sistem Informasi Pemukiman
+                                            SIHUMA (Sistem Informasi Pemukiman
                                             dan Kawasan)
                                         </span>{' '}
                                         bertujuan mendukung tata kelola kawasan
@@ -189,7 +187,7 @@ export default function Welcome() {
                                         Dengan sistem berbasis data yang akurat
                                         dan terintegrasi,{' '}
                                         <span className="font-semibold text-secondary">
-                                            SI-KAWAN
+                                            SIHUMA
                                         </span>{' '}
                                         membantu instansi dan masyarakat
                                         mengakses informasi kawasan secara mudah
@@ -220,7 +218,7 @@ export default function Welcome() {
                                             <p className="text-sm text-muted-foreground">
                                                 Total kawasan yang telah
                                                 terdaftar dan terdata dalam
-                                                sistem SI-KAWAN.
+                                                SIHUMA.
                                             </p>
                                         </div>
                                     </HoverCardContent>
@@ -245,7 +243,7 @@ export default function Welcome() {
                                             </h4>
                                             <p className="text-sm text-muted-foreground">
                                                 Jumlah total rumah yang telah
-                                                didata dalam sistem SI-KAWAN.
+                                                didata dalam sistem SIHUMA.
                                             </p>
                                         </div>
                                     </HoverCardContent>
@@ -338,7 +336,10 @@ export default function Welcome() {
                                 </p>
                                 <Card className="bg-background">
                                     <CardContent className="p-6">
-                                        <form onSubmit={handleSubmit} className="space-y-4">
+                                        <form
+                                            onSubmit={handleSubmit}
+                                            className="space-y-4"
+                                        >
                                             <div className="space-y-2">
                                                 <Label htmlFor="name">
                                                     Nama Lengkap
@@ -347,10 +348,17 @@ export default function Welcome() {
                                                     type="text"
                                                     id="name"
                                                     value={data.name}
-                                                    onChange={(e) => setData('name', e.target.value)}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'name',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                 />
                                                 {errors.name && (
-                                                    <p className="text-sm text-red-500">{errors.name}</p>
+                                                    <p className="text-sm text-red-500">
+                                                        {errors.name}
+                                                    </p>
                                                 )}
                                             </div>
                                             <div className="space-y-2">
@@ -361,10 +369,17 @@ export default function Welcome() {
                                                     type="email"
                                                     id="email"
                                                     value={data.email}
-                                                    onChange={(e) => setData('email', e.target.value)}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'email',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                 />
                                                 {errors.email && (
-                                                    <p className="text-sm text-red-500">{errors.email}</p>
+                                                    <p className="text-sm text-red-500">
+                                                        {errors.email}
+                                                    </p>
                                                 )}
                                             </div>
                                             <div className="space-y-2">
@@ -375,10 +390,17 @@ export default function Welcome() {
                                                     type="text"
                                                     id="subject"
                                                     value={data.subject}
-                                                    onChange={(e) => setData('subject', e.target.value)}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'subject',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                 />
                                                 {errors.subject && (
-                                                    <p className="text-sm text-red-500">{errors.subject}</p>
+                                                    <p className="text-sm text-red-500">
+                                                        {errors.subject}
+                                                    </p>
                                                 )}
                                             </div>
                                             <div className="space-y-2">
@@ -389,11 +411,18 @@ export default function Welcome() {
                                                     id="content"
                                                     rows={4}
                                                     value={data.content}
-                                                    onChange={(e) => setData('content', e.target.value)}
-                                                    className="w-full rounded-md border bg-background p-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'content',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full rounded-md border bg-background p-3 focus:ring-2 focus:ring-primary focus:outline-none"
                                                 ></textarea>
                                                 {errors.content && (
-                                                    <p className="text-sm text-red-500">{errors.content}</p>
+                                                    <p className="text-sm text-red-500">
+                                                        {errors.content}
+                                                    </p>
                                                 )}
                                             </div>
                                             <Button
@@ -402,7 +431,9 @@ export default function Welcome() {
                                                 className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
                                                 disabled={processing}
                                             >
-                                                {processing ? 'Mengirim...' : 'Kirim Pesan'}
+                                                {processing
+                                                    ? 'Mengirim...'
+                                                    : 'Kirim Pesan'}
                                             </Button>
                                         </form>
                                     </CardContent>

@@ -3,6 +3,7 @@ import { AssistanceFormDialog } from '@/components/household/assistance-step/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import type { Assistance } from '@/types/assistance';
 import { type HouseholdDetail } from '@/types/household';
 import { AlertCircle, Loader2, Plus } from 'lucide-react';
@@ -61,16 +62,16 @@ export default function AssistanceTab({ household }: AssistanceTabProps) {
         setError(null);
 
         try {
-            const response = await fetch(
+            const response = await csrfFetch(
                 `/households/${household.id}/assistances`,
-                {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                },
+                { method: 'GET' },
             );
 
             if (!response.ok) {
+                if (response.status === 419) {
+                    toast.error(handleCsrfError(response));
+                    return;
+                }
                 throw new Error('Gagal memuat data bantuan');
             }
 
@@ -115,23 +116,17 @@ export default function AssistanceTab({ household }: AssistanceTabProps) {
         }
 
         try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(
+            const response = await csrfFetch(
                 `/households/${household.id}/assistances/${assistanceId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
-                },
+                { method: 'DELETE' },
             );
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                if (response.status === 419) {
+                    toast.error(handleCsrfError(response, errorData));
+                    return;
+                }
                 throw new Error(
                     errorData.message ||
                         `HTTP error! status: ${response.status}`,
@@ -158,25 +153,21 @@ export default function AssistanceTab({ household }: AssistanceTabProps) {
         if (!household.id) return;
 
         try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(
+            const response = await csrfFetch(
                 `/households/${household.id}/assistances/${assistanceId}/status`,
                 {
                     method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus }),
                 },
             );
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                if (response.status === 419) {
+                    toast.error(handleCsrfError(response, errorData));
+                    return;
+                }
                 throw new Error(
                     errorData.message ||
                         `HTTP error! status: ${response.status}`,

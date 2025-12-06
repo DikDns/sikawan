@@ -66,7 +66,6 @@ export default function DeleteMessage({
   const total = messages.length;
   const singleMessage = total === 1 ? messages[0] : null;
 
-  // fungsi untuk memotong teks subjek agar tidak kepanjangan
   const truncate = (text: string, max: number) =>
     text.length > max ? text.slice(0, max) + '…' : text;
 

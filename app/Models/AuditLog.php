@@ -11,7 +11,7 @@ class AuditLog extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id','action','entity_type','entity_id','metadata_json'
+        'user_id','action','entity_type','entity_id','metadata_json','description'
     ];
 
     protected $casts = [

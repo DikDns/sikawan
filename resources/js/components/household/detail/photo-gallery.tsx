@@ -9,7 +9,20 @@ interface PhotoGalleryProps {
 export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
-    const mainUrl = getPhotoUrl(photos[activePhotoIndex]);
+    // Filter out photos that don't have valid URLs
+    const validPhotos = photos.filter((p) => getPhotoUrl(p) !== null);
+
+    // Don't render if there are no valid photos
+    if (validPhotos.length === 0) {
+        return null;
+    }
+
+    const mainUrl = getPhotoUrl(validPhotos[activePhotoIndex]);
+
+    // Safety check: if somehow mainUrl is still null, don't render
+    if (!mainUrl) {
+        return null;
+    }
 
     return (
         <div>
@@ -20,9 +33,9 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
                     className="aspect-video w-full object-cover"
                 />
             </div>
-            {photos.length > 1 && (
+            {validPhotos.length > 1 && (
                 <div className="mt-4 grid grid-cols-4 gap-3">
-                    {photos.slice(0, 8).map((p, idx) => {
+                    {validPhotos.slice(0, 8).map((p, idx) => {
                         const url = getPhotoUrl(p);
                         if (!url) return null;
                         const isActive = idx === activePhotoIndex;

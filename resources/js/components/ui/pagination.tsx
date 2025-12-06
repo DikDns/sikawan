@@ -125,3 +125,55 @@ export {
   PaginationNext,
   PaginationEllipsis,
 }
+
+type PagerProps = {
+  page: number
+  pageCount: number
+  onChange?: (page: number) => void
+}
+
+export function Pager({ page, pageCount, onChange }: PagerProps) {
+  const goTo = (p: number) => {
+    const clamped = Math.max(1, Math.min(pageCount, p))
+    onChange?.(clamped)
+  }
+
+  const items: Array<number | 'ellipsis'> = []
+  if (pageCount <= 7) {
+    for (let i = 1; i <= pageCount; i++) items.push(i)
+  } else {
+    items.push(1)
+    if (page > 3) items.push('ellipsis')
+    const start = Math.max(2, page - 1)
+    const end = Math.min(pageCount - 1, page + 1)
+    for (let i = start; i <= end; i++) items.push(i)
+    if (page < pageCount - 2) items.push('ellipsis')
+    items.push(pageCount)
+  }
+
+  return (
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious onClick={(e) => { e.preventDefault(); goTo(page - 1) }} href="#" />
+        </PaginationItem>
+        {items.map((it, idx) => (
+          it === 'ellipsis' ? (
+            <PaginationItem key={`ellipsis-${idx}`}>
+              <PaginationEllipsis />
+            </PaginationItem>
+          ) : (
+            <PaginationItem key={it}>
+              <PaginationLink href="#" isActive={it === page} onClick={(e) => { e.preventDefault(); goTo(it as number) }}>
+                {it}
+              </PaginationLink>
+            </PaginationItem>
+          )
+        ))}
+        <PaginationItem>
+          <PaginationNext onClick={(e) => { e.preventDefault(); goTo(page + 1) }} href="#" />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  )
+}

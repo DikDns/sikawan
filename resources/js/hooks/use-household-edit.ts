@@ -38,6 +38,10 @@ export interface HouseholdEditData {
         femaleMembers?: number;
         disabledMembers?: number;
         totalMembers?: number;
+        // Facility fields
+        educationFacilityLocation?: string;
+        healthFacilityUsed?: string;
+        healthFacilityLocation?: string;
     };
 
     // Step 3: Technical Data

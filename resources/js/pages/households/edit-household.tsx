@@ -172,6 +172,10 @@ export default function EditHousehold({ household }: Props) {
             femaleMembers: household.female_count,
             disabledMembers: household.disabled_count,
             totalMembers: household.member_total,
+            // Facility fields
+            educationFacilityLocation: household.education_facility_location,
+            healthFacilityUsed: household.health_facility_used,
+            healthFacilityLocation: household.health_facility_location,
         };
 
         console.log('📋 General Info prepared:', generalInfo);

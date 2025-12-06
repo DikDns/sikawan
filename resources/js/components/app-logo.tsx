@@ -4,13 +4,13 @@ export default function AppLogo() {
             <div className="flex aspect-square size-8 items-center justify-center rounded-md">
                 <img
                     src="/images/sikawan-logo.png"
-                    alt="SI-KAWAN Logo"
+                    alt="SIHUMA Logo"
                     className="size-8 object-contain"
                 />
             </div>
             <div className="ml-1 grid flex-1 text-left text-sm">
                 <span className="mb-0.5 truncate leading-tight font-semibold">
-                    SI-KAWAN
+                    SIHUMA
                 </span>
             </div>
         </>

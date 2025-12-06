@@ -95,9 +95,12 @@ import {
     useMapEvents,
 } from "react-leaflet"
 
+export const DEFAULT_CENTER: LatLngExpression = [-3.6632234, 103.7781606]
+
 function Map({
-    zoom = 15,
+    zoom = 10,
     className,
+    center: _center,
     ...props
 }: Omit<MapContainerProps, "zoomControl"> & {
     center: LatLngExpression
@@ -105,6 +108,7 @@ function Map({
 }) {
     return (
         <LeafletMapContainer
+            center={_center ?? DEFAULT_CENTER}
             zoom={zoom}
             attributionControl={false}
             zoomControl={false}
@@ -163,7 +167,7 @@ function MapTileLayer({
 
     const context = useContext(MapLayersContext)
     const DEFAULT_URL =
-        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png	"
     // const DEFAULT_DARK_URL =
     // "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
     const resolvedUrl = url ?? DEFAULT_URL
@@ -481,7 +485,7 @@ function MapCircle({
     return (
         <LeafletCircle
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -496,7 +500,7 @@ function MapCircleMarker({
     return (
         <LeafletCircleMarker
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -511,7 +515,7 @@ function MapPolyline({
     return (
         <LeafletPolyline
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -526,7 +530,7 @@ function MapPolygon({
     return (
         <LeafletPolygon
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -541,7 +545,7 @@ function MapRectangle({
     return (
         <LeafletRectangle
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-foreground stroke-foreground stroke-4",
                 className
             )}
             {...props}
@@ -747,6 +751,32 @@ function MapLocateControl({
 type MapDrawShape = "marker" | "polyline" | "circle" | "rectangle" | "polygon"
 type MapDrawAction = "edit" | "delete"
 type MapDrawMode = MapDrawShape | MapDrawAction | null
+// Initial shapes passed from parent as props for server-provided data
+type InitialPolygon = {
+    type: "polygon"
+    positions: LatLngExpression[][]
+    color?: string
+    id?: number
+}
+type InitialRectangle = {
+    type: "rectangle"
+    bounds: [[number, number], [number, number]]
+    color?: string
+    id?: number
+}
+type InitialMarker = {
+    type: "marker"
+    position: [number, number]
+    color?: string
+    id?: number
+}
+type InitialPolyline = {
+    type: "polyline"
+    positions: [number, number][]
+    color?: string
+    id?: number
+}
+type InitialShape = InitialPolygon | InitialRectangle | InitialMarker | InitialPolyline
 interface MapDrawContextType {
     readonly featureGroup: L.FeatureGroup | null
     activeMode: MapDrawMode
@@ -764,9 +794,15 @@ function useMapDrawContext() {
 function MapDrawControl({
     className,
     onLayersChange,
+    initialShapes = [],
     ...props
 }: React.ComponentProps<"div"> & {
-    onLayersChange?: (layers: L.FeatureGroup) => void
+    onLayersChange?: (
+        layers: L.FeatureGroup,
+        changeType: "initialized" | "created" | "edited" | "deleted",
+        changedLayers?: L.LayerGroup
+    ) => void
+    initialShapes?: InitialShape[]
 }) {
     const { L, LeafletDraw } = useLeaflet()
     const map = useMap()
@@ -775,18 +811,40 @@ function MapDrawControl({
     const editControlRef = useRef<EditToolbar.Edit | null>(null)
     const deleteControlRef = useRef<EditToolbar.Delete | null>(null)
     const [activeMode, setActiveMode] = useState<MapDrawMode>(null)
+    const initialShapesAddedRef = useRef<boolean>(false)
 
     const handleDrawCreated = useCallback((event: DrawEvents.Created) => {
         if (!featureGroupRef.current) return
         const { layer } = event
         featureGroupRef.current.addLayer(layer)
-        onLayersChange?.(featureGroupRef.current)
+        console.log("[MapDrawControl] changeType=created, layers=", featureGroupRef.current.getLayers().length)
+        onLayersChange?.(featureGroupRef.current, "created")
         setActiveMode(null)
     }, [onLayersChange])
 
-    const handleDrawEditedOrDeleted = useCallback(() => {
+    const handleDrawEdited = useCallback((event: DrawEvents.Edited) => {
         if (!featureGroupRef.current) return
-        onLayersChange?.(featureGroupRef.current)
+        const editedLayers = event.layers as L.LayerGroup
+        console.log(
+            "[MapDrawControl] changeType=edited, layers=",
+            featureGroupRef.current.getLayers().length,
+            "editedCount=",
+            editedLayers?.getLayers()?.length ?? 0
+        )
+        onLayersChange?.(featureGroupRef.current, "edited", editedLayers)
+        setActiveMode(null)
+    }, [onLayersChange])
+
+    const handleDrawDeleted = useCallback((event: DrawEvents.Deleted) => {
+        if (!featureGroupRef.current) return
+        const deletedLayers = event.layers as L.LayerGroup
+        console.log(
+            "[MapDrawControl] changeType=deleted, layers=",
+            featureGroupRef.current.getLayers().length,
+            "deletedCount=",
+            deletedLayers?.getLayers()?.length ?? 0
+        )
+        onLayersChange?.(featureGroupRef.current, "deleted", deletedLayers)
         setActiveMode(null)
     }, [onLayersChange])
 
@@ -796,20 +854,128 @@ function MapDrawControl({
         }
     }, [])
 
+    // Validate helpers
+    function isValidLatLngPair(pair: unknown): pair is [number, number] {
+        return (
+            Array.isArray(pair) &&
+            pair.length === 2 &&
+            typeof pair[0] === "number" &&
+            typeof pair[1] === "number" &&
+            Number.isFinite(pair[0]) &&
+            Number.isFinite(pair[1])
+        )
+    }
+
+    // Add initial shapes into the FeatureGroup once L and group are ready
+    useEffect(() => {
+        if (!L || !featureGroupRef.current) return
+        if (initialShapesAddedRef.current) return
+        if (!Array.isArray(initialShapes) || initialShapes.length === 0) return
+
+        const group = featureGroupRef.current
+        let addedCount = 0
+
+        initialShapes.forEach((shape) => {
+            try {
+                if (shape.type === "polygon") {
+                    const positions = shape.positions
+                    const valid = Array.isArray(positions) &&
+                        positions.every(
+                            (ring) => Array.isArray(ring) && ring.every(isValidLatLngPair)
+                        )
+                    if (!valid) {
+                        console.error("Invalid polygon positions", shape)
+                        return
+                    }
+                    const layer = L.polygon(positions, {
+                        color: shape.color || "var(--color-primary)",
+                        weight: 4,
+                        opacity: 1,
+                        fillOpacity: 0.25,
+                    })
+                    ;(layer as any).__initialId = shape.id ?? null
+                    group.addLayer(layer)
+                    addedCount += 1
+                } else if (shape.type === "rectangle") {
+                    const bounds = shape.bounds
+                    const valid =
+                        Array.isArray(bounds) &&
+                        bounds.length === 2 &&
+                        isValidLatLngPair(bounds[0]) &&
+                        isValidLatLngPair(bounds[1])
+                    if (!valid) {
+                        console.error("Invalid rectangle bounds", shape)
+                        return
+                    }
+                    const layer = L.rectangle(bounds, {
+                        color: shape.color || "var(--color-primary)",
+                        weight: 2,
+                        opacity: 1,
+                    })
+                    ;(layer as any).__initialId = shape.id ?? null
+                    group.addLayer(layer)
+                    addedCount += 1
+                } else if (shape.type === "marker") {
+                    const pos = shape.position
+                    const valid = isValidLatLngPair(pos)
+                    if (!valid) {
+                        console.error("Invalid marker position", shape)
+                        return
+                    }
+                    const layer = L.marker(pos, {
+                        icon: L.divIcon({
+                            className: "",
+                            iconAnchor: [12, 12],
+                            html: renderToString(<MapPinIcon className="size-6" />),
+                        }),
+                    })
+                    ;(layer as any).__initialId = shape.id ?? null
+                    group.addLayer(layer)
+                    addedCount += 1
+                } else if (shape.type === "polyline") {
+                    const positions = shape.positions
+                    const valid = Array.isArray(positions) && positions.every(isValidLatLngPair)
+                    if (!valid) {
+                        console.error("Invalid polyline positions", shape)
+                        return
+                    }
+                    const layer = L.polyline(positions, {
+                        color: shape.color || "var(--color-primary)",
+                        weight: 4,
+                        opacity: 1,
+                    })
+                    ;(layer as any).__initialId = shape.id ?? null
+                    group.addLayer(layer)
+                    addedCount += 1
+                }
+            } catch (err) {
+                console.error("Error adding initial shape", shape, err)
+            }
+        })
+
+        if (addedCount > 0) {
+            initialShapesAddedRef.current = true
+            console.log("[MapDrawControl] changeType=initialized, layers=", group.getLayers().length)
+            onLayersChange?.(group, "initialized")
+        }
+    }, [L, initialShapes, onLayersChange])
+
     useEffect(() => {
         if (!L || !LeafletDraw) return
 
         const createdHandler = handleDrawCreated as L.LeafletEventHandlerFn
+        const editedHandler = handleDrawEdited as L.LeafletEventHandlerFn
+        const deletedHandler = handleDrawDeleted as L.LeafletEventHandlerFn
         map.on(L.Draw.Event.CREATED, createdHandler)
-        map.on(L.Draw.Event.EDITED, handleDrawEditedOrDeleted)
-        map.on(L.Draw.Event.DELETED, handleDrawEditedOrDeleted)
+        map.on(L.Draw.Event.EDITED, editedHandler)
+        map.on(L.Draw.Event.DELETED, deletedHandler)
 
         return () => {
             map.off(L.Draw.Event.CREATED, createdHandler)
-            map.off(L.Draw.Event.EDITED, handleDrawEditedOrDeleted)
-            map.off(L.Draw.Event.DELETED, handleDrawEditedOrDeleted)
+            map.off(L.Draw.Event.EDITED, editedHandler)
+            map.off(L.Draw.Event.DELETED, deletedHandler)
         }
-    }, [L, LeafletDraw, map, handleDrawCreated, handleDrawEditedOrDeleted])
+    }, [L, LeafletDraw, map, handleDrawCreated, handleDrawEdited, handleDrawDeleted])
 
     return (
         <MapDrawContext.Provider
@@ -910,7 +1076,7 @@ function MapDrawPolyline({
     shapeOptions = {
         color: "var(--color-primary)",
         opacity: 1,
-        weight: 2,
+        weight: 4,
     },
     ...props
 }: DrawOptions.PolylineOptions) {
@@ -993,7 +1159,8 @@ function MapDrawPolygon({
     shapeOptions = {
         color: "var(--color-primary)",
         opacity: 1,
-        weight: 2,
+        weight: 4,
+        fillOpacity: 0.25,
     },
     ...props
 }: DrawOptions.PolygonOptions) {

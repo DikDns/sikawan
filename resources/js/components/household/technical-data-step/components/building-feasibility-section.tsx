@@ -139,8 +139,6 @@ export function BuildingFeasibilitySection({
                                 step="0.01"
                                 value={
                                     formData.areaPerPersonM2
-                                        ? formData.areaPerPersonM2.toFixed(2)
-                                        : ''
                                 }
                                 readOnly
                                 className="bg-muted"

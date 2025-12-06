@@ -54,6 +54,7 @@ export const SearchableSelect = React.forwardRef<
         ref,
     ) => {
         const [open, setOpen] = React.useState(false);
+        const listRef = React.useRef<HTMLDivElement | null>(null);
         const selectedOption = React.useMemo(() => {
             const found = options.find((opt) => String(opt.value) === String(value));
             return found;
@@ -111,6 +112,25 @@ export const SearchableSelect = React.forwardRef<
             setOpen(false);
         };
 
+        // Forward wheel scrolling from anywhere in the popover to the list container
+        const handleWheelScroll = React.useCallback(
+            (e: React.WheelEvent) => {
+                const container = listRef.current;
+                if (!container) return;
+                // If the list can scroll, forward delta to it
+                const canScroll = container.scrollHeight > container.clientHeight;
+                if (!canScroll) return;
+
+                const before = container.scrollTop;
+                container.scrollTop += e.deltaY;
+                // Prevent page/dialog scrolling if we actually scrolled the list
+                if (container.scrollTop !== before) {
+                    e.stopPropagation();
+                }
+            },
+            [],
+        );
+
         return (
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild disabled={disabled}>
@@ -165,15 +185,19 @@ export const SearchableSelect = React.forwardRef<
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                    className="w-[var(--radix-popover-trigger-width)] p-0 max-h-[50vh] overflow-hidden"
                     align="start"
+                    onWheel={handleWheelScroll}
                 >
                     <Command>
                         <CommandInput
                             placeholder={searchPlaceholder}
-                            className="h-9"
+                            className="h-9 sticky top-0 z-10 bg-background"
                         />
-                        <CommandList>
+                        <CommandList
+                            ref={listRef}
+                            className="max-h-[50vh] overflow-y-auto"
+                        >
                             <CommandEmpty>{emptyMessage}</CommandEmpty>
                             <CommandGroup>
                                 {options.map((option) => {
