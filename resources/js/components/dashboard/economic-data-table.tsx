@@ -9,13 +9,6 @@ import {
 import { router } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 
-const fallbackEconomicData = [
-    { indicator: 'Pendapatan rata-rata', value: '-' },
-    { indicator: 'Tingkat Pengangguran', value: '-' },
-    { indicator: 'Akses Pendidikan Dasar', value: '-' },
-    { indicator: 'Akses Kesehatan', value: '-' },
-];
-
 interface EconomicDataTableProps {
     data?: { indicator: string; value: string }[];
     availableYears?: string[];
@@ -77,22 +70,26 @@ export function EconomicDataTable({
                         <div>Indikator</div>
                         <div className="text-right">Nilai</div>
                     </div>
-                    {(data && data.length > 0
-                        ? data
-                        : fallbackEconomicData
-                    ).map((item, index) => (
-                        <div
-                            key={index}
-                            className="grid grid-cols-2 gap-4 py-2 text-sm"
-                        >
-                            <div className="text-muted-foreground">
-                                {item.indicator}
+                    {(data && data.length > 0 ? data : []).map(
+                        (item, index) => (
+                            <div
+                                key={index}
+                                className="grid grid-cols-2 gap-4 py-2 text-sm"
+                            >
+                                <div className="text-muted-foreground">
+                                    {item.indicator}
+                                </div>
+                                <div className="text-right font-medium text-foreground">
+                                    {item.value}
+                                </div>
                             </div>
-                            <div className="text-right font-medium text-foreground">
-                                {item.value}
-                            </div>
+                        ),
+                    )}
+                    {(!data || data.length === 0) && (
+                        <div className="py-8 text-center text-sm text-muted-foreground">
+                            Belum ada data ekonomi untuk tahun ini.
                         </div>
-                    ))}
+                    )}
                 </div>
             </CardContent>
         </Card>

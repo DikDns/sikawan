@@ -1,15 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 
-const fallbackRows = [{ name: 'Contoh Kawasan', rumah: 0 }];
-
-interface AreaSummaryRow {
+export interface AreaSummaryRow {
     name: string;
     rumah: number;
 }
 
 export function AreaSummaryTable({ rows }: { rows?: AreaSummaryRow[] }) {
-    const data = rows && rows.length > 0 ? rows : fallbackRows;
+    const data = rows && rows.length > 0 ? rows : [];
     const currentYear = new Date().getFullYear();
 
     return (

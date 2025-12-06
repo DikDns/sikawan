@@ -405,6 +405,9 @@ class HouseholdController extends Controller
         'femaleMembers' => $lastDraft->female_count,
         'disabledMembers' => $lastDraft->disabled_count,
         'totalMembers' => $lastDraft->member_total,
+        'educationFacilityLocation' => $lastDraft->education_facility_location,
+        'healthFacilityUsed' => $lastDraft->health_facility_used,
+        'healthFacilityLocation' => $lastDraft->health_facility_location,
       ];
 
       $mapLocation = null;
@@ -506,6 +509,9 @@ class HouseholdController extends Controller
         'female_count' => $generalInfoData['femaleMembers'] ?? null,
         'disabled_count' => $generalInfoData['disabledMembers'] ?? null,
         'member_total' => $generalInfoData['totalMembers'] ?? null,
+        'education_facility_location' => $generalInfoData['educationFacilityLocation'] ?? null,
+        'health_facility_used' => $generalInfoData['healthFacilityUsed'] ?? null,
+        'health_facility_location' => $generalInfoData['healthFacilityLocation'] ?? null,
       ]);
     }
 
@@ -670,6 +676,9 @@ class HouseholdController extends Controller
       'femaleMembers' => $household->female_count,
       'disabledMembers' => $household->disabled_count,
       'totalMembers' => $household->member_total,
+      'educationFacilityLocation' => $household->education_facility_location,
+      'healthFacilityUsed' => $household->health_facility_used,
+      'healthFacilityLocation' => $household->health_facility_location,
     ];
 
     // Redirect back to create page with draft data
@@ -732,6 +741,9 @@ class HouseholdController extends Controller
         'femaleMembers' => $lastDraft->female_count,
         'disabledMembers' => $lastDraft->disabled_count,
         'totalMembers' => $lastDraft->member_total,
+        'educationFacilityLocation' => $lastDraft->education_facility_location,
+        'healthFacilityUsed' => $lastDraft->health_facility_used,
+        'healthFacilityLocation' => $lastDraft->health_facility_location,
       ];
 
       $mapLocation = null;

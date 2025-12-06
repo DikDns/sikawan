@@ -53,3 +53,21 @@ export const HOUSEHOLD_STATUS_OPTIONS = [
     { value: 'istri', label: 'Istri' },
     { value: 'anak', label: 'Anak' },
 ] as const;
+
+export const HEALTH_FACILITY_USED_OPTIONS = [
+    { value: 'Puskesmas', label: 'Puskesmas' },
+    { value: 'Rumah Sakit', label: 'Rumah Sakit' },
+    { value: 'Klinik', label: 'Klinik' },
+    { value: 'Praktik Dokter', label: 'Praktik Dokter' },
+] as const;
+
+export const FACILITY_LOCATION_OPTIONS = [
+    {
+        value: 'Dalam Kelurahan/Kecamatan',
+        label: 'Dalam Kelurahan/Kecamatan',
+    },
+    {
+        value: 'Luar Kelurahan/Kecamatan',
+        label: 'Luar Kelurahan/Kecamatan',
+    },
+] as const;

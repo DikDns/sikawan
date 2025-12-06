@@ -176,9 +176,10 @@ class HouseholdSeeder extends Seeder
                     'disabled_count' => rand(0, 2),
                     'main_occupation' => $occupations[array_rand($occupations)],
                     'monthly_income_idr' => $incomeOptions[array_rand($incomeOptions)],
+                    'education_facility_location' => ['Dalam Kelurahan/Kecamatan', 'Luar Kelurahan/Kecamatan'][rand(0, 1)],
                     'health_facility_used' => ['Puskesmas', 'Rumah Sakit', 'Klinik', 'Praktik Dokter'][rand(0, 3)],
                     'health_facility_location' => ['Dalam Kelurahan/Kecamatan', 'Luar Kelurahan/Kecamatan'][rand(0, 1)],
-                    'education_facility_location' => ['Dalam Kelurahan/Kecamatan', 'Luar Kelurahan/Kecamatan'][rand(0, 1)],
+                    'created_at' => now()->subDays(rand(1, 365)), // Spread over last year
                     'habitability_status' => $isRTLH ? 'RTLH' : 'RLH',
                     'eligibility_score_total' => $isRTLH ? rand(0, 50) : rand(51, 100),
                     'eligibility_computed_at' => now(),
@@ -285,11 +286,39 @@ class HouseholdSeeder extends Seeder
 
                 if (rand(0, 1)) {
                     $photoCount = rand(2, 5);
-                    $photoFolder = 'households/' . date('Y/m') . '/' . $household->id;
+                    $photoFolderRel = 'households/' . date('Y/m') . '/' . $household->id;
+                    $photoFolderAbs = storage_path('app/public/' . $photoFolderRel);
+
+                    if (!file_exists($photoFolderAbs)) {
+                        mkdir($photoFolderAbs, 0755, true);
+                    }
+
+                    // Source folder for seed photos (must be prepared manually)
+                    $seedPhotoSource = storage_path('app/public/seed-photos');
+                    // Fallback to placeholder if seed folder doesn't exist
+                    $useRealPhotos = file_exists($seedPhotoSource);
+
                     for ($m = 0; $m < $photoCount; $m++) {
+                        $fileName = 'photo_' . ($m + 1) . '.jpg';
+                        $destPath = $photoFolderAbs . '/' . $fileName;
+
+                        // Copy real photo or create placeholder
+                        if ($useRealPhotos && file_exists($seedPhotoSource . '/' . $fileName)) {
+                             copy($seedPhotoSource . '/' . $fileName, $destPath);
+                        } else {
+                            // Create a placeholder image
+                            $image = imagecreatetruecolor(640, 480);
+                            $bgColor = imagecolorallocate($image, rand(200, 255), rand(200, 255), rand(200, 255));
+                            imagefill($image, 0, 0, $bgColor);
+                            $textColor = imagecolorallocate($image, 0, 0, 0);
+                            imagestring($image, 5, 250, 220, "Placeholder Photo " . ($m + 1), $textColor);
+                            imagejpeg($image, $destPath);
+                            imagedestroy($image);
+                        }
+
                         Photo::create([
                             'household_id' => $household->id,
-                            'file_path' => $photoFolder . '/photo_' . ($m + 1) . '.jpg',
+                            'file_path' => $photoFolderRel . '/' . $fileName,
                             'caption' => ['Tampak Depan', 'Tampak Samping', 'Ruang Tamu', 'Kamar Tidur', 'Dapur', 'Kamar Mandi'][$m % 6],
                             'order_index' => $m + 1,
                         ]);

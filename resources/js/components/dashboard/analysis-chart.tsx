@@ -14,22 +14,22 @@ import {
     YAxis,
 } from 'recharts';
 
-const fallbackAnalysisData = [
-    { year: '2014', rumah: 45, rlh: 35, rtuh: 40, rumahBaru: 30 },
-    { year: '2015', rumah: 50, rlh: 38, rtuh: 42, rumahBaru: 32 },
-    { year: '2016', rumah: 48, rlh: 40, rtuh: 45, rumahBaru: 35 },
-    { year: '2017', rumah: 55, rlh: 42, rtuh: 48, rumahBaru: 38 },
-    { year: '2018', rumah: 60, rlh: 45, rtuh: 50, rumahBaru: 40 },
-    { year: '2019', rumah: 65, rlh: 48, rtuh: 55, rumahBaru: 42 },
-    { year: '2020', rumah: 70, rlh: 50, rtuh: 60, rumahBaru: 45 },
-    { year: '2021', rumah: 75, rlh: 52, rtuh: 65, rumahBaru: 48 },
-    { year: '2022', rumah: 80, rlh: 55, rtuh: 70, rumahBaru: 50 },
-    { year: '2023', rumah: 85, rlh: 58, rtuh: 75, rumahBaru: 52 },
-    { year: '2024', rumah: 90, rlh: 60, rtuh: 80, rumahBaru: 55 },
-    { year: '2025', rumah: 95, rlh: 62, rtuh: 85, rumahBaru: 58 },
-];
-
 export function AnalysisChart({ data }: { data?: any[] }) {
+    if (!data || data.length === 0) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Analisis Rumah</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
+                        Belum ada data analisis tahunan.
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
+
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -42,7 +42,7 @@ export function AnalysisChart({ data }: { data?: any[] }) {
             <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
                     <LineChart
-                        data={data && data.length > 0 ? data : fallbackAnalysisData}
+                        data={data}
                         margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                     >
                         <CartesianGrid strokeDasharray="3 3" />

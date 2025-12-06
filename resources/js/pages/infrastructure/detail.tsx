@@ -101,6 +101,7 @@ export default function InfrastructureDetail({ group, items }: Props) {
                     description: null,
                     geometry_type: geometryType,
                     geometry_json: geometry,
+                    condition_status: 'baik',
                 };
 
                 const response = await csrfFetch(

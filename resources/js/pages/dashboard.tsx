@@ -11,7 +11,7 @@ import { StatCards } from '@/components/dashboard/stat-cards';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, type DashboardProps } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { Home, MapPin } from 'lucide-react';
 
@@ -41,7 +41,9 @@ export default function Dashboard() {
         regionStats,
         slumAreaTotalM2 = 0,
         householdsInSlumArea = 0,
-    } = usePage().props as any;
+        rtlhTotal = 0,
+        newHouseNeededTotal = 0,
+    } = usePage<DashboardProps>().props;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -49,7 +51,8 @@ export default function Dashboard() {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <main className="min-h-screen space-y-6 bg-background">
                     <DashboardHeader />
-                    <StatCards data={statCardsData} />
+                    <StatCards data={statCardsData.slice(0, 3)} columns={3} />
+                    <StatCards data={statCardsData.slice(3, 5)} columns={2} />
 
                     {/* Slum Area Statistics */}
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -94,6 +97,8 @@ export default function Dashboard() {
                     <ChartSection
                         rtlhData={chartSectionData?.rtlh}
                         rumahBaruData={chartSectionData?.rumahBaru}
+                        rtlhTotal={rtlhTotal}
+                        newHouseNeededTotal={newHouseNeededTotal}
                     />
                     <AnalysisChart data={analysisData} />
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

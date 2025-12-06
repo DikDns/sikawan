@@ -30,7 +30,9 @@ class InfrastructureController extends Controller
         'name' => $item->name,
         'description' => $item->description,
         'geometry_type' => $item->geometry_type,
+        'geometry_type' => $item->geometry_type,
         'geometry_json' => $item->geometry_json,
+        'condition_status' => $item->condition_status,
       ];
     });
 
@@ -55,7 +57,9 @@ class InfrastructureController extends Controller
       'name' => 'required|string|max:150',
       'description' => 'nullable|string',
       'geometry_type' => 'required|string|in:Point,LineString,Polygon',
+      'geometry_type' => 'required|string|in:Point,LineString,Polygon',
       'geometry_json' => 'required|array',
+      'condition_status' => 'required|string|in:baik,rusak_ringan,rusak_berat',
     ]);
 
     if ($expectedGeometryType && $request->geometry_type !== $expectedGeometryType) {
@@ -68,7 +72,9 @@ class InfrastructureController extends Controller
       'name' => $request->name,
       'description' => $request->description,
       'geometry_type' => $request->geometry_type,
+      'geometry_type' => $request->geometry_type,
       'geometry_json' => $request->geometry_json,
+      'condition_status' => $request->condition_status,
     ]);
 
     return response()->json([
@@ -79,7 +85,9 @@ class InfrastructureController extends Controller
           'name' => $item->name,
           'description' => $item->description,
           'geometry_type' => $item->geometry_type,
+          'geometry_type' => $item->geometry_type,
           'geometry_json' => $item->geometry_json,
+          'condition_status' => $item->condition_status,
         ],
       ],
     ], 201);
@@ -93,14 +101,18 @@ class InfrastructureController extends Controller
       'name' => 'required|string|max:150',
       'description' => 'nullable|string',
       'geometry_type' => 'nullable|string|in:Point,LineString,Polygon',
+      'geometry_type' => 'nullable|string|in:Point,LineString,Polygon',
       'geometry_json' => 'nullable|array',
+      'condition_status' => 'nullable|string|in:baik,rusak_ringan,rusak_berat',
     ]);
 
     $item->update([
       'name' => $request->name,
       'description' => $request->description ?? $item->description,
       'geometry_type' => $request->geometry_type ?? $item->geometry_type,
+      'geometry_type' => $request->geometry_type ?? $item->geometry_type,
       'geometry_json' => $request->geometry_json ?? $item->geometry_json,
+      'condition_status' => $request->condition_status ?? $item->condition_status,
     ]);
 
     return response()->json([
@@ -111,7 +123,9 @@ class InfrastructureController extends Controller
           'name' => $item->name,
           'description' => $item->description,
           'geometry_type' => $item->geometry_type,
+          'geometry_type' => $item->geometry_type,
           'geometry_json' => $item->geometry_json,
+          'condition_status' => $item->condition_status,
         ],
       ],
     ]);

@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type HouseholdDetail } from '@/types/household';
+import { getPhotoUrl } from '@/utils/household-formatters';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
@@ -31,6 +32,9 @@ export default function HouseholdDetail({ household }: Props) {
               .photos as unknown[])
         : [];
 
+    // Check if there are any valid photos with URLs
+    const hasValidPhotos = photos.some((p) => getPhotoUrl(p) !== null);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Rumah ${household.head_name}`} />
@@ -49,16 +53,22 @@ export default function HouseholdDetail({ household }: Props) {
                 <Card className="overflow-hidden border-border shadow-lg">
                     <CardContent className="p-6">
                         <div className="flex flex-col gap-6 lg:flex-row">
-                            {/* Gallery (left) */}
-                            <div className="lg:w-2/5">
-                                <PhotoGallery
-                                    photos={photos}
-                                    alt={household.head_name}
-                                />
-                            </div>
+                            {/* Gallery (left) - only render if there are valid photos */}
+                            {hasValidPhotos && (
+                                <div className="lg:w-2/5">
+                                    <PhotoGallery
+                                        photos={photos}
+                                        alt={household.head_name}
+                                    />
+                                </div>
+                            )}
 
-                            {/* Right side: Heading + Tabs */}
-                            <div className="lg:w-3/5">
+                            {/* Right side: Heading + Tabs - full width if no photos */}
+                            <div
+                                className={
+                                    hasValidPhotos ? 'lg:w-3/5' : 'w-full'
+                                }
+                            >
                                 <DetailHeader
                                     headName={household.head_name}
                                     addressText={household.address_text}

@@ -43,3 +43,34 @@ export interface User {
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
 }
+
+export interface DashboardProps {
+    statCardsData: { label: string; value: number | string; href?: string }[];
+    analysisData: {
+        year: string;
+        rumah: number;
+        rlh: number;
+        rtuh: number;
+        rumahBaru: number;
+    }[];
+    chartSectionData: {
+        rtlh: { name: string; value: number; fill: string }[];
+        rumahBaru: { name: string; value: number; fill: string }[];
+    };
+    psuData: { name: string; value: number; color: string }[];
+    improvedPSUData: { name: string; value: number; color: string }[];
+    bottomStatsData: { population: number; kk: number };
+    economicData: { indicator: string; value: string }[];
+    availableYears: string[];
+    selectedEconomicYear: string | null;
+    areaSummaryRows: { name: string; rumah: number }[];
+    regionStats: {
+        region: { name: string; houses: string };
+        data: { label: string; value: number; color: string }[];
+    }[];
+    slumAreaTotalM2: number;
+    householdsInSlumArea: number;
+    rtlhTotal: number;
+    newHouseNeededTotal: number;
+    [key: string]: unknown;
+}

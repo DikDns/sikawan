@@ -11,6 +11,11 @@ class ModelObserver
 {
     protected function makeLog(string $action, Model $model, array $meta): void
     {
+        // Skip logging for seeder operations (no authenticated user)
+        if (!Auth::check()) {
+            return;
+        }
+
         try {
             $description = ActivityLogFormatter::format($action, get_class($model), $meta);
             AuditLog::create([

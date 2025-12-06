@@ -8,6 +8,7 @@ export interface InfrastructureItem {
     description?: string | null;
     geometry_type: 'Point' | 'LineString' | 'Polygon';
     geometry_json?: unknown | null;
+    condition_status?: string | null;
 }
 
 export interface InfrastructureFeatureListProps {
@@ -52,7 +53,14 @@ export function InfrastructureFeatureList({
                                 </div>
                             ) : null}
                             <div className="mt-2 text-xs text-muted-foreground">
-                                {item.geometry_type}
+                                {item.geometry_type} &bull;{' '}
+                                {item.condition_status
+                                    ? item.condition_status
+                                          .replace('_', ' ')
+                                          .replace(/\b\w/g, (c) =>
+                                              c.toUpperCase(),
+                                          )
+                                    : '-'}
                             </div>
                             <div className="mt-2">
                                 <Button

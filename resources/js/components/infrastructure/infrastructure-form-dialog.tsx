@@ -9,6 +9,13 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { Loader2 } from 'lucide-react';
@@ -21,6 +28,7 @@ export interface InfrastructureItemForm {
     description?: string | null;
     geometry_type?: 'Point' | 'LineString' | 'Polygon';
     geometry_json?: unknown;
+    condition_status?: string;
 }
 
 export interface InfrastructureFormDialogProps {
@@ -51,6 +59,7 @@ export function InfrastructureFormDialog({
                   name: '',
                   description: '',
                   geometry_json: null,
+                  condition_status: 'baik',
               },
     );
 
@@ -61,13 +70,16 @@ export function InfrastructureFormDialog({
                 name: item.name || '',
                 description: item.description || '',
                 geometry_type: item.geometry_type,
+                geometry_type: item.geometry_type,
                 geometry_json: item.geometry_json,
+                condition_status: item.condition_status || 'baik',
             });
         } else {
             setFormData({
                 name: '',
                 description: '',
                 geometry_json: null,
+                condition_status: 'baik',
             });
         }
     }, [item, open]);
@@ -87,6 +99,7 @@ export function InfrastructureFormDialog({
                 description: formData.description || null,
                 geometry_type: formData.geometry_type,
                 geometry_json: formData.geometry_json,
+                condition_status: formData.condition_status,
             };
 
             const url = item
@@ -178,6 +191,32 @@ export function InfrastructureFormDialog({
                                 placeholder="Tambahkan deskripsi..."
                                 rows={3}
                             />
+                        </Field>
+
+                        <Field>
+                            <FieldLabel>Kondisi</FieldLabel>
+                            <Select
+                                value={formData.condition_status || 'baik'}
+                                onValueChange={(v) =>
+                                    setFormData({
+                                        ...formData,
+                                        condition_status: v,
+                                    })
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih kondisi" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="baik">Baik</SelectItem>
+                                    <SelectItem value="rusak_ringan">
+                                        Rusak Ringan
+                                    </SelectItem>
+                                    <SelectItem value="rusak_berat">
+                                        Rusak Berat
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </Field>
                     </div>
 

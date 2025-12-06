@@ -3,19 +3,25 @@
 import { Wrench } from 'lucide-react';
 import { DonutChart } from './donut-chart';
 
-const fallbackPsuData = [
-    { name: 'Baik', value: 260, color: '#655B9C' },
-    { name: 'Rusak Ringan', value: 0, color: '#FFAA22' },
-    { name: 'Rusak Berat', value: 100, color: '#EF4C4C' },
+const emptyData = [
+    { name: 'Belum ada data', value: 1, color: '#e2e8f0' }, // color-muted
 ];
 
-const fallbackImprovedPSUData = [
-    { name: 'Baik', value: 260, color: '#655B9C' },
-    { name: 'Rusak Ringan', value: 0, color: '#FFAA22' },
-    { name: 'Rusak Berat', value: 100, color: '#EF4C4C' },
-];
+export function PSUSection({
+    psuData,
+    improvedPSUData,
+}: {
+    psuData?: { name: string; value: number; color: string }[];
+    improvedPSUData?: { name: string; value: number; color: string }[];
+}) {
+    // If no real data, show "empty" chart with muted color
+    const hasPsuData = psuData && psuData.some((d) => d.value > 0);
+    const hasImprovedData =
+        improvedPSUData && improvedPSUData.some((d) => d.value > 0);
 
-export function PSUSection({ psuData, improvedPSUData }: { psuData?: { name: string; value: number; color: string }[]; improvedPSUData?: { name: string; value: number; color: string }[] }) {
+    const displayPsuData = hasPsuData ? psuData : emptyData;
+    const displayImprovedData = hasImprovedData ? improvedPSUData : emptyData;
+
     return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-card p-6">
@@ -25,7 +31,16 @@ export function PSUSection({ psuData, improvedPSUData }: { psuData?: { name: str
                         <Wrench className="h-5 w-5 text-secondary" />
                     </div>
                 </div>
-                <DonutChart data={(psuData && psuData.length > 0 ? psuData : fallbackPsuData) as any} />
+                <div className="relative">
+                    <DonutChart data={displayPsuData as any} />
+                    {!hasPsuData && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            <span className="text-xs font-medium text-muted-foreground">
+                                Belum ada data
+                            </span>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="rounded-lg border border-border bg-card p-6">
@@ -37,7 +52,16 @@ export function PSUSection({ psuData, improvedPSUData }: { psuData?: { name: str
                         <Wrench className="h-5 w-5 text-secondary" />
                     </div>
                 </div>
-                <DonutChart data={(improvedPSUData && improvedPSUData.length > 0 ? improvedPSUData : fallbackImprovedPSUData) as any} />
+                <div className="relative">
+                    <DonutChart data={displayImprovedData as any} />
+                    {!hasImprovedData && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            <span className="text-xs font-medium text-muted-foreground">
+                                Belum ada data
+                            </span>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -98,8 +98,21 @@ class DashboardController extends Controller
       if ($economicYear) {
         $economicQuery->whereRaw('strftime("%Y", created_at) = ?', [$economicYear]);
       }
-      $avgIncome = (clone $economicQuery)->whereNotNull('monthly_income_idr')->avg('monthly_income_idr');
-      $avgIncomeStr = $avgIncome ? 'Rp' . number_format($avgIncome, 0, ',', '.') . '/bulan' : '-';
+      // Income is stored as category index: 1=<1jt, 2=1-3jt, 3=3-5jt, 4=>5jt
+      // Calculate mode (most common income category) instead of meaningless average
+      $incomeLabels = [
+        1 => '< 1 Juta',
+        2 => '1-3 Juta',
+        3 => '3-5 Juta',
+        4 => '> 5 Juta',
+      ];
+      $incomeCounts = (clone $economicQuery)
+        ->whereNotNull('monthly_income_idr')
+        ->selectRaw('monthly_income_idr, count(*) as cnt')
+        ->groupBy('monthly_income_idr')
+        ->orderByDesc('cnt')
+        ->first();
+      $avgIncomeStr = $incomeCounts ? ($incomeLabels[$incomeCounts->monthly_income_idr] ?? '-') : '-';
       $totalHouseholdsEco = (int) (clone $economicQuery)->count();
       $educationAccessCount = (int) (clone $economicQuery)->whereNotNull('education_facility_location')->count();
       $healthAccessCount = (int) (clone $economicQuery)->whereNotNull('health_facility_used')->count();
@@ -116,8 +129,7 @@ class DashboardController extends Controller
         ->toArray();
 
       $economicData = [
-        ['indicator' => 'Pendapatan rata-rata', 'value' => $avgIncomeStr],
-        ['indicator' => 'Tingkat Pengangguran', 'value' => '-'],
+        ['indicator' => 'Pendapatan mayoritas', 'value' => $avgIncomeStr],
         ['indicator' => 'Akses Pendidikan Dasar', 'value' => $educationAccessPct],
         ['indicator' => 'Akses Kesehatan', 'value' => $healthAccessPct],
       ];
@@ -127,7 +139,7 @@ class DashboardController extends Controller
         'households',
         'households as rlh_count' => fn($q) => $q->where('habitability_status', 'RLH'),
         'households as rtlh_count' => fn($q) => $q->where('habitability_status', 'RTLH'),
-      ])->having('households_count', '>', 0)
+      ])->has('households')
         ->orderByDesc('households_count')
         ->limit(5)
         ->get();
@@ -169,6 +181,8 @@ class DashboardController extends Controller
         'regionStats' => $regionStats,
         'slumAreaTotalM2' => $slumAreaTotalM2,
         'householdsInSlumArea' => $householdsInSlumArea,
+        'rtlhTotal' => $rtlhTotal,
+        'newHouseNeededTotal' => $newHouseNeededTotal,
       ]);
     } catch (\Throwable $e) {
       return Inertia::render('dashboard', [
