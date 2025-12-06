@@ -21,46 +21,37 @@ class PermissionsFromRoutesSeeder extends Seeder
             ->unique();
 
         foreach ($routes as $routeName) {
-            Permission::firstOrCreate(['name' => $this->formatLabel($routeName)]);
+            $exclude = [
+                'distribution-map.public',
+                'home',
+                'login',
+                'password.confirm',
+                'password.confirmation',
+                'password.request',
+                'password.reset',
+                'storage.local',
+                'verification.notice',
+                'verification.verify',
+            ];
+            if (in_array($routeName, $exclude)) continue;
+            Permission::firstOrCreate(['name' => $routeName]);
         }
 
         $extraPermissions = [
             'messages.show',
             'messages.destroy',
             'levels.update',
-            'levels.destroy',
             'levels.show',
+            'levels.destroy',
+            'reports.store',
+            'reports.destroy',
+            'reports.update',
+            'users.destroy',
             'logs',
         ];
 
         foreach ($extraPermissions as $perm) {
-            Permission::firstOrCreate(['name' => $this->formatLabel($perm)]);
+            Permission::firstOrCreate(['name' => $perm]);
         }
-    }
-
-    private function formatLabel(string $routeName): string
-    {
-        $parts = explode('.', $routeName);
-
-        if (count($parts) === 1) {
-            return ucfirst(str_replace(['-', '_'], ' ', $parts[0]));
-        }
-        [$resource, $action] = $parts;
-
-        $actionMap = [
-            'index'   => 'Halaman',
-            'create'  => 'Tambah',
-            'store'   => 'Simpan',
-            'edit'    => 'Edit',
-            'update'  => 'Perbarui',
-            'destroy' => 'Hapus',
-            'delete'  => 'Hapus',
-            'show'    => 'Lihat',
-        ];
-
-        $resourceLabel = ucfirst(str_replace(['-', '_'], ' ', $resource));
-        $actionLabel = $actionMap[$action] ?? ucfirst($action);
-
-        return "{$actionLabel} {$resourceLabel}";
     }
 }

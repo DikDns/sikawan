@@ -62,6 +62,7 @@ import ReportGenerateDialog from '@/components/report/create-report';
 import DeleteReport from '@/components/report/delete-report';
 import ReportViewDialog from '@/components/report/view-report';
 import EditReportDialog from '@/components/report/edit-report';
+import { useCan } from '@/utils/permissions';
 
 dayjs.locale("id");
 
@@ -104,6 +105,7 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
     const perPage = 5;
     const formatDate = (date: string | null) =>
         date ? dayjs(date).format("DD MMM YYYY") : "-";
+    const can = useCan();
 
     const [viewDialog, setViewDialog] = useState({
         open: false,
@@ -266,13 +268,15 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                         dari {reports.length} laporan
                                     </CardDescription>
                                 </div>
-                                <Button
-                                    onClick={handleAdd}
-                                    className="gap-2 sm:w-auto"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    <span>Buat Laporan</span>
-                                </Button>
+                                {can('reports.store') && (
+                                    <Button
+                                        onClick={handleAdd}
+                                        className="gap-2 sm:w-auto"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        <span>Buat Laporan</span>
+                                    </Button>
+                                )}
                             </div>
                             {/* Search and Filters */}
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -398,74 +402,91 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
+                                                {can('reports.view') ||
+                                                can('reports.download') ||
+                                                can('reports.update') ||
+                                                can('reports.destroy') ? (
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            asChild
                                                         >
-                                                            <MoreVertical className="h-4 w-4" />
-                                                            <span className="sr-only">
-                                                                Open menu
-                                                            </span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>
-                                                            Aksi
-                                                        </DropdownMenuLabel>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleView(
-                                                                    report,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Lihat Detail
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleDownload(
-                                                                    report.file_path ||
-                                                                        '',
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Download className="mr-2 h-4 w-4" />
-                                                            Unduh Laporan
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    report,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    report,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Hapus
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                            >
+                                                                <MoreVertical className="h-4 w-4" />
+                                                                <span className="sr-only">
+                                                                    Open menu
+                                                                </span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>
+                                                                Aksi
+                                                            </DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            {can('reports.view') && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleView(
+                                                                            report,
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer"
+                                                                >
+                                                                    <Eye className="mr-2 h-4 w-4" />
+                                                                    Lihat Detail
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {can('reports.download') && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleDownload(
+                                                                            report.file_path ||
+                                                                                '',
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer"
+                                                                >
+                                                                    <Download className="mr-2 h-4 w-4" />
+                                                                    Unduh Laporan
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {can('reports.update') && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            report,
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer"
+                                                                >
+                                                                    <Edit className="mr-2 h-4 w-4" />
+                                                                    Edit
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            <DropdownMenuSeparator />
+                                                            {can('reports.destroy') && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            report,
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer text-destructive focus:text-destructive"
+                                                                >
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    Hapus
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                ) : (
+                                                    <span className="text-sm text-muted-foreground">
+                                                        -
+                                                    </span>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     )))}
@@ -497,72 +518,89 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                     {report.type}
                                                 </CardDescription>
                                             </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <MoreVertical className="h-4 w-4" />
-                                                        <span className="sr-only">
-                                                            Open menu
-                                                        </span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>
-                                                        Aksi
-                                                    </DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleView(
-                                                                report,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        Lihat Detail
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleDownload(
-                                                                report.file_path ||
-                                                                    '',
-                                                            )
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Download className="mr-2 h-4 w-4" />
-                                                        Unduh Laporan
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleEdit(
-                                                                report,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                report,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Hapus
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            {can('reports.view') ||
+                                            can('reports.download') ||
+                                            can('reports.update') ||
+                                            can('reports.destroy') ? (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                        >
+                                                            <MoreVertical className="h-4 w-4" />
+                                                            <span className="sr-only">
+                                                                Open menu
+                                                            </span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>
+                                                            Aksi
+                                                        </DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        {can('reports.view') && (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleView(
+                                                                        report,
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <Eye className="mr-2 h-4 w-4" />
+                                                                Lihat Detail
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {can('reports.download') && (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleDownload(
+                                                                        report.file_path ||
+                                                                            '',
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                                Unduh Laporan
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {can('reports.update') && (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        report,
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <Edit className="mr-2 h-4 w-4" />
+                                                                Edit
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        <DropdownMenuSeparator />
+                                                        {can('reports.destroy') && (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        report,
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer text-destructive focus:text-destructive"
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Hapus
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    -
+                                                </span>
+                                            )}
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
