@@ -1,5 +1,7 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { AlertCircle, Loader2, MapPin } from 'lucide-react';
@@ -396,6 +398,84 @@ export function MapPicker({
                 >
                     Hapus Marker
                 </Button>
+            </div>
+
+            {/* Coordinate Input Fields */}
+            <div className="grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                    <Label htmlFor="latitude-input">Latitude</Label>
+                    <Input
+                        id="latitude-input"
+                        type="number"
+                        step="0.000001"
+                        min="-90"
+                        max="90"
+                        placeholder="Contoh: -4.232700"
+                        value={markerPosition?.[0]?.toString() ?? ''}
+                        onChange={(e) => {
+                            const lat = parseFloat(e.target.value);
+                            if (!isNaN(lat) && lat >= -90 && lat <= 90) {
+                                const lng = markerPosition?.[1] ?? mapCenter[1];
+                                const newPosition: [number, number] = [
+                                    lat,
+                                    lng,
+                                ];
+                                setMarkerPosition(newPosition);
+                                setMapCenter(newPosition);
+                                onChange({ latitude: lat, longitude: lng });
+                            } else if (e.target.value === '') {
+                                // Allow clearing the value
+                                if (markerPosition) {
+                                    setMarkerPosition(null);
+                                    onChange({
+                                        latitude: undefined,
+                                        longitude: undefined,
+                                    });
+                                }
+                            }
+                        }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Rentang: -90 hingga 90
+                    </p>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="longitude-input">Longitude</Label>
+                    <Input
+                        id="longitude-input"
+                        type="number"
+                        step="0.000001"
+                        min="-180"
+                        max="180"
+                        placeholder="Contoh: 103.614100"
+                        value={markerPosition?.[1]?.toString() ?? ''}
+                        onChange={(e) => {
+                            const lng = parseFloat(e.target.value);
+                            if (!isNaN(lng) && lng >= -180 && lng <= 180) {
+                                const lat = markerPosition?.[0] ?? mapCenter[0];
+                                const newPosition: [number, number] = [
+                                    lat,
+                                    lng,
+                                ];
+                                setMarkerPosition(newPosition);
+                                setMapCenter(newPosition);
+                                onChange({ latitude: lat, longitude: lng });
+                            } else if (e.target.value === '') {
+                                // Allow clearing the value
+                                if (markerPosition) {
+                                    setMarkerPosition(null);
+                                    onChange({
+                                        latitude: undefined,
+                                        longitude: undefined,
+                                    });
+                                }
+                            }
+                        }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Rentang: -180 hingga 180
+                    </p>
+                </div>
             </div>
 
             <Alert>
