@@ -8,12 +8,18 @@ import {
     DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog";
-
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from "@/components/ui/select";
-
 import { useEffect, useState, useRef } from "react";
 import dayjs from "dayjs";
 import { useForm, usePage, router } from "@inertiajs/react";
@@ -21,6 +27,13 @@ import { toast } from "sonner";
 import * as htmlToImage from "html-to-image";
 import type { DebouncedFunc } from "lodash";
 import debounce from "lodash.debounce";
+import * as XLSX from "xlsx";
+
+type SheetData = {
+    headers: string[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rows: any[][];
+};
 
 export default function ReportGenerateDialog({
     open,
@@ -29,10 +42,12 @@ export default function ReportGenerateDialog({
 }: any) {
 
     const today = dayjs().format("YYYY-MM-DD");
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+    const [excelData, setExcelData] = useState<Record<string, SheetData> | null>(null);
     const [loadingPreview, setLoadingPreview] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const generatePreviewRef = useRef<DebouncedFunc<(payload: any) => void> | null>(null);
+    const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
 
     const takeSnapshot = async (element: HTMLElement) => {
         return await htmlToImage.toPng(element, {
@@ -40,7 +55,42 @@ export default function ReportGenerateDialog({
             pixelRatio: 2,
             cacheBust: true,
             skipFonts: true,
+            fontEmbedCSS: "",
         });
+    }
+
+    async function loadExcelPreview(url: string) {
+        try {
+            const res = await fetch(url);
+            const arrayBuffer = await res.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer);
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const allSheets: any = {};
+
+            workbook.SheetNames.forEach(sheetName => {
+                const sheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                if (!jsonData || jsonData.length === 0 || !jsonData[0]) {
+                    allSheets[sheetName] = { headers: [], rows: [] };
+                    return;
+                }
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const firstRow = jsonData[0] as any[];
+                const headers = firstRow.map(h => String(h || ""));
+                const rows = jsonData.slice(1);
+
+                allSheets[sheetName] = { headers, rows };
+            });
+
+            setExcelData(allSheets);
+            setSelectedSheet(workbook.SheetNames[0]);
+        } catch (e) {
+            console.log("error bang: ", e);
+            setExcelData(null);
+        }
     }
 
     const { data, setData, processing, reset, errors } = useForm({
@@ -111,21 +161,21 @@ export default function ReportGenerateDialog({
     useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         generatePreviewRef.current = debounce(async (payload: any) => {
-            if (!payload.type || payload.format !== "PDF") return;
+            if (!payload.type) return;
             setLoadingPreview(true);
 
             try {
                 const statusEl = document.getElementById("chart-status") as HTMLElement | null;
-                const lineEl   = document.getElementById("chart-line") as HTMLElement | null;
-                const infraEl  = document.getElementById("chart-infra") as HTMLElement | null;
+                const lineEl = document.getElementById("chart-line") as HTMLElement | null;
+                const infraEl = document.getElementById("chart-infra") as HTMLElement | null;
 
                 let base64Status = null;
                 let base64Line = null;
                 let base64Infra = null;
 
-                if (statusEl) base64Status = await htmlToImage.toPng(statusEl);
-                if (lineEl)   base64Line   = await htmlToImage.toPng(lineEl);
-                if (infraEl)  base64Infra  = await htmlToImage.toPng(infraEl);
+                if (statusEl) base64Status = await takeSnapshot(statusEl);
+                if (lineEl) base64Line   = await takeSnapshot(lineEl);
+                if (infraEl) base64Infra  = await takeSnapshot(infraEl);
 
                 const res = await fetch("reports/preview", {
                     method: "POST",
@@ -141,11 +191,21 @@ export default function ReportGenerateDialog({
                 });
 
                 const json = await res.json();
-                setPreviewUrl(json.url);
+
+                if (payload.format === "PDF") {
+                    setPreviewPdfUrl(json.url);
+                    setExcelData(null);
+                }
+
+                if (payload.format === "EXCEL") {
+                    await loadExcelPreview(json.url);
+                    setPreviewPdfUrl(null);
+                }
 
             } catch (e) {
                 console.log("error preview:", e);
-                setPreviewUrl(null);
+                setPreviewPdfUrl(null);
+                setExcelData(null);
             } finally {
                 setLoadingPreview(false);
             }
@@ -279,14 +339,84 @@ export default function ReportGenerateDialog({
                                             Memuat preview...
                                         </div>
                                     )}
-
-                                    {!loadingPreview && previewUrl && (
+                                    {!loadingPreview && previewPdfUrl && (
                                         <iframe
-                                            src={previewUrl}
+                                            src={previewPdfUrl}
                                             className="w-full h-full"
                                             title="Preview PDF"
                                         ></iframe>
                                     )}
+                                </div>
+                            )}
+                            {data.format === "EXCEL" && (
+                                <div className="mt-1 border rounded-md h-[400px] bg-white max-w-[450px]">
+                                    <div className="w-full h-full max-w-[450px] overflow-auto">
+                                        {loadingPreview && (
+                                            <div className="p-4 text-center text-gray-500">Memuat preview...</div>
+                                        )}
+                                        {excelData && Object.keys(excelData).length > 1 && (
+                                            <div className="flex gap-2 my-2 ps-2 sticky top-0 z-20 bg-white py-2 border-b-2 border-b-gray-500">
+                                                {Object.keys(excelData).map(name => (
+                                                    <button
+                                                        type="button"
+                                                        key={name}
+                                                        onClick={() => setSelectedSheet(name)}
+                                                        className={`px-2 py-1 rounded border text-xs cursor-pointer ${
+                                                            selectedSheet === name ? "bg-blue-500 text-white" : "bg-gray-100"
+                                                        }`}
+                                                    >
+                                                        {name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {!loadingPreview && excelData && selectedSheet && excelData[selectedSheet] && (
+                                            <Table className="table-auto min-w-[400px] border-separate max-w-[450px] border-spacing-0">
+                                                <TableHeader>
+                                                    <TableRow className="bg-gray-100">
+                                                        {excelData[selectedSheet]?.headers?.map((header, idx) => (
+                                                            <TableHead
+                                                                key={idx}
+                                                                className="
+                                                                    sticky top-0 z-10
+                                                                    bg-gray-100
+                                                                    font-semibold
+                                                                    text-sm
+                                                                    px-4 py-3
+                                                                    border-b
+                                                                    whitespace-nowrap
+                                                                "
+                                                            >
+                                                                {header}
+                                                            </TableHead>
+                                                        ))}
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {excelData[selectedSheet]?.rows?.map((row, rowIdx) => (
+                                                        <TableRow
+                                                            key={rowIdx}
+                                                            className="hover:bg-gray-50 transition-colors"
+                                                        >
+                                                            {row.map((cell, cellIdx) => (
+                                                                <TableCell
+                                                                    key={cellIdx}
+                                                                    className="
+                                                                        px-4 py-3
+                                                                        border-b
+                                                                        whitespace-nowrap
+                                                                        text-sm
+                                                                    "
+                                                                >
+                                                                    {cell ?? ""}
+                                                                </TableCell>
+                                                            ))}
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>

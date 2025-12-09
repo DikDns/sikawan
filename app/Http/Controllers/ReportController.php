@@ -261,27 +261,41 @@ class ReportController extends Controller
             $request->end_date
         );
 
-        $html = view('reports.pdf', [
-            'title'   => $request->title,
-            'description' => $request->description,
-            'type'    => $request->type,
-            'start'   => $request->start_date,
-            'end'     => $request->end_date,
-            'data'    => $data,
-            'chartStatus' => $request->chart_household_status,
-            'chartLine'   => $request->chart_household_line,
-            'chartInfra'  => $request->chart_infrastructure,
-        ])->render();
+        if ($request->format === 'EXCEL') {
+            $filename = "report_preview.xlsx";
 
-        $pdf = Pdf::loadHTML($html);
-        $output = $pdf->output();
+            if ($request->type === "UMUM") {
+                Excel::store(new \App\Exports\GenericReportExport($data), $filename, 'public');
+            } else {
+                Excel::store(new \App\Exports\ReportExport($data), $filename, 'public');
+            }
 
-        $filename = 'preview.pdf';
-        $path = storage_path('app/public/' . $filename);
-        File::put($path, $output);
+            return response()->json([
+                'url' => asset("storage/" . $filename),
+            ]);
+        } else {
+            $html = view('reports.pdf', [
+                'title'   => $request->title,
+                'description' => $request->description,
+                'type'    => $request->type,
+                'start'   => $request->start_date,
+                'end'     => $request->end_date,
+                'data'    => $data,
+                'chartStatus' => $request->chart_household_status,
+                'chartLine'   => $request->chart_household_line,
+                'chartInfra'  => $request->chart_infrastructure,
+            ])->render();
 
-        return response()->json([
-            'url' => asset('storage/' . $filename)
-        ]);
+            $pdf = Pdf::loadHTML($html);
+            $output = $pdf->output();
+
+            $filename = 'preview.pdf';
+            $path = storage_path('app/public/' . $filename);
+            File::put($path, $output);
+
+            return response()->json([
+                'url' => asset('storage/' . $filename)
+            ]);
+        }
     }
 }
