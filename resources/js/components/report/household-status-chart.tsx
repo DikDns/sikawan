@@ -10,8 +10,6 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import { CalendarIcon } from "lucide-react";
-
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -94,7 +92,6 @@ const HouseholdCharts= forwardRef<HTMLDivElement, { houses: Household[] }>(
                 </CardHeader>
                 <div className="flex gap-3 px-6 pb-2">
                     <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
                         <input
                             type="date"
                             value={startStatus ? startStatus.format("YYYY-MM-DD") : ""}
@@ -107,8 +104,10 @@ const HouseholdCharts= forwardRef<HTMLDivElement, { houses: Household[] }>(
                             className="border rounded px-2 py-1 text-sm"
                         />
                     </div>
+                    <div className="mt-1">
+                        -
+                    </div>
                     <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
                         <input
                             type="date"
                             value={endStatus ? endStatus.format("YYYY-MM-DD") : ""}
@@ -174,6 +173,9 @@ const HouseholdCharts= forwardRef<HTMLDivElement, { houses: Household[] }>(
                         }}
                         className="border rounded px-2 py-1 text-sm"
                     />
+                    <div className="mt-1">
+                        -
+                    </div>
                     <input
                         type="date"
                         value={endPeople ? endPeople.format("YYYY-MM-DD") : ""}

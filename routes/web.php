@@ -108,6 +108,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/reports/destroy', 'destroy')->name('reports.destroy');
     Route::get('/reports/download/{encoded}', 'download')->where('encoded', '.*')->name('reports.download');
     Route::post('/reports/update/{report_id}', 'update')->name('reports.update');
+    Route::post('/reports/preview', 'preview')->name('reports.preview');
   });
 
   Route::prefix('superadmin/logs')->middleware(['auth', 'verified'])->group(function () {

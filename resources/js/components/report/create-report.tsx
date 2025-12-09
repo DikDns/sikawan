@@ -14,11 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from "@/components/ui/select";
 
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import dayjs from "dayjs";
 import { useForm, usePage, router } from "@inertiajs/react";
 import { toast } from "sonner";
 import * as htmlToImage from "html-to-image";
+import type { DebouncedFunc } from "lodash";
+import debounce from "lodash.debounce";
 
 export default function ReportGenerateDialog({
     open,
@@ -27,6 +29,11 @@ export default function ReportGenerateDialog({
 }: any) {
 
     const today = dayjs().format("YYYY-MM-DD");
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [loadingPreview, setLoadingPreview] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const generatePreviewRef = useRef<DebouncedFunc<(payload: any) => void> | null>(null);
+
     const takeSnapshot = async (element: HTMLElement) => {
         return await htmlToImage.toPng(element, {
             quality: 1,
@@ -100,6 +107,66 @@ export default function ReportGenerateDialog({
             downloadFile();
         }
     }, [props.flash?.success?.download_url, onOpenChange, reset]);
+
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        generatePreviewRef.current = debounce(async (payload: any) => {
+            if (!payload.type || payload.format !== "PDF") return;
+            setLoadingPreview(true);
+
+            try {
+                const statusEl = document.getElementById("chart-status") as HTMLElement | null;
+                const lineEl   = document.getElementById("chart-line") as HTMLElement | null;
+                const infraEl  = document.getElementById("chart-infra") as HTMLElement | null;
+
+                let base64Status = null;
+                let base64Line = null;
+                let base64Infra = null;
+
+                if (statusEl) base64Status = await htmlToImage.toPng(statusEl);
+                if (lineEl)   base64Line   = await htmlToImage.toPng(lineEl);
+                if (infraEl)  base64Infra  = await htmlToImage.toPng(infraEl);
+
+                const res = await fetch("reports/preview", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        ...payload,
+                        chart_household_status: base64Status,
+                        chart_household_line: base64Line,
+                        chart_infrastructure: base64Infra,
+                    }),
+                });
+
+                const json = await res.json();
+                setPreviewUrl(json.url);
+
+            } catch (e) {
+                console.log("error preview:", e);
+                setPreviewUrl(null);
+            } finally {
+                setLoadingPreview(false);
+            }
+        }, 600);
+
+        return () => {
+            generatePreviewRef.current?.cancel?.();
+        };
+    }, []);
+
+    useEffect(() => {
+        generatePreviewRef.current?.(data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[
+        data.title,
+        data.description,
+        data.type,
+        data.start_date,
+        data.end_date,
+        data.format
+    ]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -203,6 +270,26 @@ export default function ReportGenerateDialog({
                                 <SelectItem value="EXCEL">Excel</SelectItem>
                             </SelectContent>
                         </Select>
+                        <div className="flex flex-col">
+                            <label className="text-sm font-medium">Preview</label>
+                            {data.format === "PDF" && (
+                                <div className="mt-1 border rounded-md h-[400px] overflow-hidden">
+                                    {loadingPreview && (
+                                        <div className="p-4 text-center text-gray-500">
+                                            Memuat preview...
+                                        </div>
+                                    )}
+
+                                    {!loadingPreview && previewUrl && (
+                                        <iframe
+                                            src={previewUrl}
+                                            className="w-full h-full"
+                                            title="Preview PDF"
+                                        ></iframe>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <DialogFooter className="p-4 border-t bg-white">
                         <Button type="submit" disabled={processing}>

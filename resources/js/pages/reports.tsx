@@ -268,7 +268,7 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                 </div>
                                 <Button
                                     onClick={handleAdd}
-                                    className="gap-2 sm:w-auto"
+                                    className="gap-2 sm:w-auto cursor-pointer"
                                 >
                                     <Plus className="h-4 w-4" />
                                     <span>Buat Laporan</span>
@@ -405,7 +405,7 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8"
+                                                            className="h-8 w-8 cursor-pointer"
                                                         >
                                                             <MoreVertical className="h-4 w-4" />
                                                             <span className="sr-only">

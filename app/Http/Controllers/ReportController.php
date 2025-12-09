@@ -217,4 +217,71 @@ class ReportController extends Controller
             'Content-Type' => Storage::mimeType($fullPath)
         ]);
     }
+
+    private function getReportData($type, $start, $end) {
+        $start = $start ? date($start) : null;
+        $end   = $end ? date($end) : null;
+
+        if ($type === 'RUMAH') {
+            return Household::query()
+                ->when($start, fn($q) => $q->whereDate('created_at', '>=', $start))
+                ->when($end, fn($q) => $q->whereDate('created_at', '<=', $end))
+                ->get();
+        }
+
+        if ($type === 'PSU') {
+            return InfrastructureGroup::query()
+                ->when($start, fn($q) => $q->whereDate('created_at', '>=', $start))
+                ->when($end, fn($q) => $q->whereDate('created_at', '<=', $end))
+                ->get();
+        }
+
+        if ($type === 'KAWASAN') {
+            return AreaGroup::query()
+                ->when($start, fn($q) => $q->whereDate('created_at', '>=', $start))
+                ->when($end, fn($q) => $q->whereDate('created_at', '<=', $end))
+                ->get();
+        }
+
+        if ($type === 'UMUM') {
+            return [
+                'houses' => Household::all(),
+                'psu'    => InfrastructureGroup::all(),
+                'areas'  => AreaGroup::all(),
+            ];
+        }
+
+        return [];
+    }
+
+    public function preview(Request $request) {
+        $data = $this->getReportData(
+            $request->type,
+            $request->start_date,
+            $request->end_date
+        );
+
+        $html = view('reports.pdf', [
+            'title'   => $request->title,
+            'description' => $request->description,
+            'type'    => $request->type,
+            'start'   => $request->start_date,
+            'end'     => $request->end_date,
+            'data'    => $data,
+            'chartStatus' => $request->chart_household_status,
+            'chartLine'   => $request->chart_household_line,
+            'chartInfra'  => $request->chart_infrastructure,
+        ])->render();
+
+        $pdf = Pdf::loadHTML($html);
+        $output = $pdf->output();
+
+        $filename = 'preview.pdf';
+        $path = storage_path('app/public/' . $filename);
+        File::put($path, $output);
+
+        return response()->json([
+            'url' => asset('storage/' . $filename)
+        ]);
+    }
 }
