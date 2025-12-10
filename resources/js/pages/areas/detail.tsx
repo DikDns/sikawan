@@ -10,12 +10,14 @@ import {
     AreaMapDisplay,
     type AreaFeatureGeometry,
 } from '@/components/area/area-map-display';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import AppLayout from '@/layouts/app-layout';
 import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -415,10 +417,21 @@ export default function AreaDetail({
 
                 <div className="min-h-0 flex-1 gap-4 md:flex md:flex-row md:items-stretch">
                     <Card className="md:h-full md:max-h-[500px] md:w-1/3">
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
                             <CardTitle>
                                 Daftar Kawasan ({areasState.length})
                             </CardTitle>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                    setEditingArea(null);
+                                    setIsDialogOpen(true);
+                                }}
+                            >
+                                <Plus className="mr-1 size-4" />
+                                Tambah
+                            </Button>
                         </CardHeader>
                         <CardContent className="h-full">
                             <ScrollArea className="h-[calc(100%-80px)]">

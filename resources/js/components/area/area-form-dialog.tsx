@@ -8,6 +8,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { GeometryEditor } from '@/components/ui/geometry-editor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
@@ -501,6 +502,17 @@ export function AreaFormDialog({
                                 />
                             </Field>
                         </div>
+
+                        <GeometryEditor
+                            geometryJson={formData.geometry_json}
+                            onGeometryChange={(geometry: unknown) =>
+                                setFormData({
+                                    ...formData,
+                                    geometry_json:
+                                        geometry as typeof formData.geometry_json,
+                                })
+                            }
+                        />
                     </div>
 
                     <DialogFooter>

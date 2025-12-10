@@ -78,6 +78,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::put('infrastructure/{groupId}/items/{itemId}', [App\Http\Controllers\InfrastructureController::class, 'update'])->name('infrastructure.items.update');
   Route::delete('infrastructure/{groupId}/items/{itemId}', [App\Http\Controllers\InfrastructureController::class, 'destroy'])->name('infrastructure.items.destroy');
 
+  // Infrastructure Assistance Routes
+  Route::get('infrastructure-items/{infrastructureId}/assistances', [App\Http\Controllers\InfrastructureAssistanceController::class, 'index'])->name('infrastructure.assistances.index');
+  Route::post('infrastructure-items/{infrastructureId}/assistances', [App\Http\Controllers\InfrastructureAssistanceController::class, 'store'])->name('infrastructure.assistances.store');
+  Route::put('infrastructure-items/{infrastructureId}/assistances/{assistanceId}', [App\Http\Controllers\InfrastructureAssistanceController::class, 'update'])->name('infrastructure.assistances.update');
+  Route::delete('infrastructure-items/{infrastructureId}/assistances/{assistanceId}', [App\Http\Controllers\InfrastructureAssistanceController::class, 'destroy'])->name('infrastructure.assistances.destroy');
+
   Route::controller(UserController::class)->group(function () {
     Route::get('/users', 'index')->name('users');
     Route::get('/users/create', 'create')->name('users.create');

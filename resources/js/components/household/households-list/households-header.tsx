@@ -9,9 +9,6 @@ export default function HouseholdsHeader() {
                 <h1 className="text-3xl font-bold text-foreground">
                     Data Rumah
                 </h1>
-                <p className="mt-1 text-muted-foreground">
-                    Kelola dan pantau data hunian di wilayah Anda
-                </p>
             </div>
             <Button
                 size="lg"

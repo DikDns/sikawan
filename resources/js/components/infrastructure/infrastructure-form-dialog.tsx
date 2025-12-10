@@ -8,6 +8,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { GeometryEditor } from '@/components/ui/geometry-editor';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -21,6 +22,7 @@ import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { InfrastructureAssistanceSection } from './infrastructure-assistance-card';
 
 export interface InfrastructureItemForm {
     id?: number;
@@ -35,6 +37,7 @@ export interface InfrastructureFormDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     groupId: number;
+    groupType?: 'Marker' | 'Polyline' | 'Polygon';
     item?: InfrastructureItemForm | null;
     onSuccess: () => void;
 }
@@ -43,6 +46,7 @@ export function InfrastructureFormDialog({
     open,
     onOpenChange,
     groupId,
+    groupType,
     item,
     onSuccess,
 }: InfrastructureFormDialogProps) {
@@ -218,6 +222,40 @@ export function InfrastructureFormDialog({
                                 </SelectContent>
                             </Select>
                         </Field>
+
+                        <GeometryEditor
+                            geometryJson={formData.geometry_json}
+                            geometryType={
+                                formData.geometry_type ||
+                                (groupType === 'Marker'
+                                    ? 'Point'
+                                    : groupType === 'Polyline'
+                                      ? 'LineString'
+                                      : groupType === 'Polygon'
+                                        ? 'Polygon'
+                                        : undefined)
+                            }
+                            onGeometryChange={(
+                                geometry: unknown,
+                                geoType?: string,
+                            ) =>
+                                setFormData({
+                                    ...formData,
+                                    geometry_json: geometry,
+                                    geometry_type: (geoType === 'Point'
+                                        ? 'Point'
+                                        : geoType === 'LineString'
+                                          ? 'LineString'
+                                          : geoType === 'Polygon'
+                                            ? 'Polygon'
+                                            : formData.geometry_type) as
+                                        | 'Point'
+                                        | 'LineString'
+                                        | 'Polygon'
+                                        | undefined,
+                                })
+                            }
+                        />
                     </div>
 
                     <DialogFooter>
@@ -237,6 +275,13 @@ export function InfrastructureFormDialog({
                         </Button>
                     </DialogFooter>
                 </form>
+
+                {/* Show assistance section only when editing existing item */}
+                {item?.id && (
+                    <InfrastructureAssistanceSection
+                        infrastructureId={item.id}
+                    />
+                )}
             </DialogContent>
         </Dialog>
     );
