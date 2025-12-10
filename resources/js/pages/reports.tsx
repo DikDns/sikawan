@@ -1,3 +1,10 @@
+import ReportGenerateDialog from '@/components/report/create-report';
+import DeleteReport from '@/components/report/delete-report';
+import EditReportDialog from '@/components/report/edit-report';
+import HouseholdLineChart from '@/components/report/household-line-chart';
+import HouseholdStatusChart from '@/components/report/household-status-chart';
+import InfrastructureBarChart from '@/components/report/infrastructure-bar-chart';
+import ReportViewDialog from '@/components/report/view-report';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +24,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -33,7 +48,10 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { useCan } from '@/utils/permissions';
 import { Head } from '@inertiajs/react';
+import dayjs from 'dayjs';
+import 'dayjs/locale/id';
 import {
     Download,
     Edit,
@@ -44,27 +62,9 @@ import {
     Search,
     Trash2,
 } from 'lucide-react';
-import { useMemo, useState, useRef } from 'react';
-import dayjs from "dayjs";
-import "dayjs/locale/id";
-import HouseholdStatusChart from '@/components/report/household-status-chart';
-import HouseholdLineChart from '@/components/report/household-line-chart';
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
-import InfrastructureBarChart from '@/components/report/infrastructure-bar-chart';
-import ReportGenerateDialog from '@/components/report/create-report';
-import DeleteReport from '@/components/report/delete-report';
-import ReportViewDialog from '@/components/report/view-report';
-import EditReportDialog from '@/components/report/edit-report';
-import { useCan } from '@/utils/permissions';
+import { useMemo, useRef, useState } from 'react';
 
-dayjs.locale("id");
+dayjs.locale('id');
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -88,13 +88,21 @@ interface Report {
     start_date: string | null;
     end_date: string | null;
     status: 'DRAFT' | 'GENERATED';
-    format?: "PDF" | "EXCEL" | null;
+    format?: 'PDF' | 'EXCEL' | null;
 }
 
 type ReportItem = Report;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function Reports({ reports, houses, infrastructures }: { reports: Report[], houses: any[], infrastructures: any[] }) {
+export default function Reports({
+    reports,
+    houses,
+    infrastructures,
+}: {
+    reports: Report[];
+    houses: any[];
+    infrastructures: any[];
+}) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
     const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -104,7 +112,7 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
     const [page, setPage] = useState(1);
     const perPage = 5;
     const formatDate = (date: string | null) =>
-        date ? dayjs(date).format("DD MMM YYYY") : "-";
+        date ? dayjs(date).format('DD MMM YYYY') : '-';
     const can = useCan();
 
     const [viewDialog, setViewDialog] = useState({
@@ -129,20 +137,20 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
         setEditOpen({
             open: true,
             report: report,
-        })
+        });
     };
 
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [selectedReports, setSelectedReports] = useState<ReportItem[]>([]);
 
-   const handleDelete = (report: ReportItem) => {
+    const handleDelete = (report: ReportItem) => {
         setSelectedReports([report]);
         setDeleteOpen(true);
     };
 
     const handleDownload = (filePath: string) => {
         const encoded = encodeURIComponent(filePath);
-        window.open(`/reports/download/${encoded}`, "_blank");
+        window.open(`/reports/download/${encoded}`, '_blank');
     };
 
     const handleAdd = () => {
@@ -152,8 +160,10 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
     // Calculate statistics
     const stats = useMemo(() => {
         const totalReports = reports.length;
-        const generatedReports = reports.filter(r => r.status === 'GENERATED').length;
-        const draftReports = reports.filter(r => r.status === 'DRAFT').length;
+        const generatedReports = reports.filter(
+            (r) => r.status === 'GENERATED',
+        ).length;
+        const draftReports = reports.filter((r) => r.status === 'DRAFT').length;
 
         return { totalReports, generatedReports, draftReports };
     }, [reports]);
@@ -162,9 +172,7 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
     const reportTypes = useMemo(() => {
         if (!reports) return [];
 
-        const uniqueTypes = Array.from(
-            new Set(reports.map((r) => r.type))
-        );
+        const uniqueTypes = Array.from(new Set(reports.map((r) => r.type)));
 
         return uniqueTypes.sort();
     }, [reports]);
@@ -172,23 +180,34 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
     const filteredReports = useMemo(() => {
         return reports.filter((report) => {
             const matchSearch =
-                report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                report.title
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
                 (report.description &&
-                    report.description.toLowerCase().includes(searchQuery.toLowerCase()));
+                    report.description
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()));
 
-            const matchType = filterType === 'all' || report.type === filterType;
-            const matchStatus = filterStatus === 'all' || report.status === filterStatus;
+            const matchType =
+                filterType === 'all' || report.type === filterType;
+            const matchStatus =
+                filterStatus === 'all' || report.status === filterStatus;
 
             return matchSearch && matchType && matchStatus;
         });
     }, [reports, searchQuery, filterType, filterStatus]);
 
     const totalPages = Math.ceil(filteredReports.length / perPage);
-    const paginatedReports = filteredReports.slice((page - 1) * perPage, page * perPage);
+    const paginatedReports = filteredReports.slice(
+        (page - 1) * perPage,
+        page * perPage,
+    );
     const [openCreate, setOpenCreate] = useState(false);
     const truncateText = (text: string, maxLength: number = 50) => {
-        if (!text) return "";
-        return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+        if (!text) return '';
+        return text.length > maxLength
+            ? text.substring(0, maxLength) + '...'
+            : text;
     };
 
     return (
@@ -268,15 +287,13 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                         dari {reports.length} laporan
                                     </CardDescription>
                                 </div>
-                                {can('reports.store') && (
-                                    <Button
-                                        onClick={handleAdd}
-                                        className="gap-2 sm:w-auto"
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        <span>Buat Laporan</span>
-                                    </Button>
-                                )}
+                                <Button
+                                    onClick={handleAdd}
+                                    className="cursor-pointer gap-2 sm:w-auto"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    <span>Buat Laporan</span>
+                                </Button>
                             </div>
                             {/* Search and Filters */}
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -356,52 +373,199 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                 <TableBody>
                                     {paginatedReports.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                                                Tidak ada data laporan yang tersedia.
+                                            <TableCell
+                                                colSpan={6}
+                                                className="py-6 text-center text-muted-foreground"
+                                            >
+                                                Tidak ada data laporan yang
+                                                tersedia.
                                             </TableCell>
                                         </TableRow>
-                                    ) : (paginatedReports.map((report) => (
-                                        <TableRow key={report.id}>
-                                            <TableCell className="font-medium">
-                                                {report.id}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div>
-                                                    <div className="font-medium">
-                                                        {truncateText(report.title, 50)}
-                                                    </div>
-                                                    {report.description && (
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {truncateText(report.description, 60)}
+                                    ) : (
+                                        paginatedReports.map((report) => (
+                                            <TableRow key={report.id}>
+                                                <TableCell className="font-medium">
+                                                    {report.id}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div>
+                                                        <div className="font-medium">
+                                                            {truncateText(
+                                                                report.title,
+                                                                50,
+                                                            )}
                                                         </div>
+                                                        {report.description && (
+                                                            <div className="text-sm text-muted-foreground">
+                                                                {truncateText(
+                                                                    report.description,
+                                                                    60,
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary">
+                                                        {report.type}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={
+                                                            report.status ===
+                                                            'GENERATED'
+                                                                ? 'default'
+                                                                : 'secondary'
+                                                        }
+                                                    >
+                                                        {report.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-sm">
+                                                        {`${report.start_date ? formatDate(report.start_date) : 'Semua'} - ${
+                                                            report.end_date
+                                                                ? formatDate(
+                                                                      report.end_date,
+                                                                  )
+                                                                : 'Semua'
+                                                        }`}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {can('reports.view') ||
+                                                    can('reports.download') ||
+                                                    can('reports.update') ||
+                                                    can('reports.destroy') ? (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8"
+                                                                >
+                                                                    <MoreVertical className="h-4 w-4" />
+                                                                    <span className="sr-only">
+                                                                        Open
+                                                                        menu
+                                                                    </span>
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuLabel>
+                                                                    Aksi
+                                                                </DropdownMenuLabel>
+                                                                <DropdownMenuSeparator />
+                                                                {can(
+                                                                    'reports.view',
+                                                                ) && (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            handleView(
+                                                                                report,
+                                                                            )
+                                                                        }
+                                                                        className="cursor-pointer"
+                                                                    >
+                                                                        <Eye className="mr-2 h-4 w-4" />
+                                                                        Lihat
+                                                                        Detail
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {can(
+                                                                    'reports.download',
+                                                                ) && (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            handleDownload(
+                                                                                report.file_path ||
+                                                                                    '',
+                                                                            )
+                                                                        }
+                                                                        className="cursor-pointer"
+                                                                    >
+                                                                        <Download className="mr-2 h-4 w-4" />
+                                                                        Unduh
+                                                                        Laporan
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {can(
+                                                                    'reports.update',
+                                                                ) && (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            handleEdit(
+                                                                                report,
+                                                                            )
+                                                                        }
+                                                                        className="cursor-pointer"
+                                                                    >
+                                                                        <Edit className="mr-2 h-4 w-4" />
+                                                                        Edit
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                <DropdownMenuSeparator />
+                                                                {can(
+                                                                    'reports.destroy',
+                                                                ) && (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                report,
+                                                                            )
+                                                                        }
+                                                                        className="cursor-pointer text-destructive focus:text-destructive"
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                        Hapus
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    ) : (
+                                                        <span className="text-sm text-muted-foreground">
+                                                            -
+                                                        </span>
                                                     )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className="space-y-4 md:hidden">
+                            {paginatedReports.length === 0 ? (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">
+                                            Data Tidak Ditemukan
+                                        </CardTitle>
+                                        <CardDescription className="text-muted-foreground">
+                                            Tidak ada data laporan yang
+                                            tersedia.
+                                        </CardDescription>
+                                    </CardHeader>
+                                </Card>
+                            ) : (
+                                paginatedReports.map((report) => (
+                                    <Card key={report.id}>
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex-1">
+                                                    <CardTitle className="text-base">
+                                                        {report.title}
+                                                    </CardTitle>
+                                                    <CardDescription className="text-xs">
+                                                        ID: {report.id} •{' '}
+                                                        {report.type}
+                                                    </CardDescription>
                                                 </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary">
-                                                    {report.type}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        report.status ===
-                                                        'GENERATED'
-                                                            ? 'default'
-                                                            : 'secondary'
-                                                    }
-                                                >
-                                                    {report.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="text-sm">
-                                                    {`${report.start_date ? formatDate(report.start_date) : "Semua"} - ${
-                                                        report.end_date ? formatDate(report.end_date) : "Semua"
-                                                    }`}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right">
                                                 {can('reports.view') ||
                                                 can('reports.download') ||
                                                 can('reports.update') ||
@@ -426,7 +590,9 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                                 Aksi
                                                             </DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
-                                                            {can('reports.view') && (
+                                                            {can(
+                                                                'reports.view',
+                                                            ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
                                                                         handleView(
@@ -439,7 +605,9 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                                     Lihat Detail
                                                                 </DropdownMenuItem>
                                                             )}
-                                                            {can('reports.download') && (
+                                                            {can(
+                                                                'reports.download',
+                                                            ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
                                                                         handleDownload(
@@ -450,10 +618,13 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                                     className="cursor-pointer"
                                                                 >
                                                                     <Download className="mr-2 h-4 w-4" />
-                                                                    Unduh Laporan
+                                                                    Unduh
+                                                                    Laporan
                                                                 </DropdownMenuItem>
                                                             )}
-                                                            {can('reports.update') && (
+                                                            {can(
+                                                                'reports.update',
+                                                            ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
                                                                         handleEdit(
@@ -467,7 +638,9 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                                 </DropdownMenuItem>
                                                             )}
                                                             <DropdownMenuSeparator />
-                                                            {can('reports.destroy') && (
+                                                            {can(
+                                                                'reports.destroy',
+                                                            ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
                                                                         handleDelete(
@@ -487,180 +660,78 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                                                         -
                                                     </span>
                                                 )}
-                                            </TableCell>
-                                        </TableRow>
-                                    )))}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        {/* Mobile Card View */}
-                        <div className="space-y-4 md:hidden">
-                            {paginatedReports.length === 0 ? (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-base">Data Tidak Ditemukan</CardTitle>
-                                        <CardDescription className="text-muted-foreground">
-                                            Tidak ada data laporan yang tersedia.
-                                        </CardDescription>
-                                    </CardHeader>
-                                </Card>
-                            ) : (paginatedReports.map((report) => (
-                                <Card key={report.id}>
-                                    <CardHeader className="pb-3">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex-1">
-                                                <CardTitle className="text-base">
-                                                    {report.title}
-                                                </CardTitle>
-                                                <CardDescription className="text-xs">
-                                                    ID: {report.id} •{' '}
-                                                    {report.type}
-                                                </CardDescription>
                                             </div>
-                                            {can('reports.view') ||
-                                            can('reports.download') ||
-                                            can('reports.update') ||
-                                            can('reports.destroy') ? (
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                        >
-                                                            <MoreVertical className="h-4 w-4" />
-                                                            <span className="sr-only">
-                                                                Open menu
-                                                            </span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>
-                                                            Aksi
-                                                        </DropdownMenuLabel>
-                                                        <DropdownMenuSeparator />
-                                                        {can('reports.view') && (
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    handleView(
-                                                                        report,
-                                                                    )
-                                                                }
-                                                                className="cursor-pointer"
-                                                            >
-                                                                <Eye className="mr-2 h-4 w-4" />
-                                                                Lihat Detail
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {can('reports.download') && (
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    handleDownload(
-                                                                        report.file_path ||
-                                                                            '',
-                                                                    )
-                                                                }
-                                                                className="cursor-pointer"
-                                                            >
-                                                                <Download className="mr-2 h-4 w-4" />
-                                                                Unduh Laporan
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {can('reports.update') && (
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    handleEdit(
-                                                                        report,
-                                                                    )
-                                                                }
-                                                                className="cursor-pointer"
-                                                            >
-                                                                <Edit className="mr-2 h-4 w-4" />
-                                                                Edit
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        <DropdownMenuSeparator />
-                                                        {can('reports.destroy') && (
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        report,
-                                                                    )
-                                                                }
-                                                                className="cursor-pointer text-destructive focus:text-destructive"
-                                                            >
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Hapus
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    -
-                                                </span>
+                                        </CardHeader>
+                                        <CardContent className="space-y-3">
+                                            {report.description && (
+                                                <p className="text-sm text-muted-foreground">
+                                                    {report.description}
+                                                </p>
                                             )}
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        {report.description && (
-                                            <p className="text-sm text-muted-foreground">
-                                                {report.description}
-                                            </p>
-                                        )}
-                                        <div className="flex flex-wrap gap-2">
-                                            <Badge variant="secondary">
-                                                {report.type}
-                                            </Badge>
-                                            <Badge
-                                                variant={
-                                                    report.status ===
-                                                    'GENERATED'
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {report.status}
-                                            </Badge>
-                                            <Badge variant="outline">
-                                                {`${report.start_date ? formatDate(report.start_date) : "Semua"} - ${
-                                                    report.end_date ? formatDate(report.end_date) : "Semua"
-                                                }`}
-                                            </Badge>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )))}
+                                            <div className="flex flex-wrap gap-2">
+                                                <Badge variant="secondary">
+                                                    {report.type}
+                                                </Badge>
+                                                <Badge
+                                                    variant={
+                                                        report.status ===
+                                                        'GENERATED'
+                                                            ? 'default'
+                                                            : 'secondary'
+                                                    }
+                                                >
+                                                    {report.status}
+                                                </Badge>
+                                                <Badge variant="outline">
+                                                    {`${report.start_date ? formatDate(report.start_date) : 'Semua'} - ${
+                                                        report.end_date
+                                                            ? formatDate(
+                                                                  report.end_date,
+                                                              )
+                                                            : 'Semua'
+                                                    }`}
+                                                </Badge>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            )}
                         </div>
                         {/* pagination */}
                         <div className="mt-6 flex justify-center">
                             <Pagination>
                                 <PaginationContent>
-
                                     <PaginationItem>
                                         <PaginationPrevious
-                                            onClick={() => page > 1 && setPage(page - 1)}
+                                            onClick={() =>
+                                                page > 1 && setPage(page - 1)
+                                            }
                                         />
                                     </PaginationItem>
 
-                                    {Array.from({ length: totalPages }).map((_, idx) => (
-                                        <PaginationItem key={idx}>
-                                            <PaginationLink
-                                                isActive={page === idx + 1}
-                                                onClick={() => setPage(idx + 1)}
-                                            >
-                                                {idx + 1}
-                                            </PaginationLink>
-                                        </PaginationItem>
-                                    ))}
+                                    {Array.from({ length: totalPages }).map(
+                                        (_, idx) => (
+                                            <PaginationItem key={idx}>
+                                                <PaginationLink
+                                                    isActive={page === idx + 1}
+                                                    onClick={() =>
+                                                        setPage(idx + 1)
+                                                    }
+                                                >
+                                                    {idx + 1}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        ),
+                                    )}
 
                                     <PaginationItem>
                                         <PaginationNext
-                                            onClick={() => page < totalPages && setPage(page + 1)}
+                                            onClick={() =>
+                                                page < totalPages &&
+                                                setPage(page + 1)
+                                            }
                                         />
                                     </PaginationItem>
-
                                 </PaginationContent>
                             </Pagination>
                         </div>
@@ -674,7 +745,10 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                     <HouseholdLineChart ref={refLine} houses={houses} />
                 </div>
                 <div id="chart-infra">
-                    <InfrastructureBarChart ref={refInfra} infrastructures={infrastructures} />
+                    <InfrastructureBarChart
+                        ref={refInfra}
+                        infrastructures={infrastructures}
+                    />
                 </div>
 
                 {/* dialogs */}
@@ -689,7 +763,9 @@ export default function Reports({ reports, houses, infrastructures }: { reports:
                 />
                 <ReportViewDialog
                     open={viewDialog.open}
-                    onOpenChange={(open) => setViewDialog({ ...viewDialog, open })}
+                    onOpenChange={(open) =>
+                        setViewDialog({ ...viewDialog, open })
+                    }
                     report={viewDialog.report}
                 />
                 <EditReportDialog

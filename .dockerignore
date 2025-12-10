@@ -1,0 +1,14 @@
+# Build artifacts
+/public/build/
+
+# Docker data volumes
+/data/
+
+# IDE and editor files
+.cursor/
+.trae/
+.vscode/
+.idea/
+
+# Documentation
+.docs/

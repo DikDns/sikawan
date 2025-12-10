@@ -86,6 +86,9 @@ const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any
                     }}
                     className="border rounded px-2 py-1 text-sm"
                 />
+                <div className="mt-1">
+                    -
+                </div>
                 <input
                     type="date"
                     value={endDate ? endDate.format("YYYY-MM-DD") : ""}

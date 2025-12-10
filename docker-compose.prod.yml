@@ -1,0 +1,22 @@
+services:
+  app:
+    image: ghcr.io/${GITHUB_REPOSITORY}:latest
+    container_name: sikawan-app
+    restart: unless-stopped
+    ports:
+      - '8080:80'
+    volumes:
+      - ./data/database.sqlite:/var/www/html/database/database.sqlite
+      - ./data/storage:/var/www/html/storage
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=https://sihuma.rplupiproject.com
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/var/www/html/database/database.sqlite
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost/']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

@@ -13,7 +13,6 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, ChevronDown } from "lucide-react";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import "dayjs/locale/id";
@@ -87,7 +86,6 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(f
                 <CardTitle>Jumlah Rumah Per Tanggal</CardTitle>
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
                         <input
                             type="date"
                             value={startDate.format("YYYY-MM-DD")}
@@ -96,8 +94,10 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(f
                             className="border rounded px-2 py-1 text-sm"
                         />
                     </div>
+                    <div className="mt-1">
+                        -
+                    </div>
                     <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
                         <input
                             type="date"
                             value={endDate.format("YYYY-MM-DD")}
@@ -109,7 +109,6 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(f
                     </div>
                     <Button variant="ghost" size="sm" className="gap-2">
                         {startDate.format("DD MMM")} - {endDate.format("DD MMM")}
-                        <ChevronDown className="w-4 h-4" />
                     </Button>
                 </div>
             </CardHeader>
