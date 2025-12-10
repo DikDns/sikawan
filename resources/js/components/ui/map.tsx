@@ -893,7 +893,7 @@ function MapDrawControl({
                         opacity: 1,
                         fillOpacity: 0.25,
                     })
-                    ;(layer as any).__initialId = shape.id ?? null
+                    ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
                     group.addLayer(layer)
                     addedCount += 1
                 } else if (shape.type === "rectangle") {
@@ -912,7 +912,7 @@ function MapDrawControl({
                         weight: 2,
                         opacity: 1,
                     })
-                    ;(layer as any).__initialId = shape.id ?? null
+                    ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
                     group.addLayer(layer)
                     addedCount += 1
                 } else if (shape.type === "marker") {
@@ -929,7 +929,7 @@ function MapDrawControl({
                             html: renderToString(<MapPinIcon className="size-6" />),
                         }),
                     })
-                    ;(layer as any).__initialId = shape.id ?? null
+                    ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
                     group.addLayer(layer)
                     addedCount += 1
                 } else if (shape.type === "polyline") {
@@ -944,7 +944,7 @@ function MapDrawControl({
                         weight: 4,
                         opacity: 1,
                     })
-                    ;(layer as any).__initialId = shape.id ?? null
+                    ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
                     group.addLayer(layer)
                     addedCount += 1
                 }

@@ -82,8 +82,53 @@ function formatDescription(row: {
     return `${actionName} ${entityName}`;
 }
 
+interface LogRow {
+    id: number;
+    created_at: string;
+    user_name?: string | null;
+    action: string;
+    description?: string | null;
+    entity_type?: string | null;
+    entity_id?: number | null;
+    metadata_json?:
+        | (Record<string, unknown> & {
+              before?: Record<string, unknown>;
+              after?: Record<string, unknown>;
+          })
+        | null;
+}
+
+interface FilterUser {
+    id: number;
+    name: string;
+}
+
+interface FilterModel {
+    value: string;
+    name: string;
+}
+
+interface LogsPageProps {
+    logs: {
+        data: LogRow[];
+        current_page: number;
+        last_page: number;
+    };
+    filters: {
+        applied?: {
+            user_id?: string;
+            model?: string;
+            start_date?: string;
+            end_date?: string;
+        };
+        users?: FilterUser[];
+        models?: FilterModel[];
+    };
+    [key: string]: unknown;
+}
+
 export default function SuperadminLogs() {
-    const { logs, filters } = usePage().props as any;
+    const { logs, filters } = usePage<LogsPageProps>().props;
     const [userId, setUserId] = useState<string>(
         filters?.applied?.user_id || 'all',
     );
@@ -96,7 +141,7 @@ export default function SuperadminLogs() {
     const [end, setEnd] = useState<string>(filters?.applied?.end_date || '');
 
     const applyFilters = (page?: number) => {
-        const query: any = {
+        const query: Record<string, string | number | undefined> = {
             user_id: userId && userId !== 'all' ? userId : undefined,
             model: model && model !== 'all' ? model : undefined,
             start_date: start || undefined,
@@ -166,14 +211,16 @@ export default function SuperadminLogs() {
                                         <SelectItem value="all">
                                             Semua
                                         </SelectItem>
-                                        {filters?.users?.map((u: any) => (
-                                            <SelectItem
-                                                key={u.id}
-                                                value={String(u.id)}
-                                            >
-                                                {u.name}
-                                            </SelectItem>
-                                        ))}
+                                        {filters?.users?.map(
+                                            (u: FilterUser) => (
+                                                <SelectItem
+                                                    key={u.id}
+                                                    value={String(u.id)}
+                                                >
+                                                    {u.name}
+                                                </SelectItem>
+                                            ),
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -195,7 +242,7 @@ export default function SuperadminLogs() {
                                             Semua
                                         </SelectItem>
                                         {filters?.models?.map(
-                                            (m: any, idx: number) => (
+                                            (m: FilterModel, idx: number) => (
                                                 <SelectItem
                                                     key={idx}
                                                     value={m.value}
@@ -271,7 +318,7 @@ export default function SuperadminLogs() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {logs?.data?.map((row: any) => (
+                                    {logs?.data?.map((row: LogRow) => (
                                         <TableRow key={row.id}>
                                             <TableCell className="text-sm text-muted-foreground">
                                                 {formatDateTime(row.created_at)}

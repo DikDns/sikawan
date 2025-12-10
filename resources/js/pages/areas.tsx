@@ -305,7 +305,7 @@ function useSyncAllPolling(
     ) => void,
 ) {
     useEffect(() => {
-        let timer: any;
+        let timer: ReturnType<typeof setInterval> | undefined;
         const poll = async () => {
             try {
                 const res = await csrfFetch('/areas/sync-all/status', {
@@ -320,7 +320,7 @@ function useSyncAllPolling(
                     toast.success('Sinkronisasi semua kawasan selesai');
                     setPolling(false);
                 }
-            } catch (e) {
+            } catch {
                 // swallow errors, continue polling a few times
             }
         };

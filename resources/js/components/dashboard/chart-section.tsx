@@ -10,7 +10,11 @@ import {
     Tooltip,
 } from 'recharts';
 
-const emptyChartData = [{ name: 'Belum ada data', value: 1, fill: '#e2e8f0' }];
+type ChartDataItem = { name: string; value: number; fill: string };
+
+const emptyChartData: ChartDataItem[] = [
+    { name: 'Belum ada data', value: 1, fill: '#e2e8f0' },
+];
 
 interface ChartSectionProps {
     rtlhData?: { name: string; value: number; fill: string }[];
@@ -41,7 +45,7 @@ export function ChartSection({ rtlhData, rtlhTotal }: ChartSectionProps) {
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
                             <Pie
-                                data={displayRtlhData as any}
+                                data={displayRtlhData}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={60}
@@ -49,8 +53,8 @@ export function ChartSection({ rtlhData, rtlhTotal }: ChartSectionProps) {
                                 paddingAngle={2}
                                 dataKey="value"
                             >
-                                {displayRtlhData!.map(
-                                    (entry: any, index: number) => (
+                                {displayRtlhData.map(
+                                    (entry: ChartDataItem, index: number) => (
                                         <Cell
                                             key={`cell-${index}`}
                                             fill={entry.fill}

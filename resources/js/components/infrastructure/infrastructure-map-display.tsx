@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// This file uses dynamic Leaflet layer properties that require 'any' type assertions
 import { Badge } from '@/components/ui/badge';
 import {
     Map,
@@ -234,8 +236,8 @@ export function InfrastructureMapDisplay({
                     coords.reduce((s, [, lng]) => s + lng, 0) / coords.length;
                 return [avgLat, avgLng] as LatLngExpression;
             }
-        } catch (e) {
-            void 0;
+        } catch {
+            // Parsing error, use default center
         }
         return [-4.2327, 103.6141] as LatLngExpression;
     }, [center, parsedFeatures, allowedGeometryType]);
@@ -283,7 +285,9 @@ export function InfrastructureMapDisplay({
                     direction: 'top',
                     offset: L.point(0, 15),
                 });
-            } catch {}
+            } catch {
+                // Tooltip binding may fail silently
+            }
 
             const popupContent = `
       <div class="space-y-4" aria-label="Informasi PSU">
@@ -307,7 +311,9 @@ export function InfrastructureMapDisplay({
                     autoPan: true,
                     autoPanPadding: L.point(10, 10),
                 });
-            } catch {}
+            } catch {
+                // Popup binding may fail silently
+            }
         },
         [L, itemsFromProps],
     );
@@ -506,12 +512,13 @@ export function InfrastructureMapDisplay({
         },
         [
             L,
-            parsedFeatures,
             allowedGeometryType,
             onLayerCreated,
             onLayerDeleted,
             onLayerEdited,
-            defaultColor,
+            attachInfoUI,
+            features,
+            markerIcon,
         ],
     );
 

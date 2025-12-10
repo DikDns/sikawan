@@ -18,7 +18,18 @@ interface DonutChartProps {
     }>;
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface TooltipPayload {
+    name: string;
+    value: number;
+}
+
+const CustomTooltip = ({
+    active,
+    payload,
+}: {
+    active?: boolean;
+    payload?: TooltipPayload[];
+}) => {
     if (active && payload && payload.length) {
         return (
             <div className="rounded-md border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-950">

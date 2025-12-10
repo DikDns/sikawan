@@ -2,36 +2,48 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Link } from '@inertiajs/react';
 import { AlertCircle, Building2, Hammer, Home, Plus } from 'lucide-react';
 
+import { LucideIcon } from 'lucide-react';
+
 type StatItem = { label: string; value: number | string; href?: string };
+type ExtendedStatItem = StatItem & {
+    icon?: LucideIcon;
+    bgColor?: string;
+    iconColor?: string;
+};
+
+type ProcessedStat = {
+    label: string;
+    value: number | string;
+    href?: string;
+    icon: LucideIcon;
+    bgColor: string;
+    iconColor: string;
+};
 
 export function StatCards({
     data,
     columns = 4,
 }: {
-    data?: StatItem[];
+    data?: ExtendedStatItem[];
     columns?: number;
 }) {
-    const stats = (data && data.length > 0 ? data : []).map((s) => {
-        const mapIcon = (label: string) => {
-            if (label === 'Rumah') return Home;
-            if (label === 'RLH' || label === 'Backlog Kelayakan')
-                return Building2;
-            if (label === 'RTLH') return Hammer;
-            if (label === 'Backlog Kepemilikan') return AlertCircle;
-            return Plus;
-        };
-        const icon = 'icon' in s ? (s as any).icon : mapIcon((s as any).label);
-        const bgColor =
-            'bgColor' in s
-                ? (s as any).bgColor
-                : 'bg-blue-100 dark:bg-blue-900';
-        const iconColor =
-            'iconColor' in s
-                ? (s as any).iconColor
-                : 'text-blue-600 dark:text-blue-400';
-        const href = 'href' in s ? (s as any).href : undefined;
-        return { ...s, icon, bgColor, iconColor, href } as any;
-    });
+    const stats: ProcessedStat[] = (data && data.length > 0 ? data : []).map(
+        (s) => {
+            const mapIcon = (label: string): LucideIcon => {
+                if (label === 'Rumah') return Home;
+                if (label === 'RLH' || label === 'Backlog Kelayakan')
+                    return Building2;
+                if (label === 'RTLH') return Hammer;
+                if (label === 'Backlog Kepemilikan') return AlertCircle;
+                return Plus;
+            };
+            const icon = s.icon ?? mapIcon(s.label);
+            const bgColor = s.bgColor ?? 'bg-blue-100 dark:bg-blue-900';
+            const iconColor = s.iconColor ?? 'text-blue-600 dark:text-blue-400';
+            const href = s.href;
+            return { ...s, icon, bgColor, iconColor, href };
+        },
+    );
 
     // Allow custom columns, default to 4 for backward compatibility
     const gridCols = {

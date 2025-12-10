@@ -47,6 +47,7 @@ export const AreaGroupForm = ({ mode, initial }: Props) => {
     // Ensure form data syncs when `initial` props arrive or change
     useEffect(() => {
         setData(starting);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [starting]);
 
     const handleSubmit = useCallback(

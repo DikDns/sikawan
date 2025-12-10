@@ -303,7 +303,12 @@ export default function AreaDetail({
                 }
                 const data = await res.json();
                 const list: HouseholdForMap[] = (data?.data || []).map(
-                    (h: any) => ({
+                    (h: {
+                        id: number;
+                        head_name: string;
+                        habitability_status?: HabitabilityStatus;
+                        updated_at?: string | null;
+                    }) => ({
                         id: h.id,
                         head_name: h.head_name,
                         address_text: '',
@@ -318,7 +323,7 @@ export default function AreaDetail({
                     status: data?.sync?.status ?? 'unknown',
                     last_at: data?.sync?.last_at ?? null,
                 });
-            } catch (e) {
+            } catch {
                 setRelatedError('Gagal memuat data rumah');
                 setRelatedHouseholds([]);
                 setSyncStatus(null);

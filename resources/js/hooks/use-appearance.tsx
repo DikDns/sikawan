@@ -52,7 +52,8 @@ export function useAppearance() {
     // Always return light mode - disable theme switching
     const [appearance] = useState<Appearance>('light');
 
-    const updateAppearance = useCallback((mode: Appearance) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const updateAppearance = useCallback((_mode: Appearance) => {
         // Do nothing - theme switching is disabled
         // Always force light mode
         applyTheme('light');

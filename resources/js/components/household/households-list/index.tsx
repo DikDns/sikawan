@@ -51,7 +51,7 @@ export default function HouseholdsList({
             }
         });
 
-        router.get('/households', updatedFilters as any, {
+        router.get('/households', updatedFilters as Record<string, string>, {
             preserveState: true,
             preserveScroll: true,
         });

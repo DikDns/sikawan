@@ -14,7 +14,14 @@ import {
     YAxis,
 } from 'recharts';
 
-export function AnalysisChart({ data }: { data?: any[] }) {
+interface ChartDataPoint {
+    year: string | number;
+    rumah?: number;
+    rlh?: number;
+    rtlh?: number;
+}
+
+export function AnalysisChart({ data }: { data?: ChartDataPoint[] }) {
     if (!data || data.length === 0) {
         return (
             <Card>

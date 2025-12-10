@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// This file uses dynamic Leaflet layer properties that require 'any' type assertions
 import { Badge } from '@/components/ui/badge';
 import {
     DEFAULT_CENTER,
@@ -58,7 +60,7 @@ export function AreaMapDisplay({
 }: AreaMapDisplayProps) {
     const { L } = useLeaflet();
     const page = usePage();
-    const areasFromProps = (page.props as any)?.areas as
+    const areasFromProps = (page.props as Record<string, unknown>)?.areas as
         | AreaDetail[]
         | undefined;
     const [numberOfShapes, setNumberOfShapes] = useState(0);
@@ -167,13 +169,15 @@ export function AreaMapDisplay({
             };
 
             // GeoJSON-like Polygon: { type: 'Polygon', coordinates: number[][][] }
+            const geomObj = geometry as Record<string, unknown>;
             if (
                 geometry &&
                 typeof geometry === 'object' &&
-                (geometry as any).type === 'Polygon' &&
-                Array.isArray((geometry as any).coordinates)
+                geomObj.type === 'Polygon' &&
+                Array.isArray(geomObj.coordinates)
             ) {
-                const coords: number[][][] = (geometry as any).coordinates;
+                const coords: number[][][] =
+                    geomObj.coordinates as number[][][];
                 const positions: LatLngExpression[][] = coords.map((ring) =>
                     ring.map(([lng, lat]) => [lat, lng] as [number, number]),
                 );
@@ -182,11 +186,12 @@ export function AreaMapDisplay({
             }
 
             // Rectangle bounds: [[west, north], [east, south]] in [lng, lat]
+            const geomArray = geometry as unknown[];
             if (
                 Array.isArray(geometry) &&
                 geometry.length === 2 &&
-                Array.isArray((geometry as any)[0]) &&
-                Array.isArray((geometry as any)[1])
+                Array.isArray(geomArray[0]) &&
+                Array.isArray(geomArray[1])
             ) {
                 const [[west, north], [east, south]] = geometry as [
                     [number, number],
@@ -212,7 +217,7 @@ export function AreaMapDisplay({
 
     // Attach hover tooltip and click popup to a given Leaflet layer
     const attachInfoUI = useCallback(
-        (layer: any, label?: string) => {
+        (layer: L.Layer, label?: string) => {
             if (!L || !layer) return;
 
             let tipe = 'Area';
@@ -223,14 +228,15 @@ export function AreaMapDisplay({
             else if (layer instanceof L.Marker) tipe = 'Titik';
 
             // Resolve area details from the same source as AreaFormDialog (Inertia props)
-            const serverId = (layer as any).__initialId as number | undefined;
+            const serverId = (layer as unknown as { __initialId?: number })
+                .__initialId;
             const areaDetail: AreaDetail | undefined = Array.isArray(
                 areasFromProps,
             )
                 ? areasFromProps.find((a) => a.id === serverId)
                 : undefined;
 
-            const esc = (v: any) =>
+            const esc = (v: unknown) =>
                 String(v ?? '-')
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
@@ -452,11 +458,17 @@ export function AreaMapDisplay({
                 console.log('[AreaMapDisplay] edited: user modified layers');
                 if (!changedLayers) return;
                 changedLayers.eachLayer((layer: L.Layer) => {
-                    const id = (layer as any).__initialId as number | null;
+                    const id = (
+                        layer as unknown as { __initialId?: number | null }
+                    ).__initialId;
                     if (typeof id !== 'number' || id <= 0) return;
 
-                    let geometry: any = null;
-                    if ((layer as any).getBounds) {
+                    let geometry: Record<string, unknown> | null = null;
+                    if (
+                        'getBounds' in layer &&
+                        typeof (layer as { getBounds?: () => L.LatLngBounds })
+                            .getBounds === 'function'
+                    ) {
                         const bounds = (layer as any).getBounds();
                         geometry = {
                             type: 'Polygon',
@@ -522,7 +534,14 @@ export function AreaMapDisplay({
                 return;
             }
         },
-        [L, onLayerCreated, onLayerDeleted, onLayerEdited],
+        [
+            L,
+            onLayerCreated,
+            onLayerDeleted,
+            onLayerEdited,
+            attachInfoUI,
+            features,
+        ],
     );
 
     // When parent resolves server IDs for newly created layers, bind them here

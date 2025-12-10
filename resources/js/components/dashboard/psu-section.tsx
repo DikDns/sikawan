@@ -32,7 +32,7 @@ export function PSUSection({
                     </div>
                 </div>
                 <div className="relative">
-                    <DonutChart data={displayPsuData as any} />
+                    <DonutChart data={displayPsuData} />
                     {!hasPsuData && (
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                             <span className="text-xs font-medium text-muted-foreground">
@@ -53,7 +53,7 @@ export function PSUSection({
                     </div>
                 </div>
                 <div className="relative">
-                    <DonutChart data={displayImprovedData as any} />
+                    <DonutChart data={displayImprovedData} />
                     {!hasImprovedData && (
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                             <span className="text-xs font-medium text-muted-foreground">

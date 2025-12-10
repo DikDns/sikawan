@@ -93,15 +93,22 @@ interface Report {
 
 type ReportItem = Report;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function Reports({
     reports,
     houses,
     infrastructures,
 }: {
     reports: Report[];
-    houses: any[];
-    infrastructures: any[];
+    houses: {
+        id: number;
+        habitability_status?: string | null;
+        created_at?: string | null;
+    }[];
+    infrastructures: {
+        id: number;
+        name?: string | null;
+        category?: string | null;
+    }[];
 }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
