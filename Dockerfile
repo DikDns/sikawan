@@ -11,7 +11,7 @@ RUN npm ci
 
 # Copy frontend source files
 COPY resources ./resources
-COPY vite.config.ts tsconfig.json tailwind.config.js postcss.config.js ./
+COPY vite.config.ts tsconfig.json ./
 COPY public ./public
 
 # Build assets
