@@ -22,6 +22,8 @@ Route::get('/', function () {
 Route::get('peta-sebaran', [PublicDistributionMapController::class, 'index'])
   ->name('distribution-map.public');
 
+Route::post('/messages/store', [MessageController::class, 'store'])->name('messages.store');
+
 Route::middleware(['auth', 'verified'])->group(function () {
   Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -98,7 +100,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
   Route::controller(MessageController::class)->group(function () {
     Route::get('/messages', 'index')->name('messages');
-    Route::post('/messages/store', 'store')->name('messages.store');
     Route::post('/messages/destroy', 'destroy')->name('messages.destroy');
   });
 
