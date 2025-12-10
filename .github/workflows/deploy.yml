@@ -106,17 +106,16 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Navigate to app directory
-            cd /opt/sikawan || mkdir -p /opt/sikawan && cd /opt/sikawan
-
-            # Create data directories if they don't exist
-            mkdir -p data
+            # Create app directory with proper permissions
+            sudo mkdir -p /opt/sikawan/data
+            sudo chown -R $USER:$USER /opt/sikawan
+            cd /opt/sikawan
 
             # Ensure database file exists
             touch data/database.sqlite
 
             # Create/update docker-compose file
-            cat > docker-compose.yml << 'EOF'
+            cat > docker-compose.yml << 'COMPOSE_EOF'
             services:
               app:
                 image: ghcr.io/${{ github.repository }}:latest
@@ -140,7 +139,7 @@ jobs:
                   timeout: 10s
                   retries: 3
                   start_period: 40s
-            EOF
+            COMPOSE_EOF
 
             # Login to GitHub Container Registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
