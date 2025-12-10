@@ -28,7 +28,7 @@ RUN composer dump-autoload --optimize
 RUN npm run build
 
 # Stage 2: PHP Application
-FROM php:8.2-fpm-alpine AS production
+FROM php:8.3-fpm-alpine AS production
 
 # Install system dependencies
 RUN apk add --no-cache \
