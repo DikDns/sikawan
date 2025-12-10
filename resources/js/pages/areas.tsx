@@ -68,10 +68,12 @@ export default function Areas({ areaGroups, stats }: Props) {
     const [filterType, setFilterType] = useState<string>('all');
     const [syncAllOpen, setSyncAllOpen] = useState(false);
     const [syncAllPolling, setSyncAllPolling] = useState(false);
+    const [syncAllLoading, setSyncAllLoading] = useState(false);
     const [syncAllStatus, setSyncAllStatus] = useState<{
         status: string;
         total: number;
         pending: number;
+        start_at?: string | null;
     } | null>(null);
 
     useSyncAllPolling(syncAllPolling, setSyncAllPolling, setSyncAllStatus);
@@ -151,7 +153,34 @@ export default function Areas({ areaGroups, stats }: Props) {
                                 </Button>
                                 <Button
                                     type="button"
-                                    onClick={() => setSyncAllOpen(true)}
+                                    onClick={async () => {
+                                        setSyncAllOpen(true);
+                                        setSyncAllLoading(true);
+                                        try {
+                                            const res = await csrfFetch(
+                                                '/areas/sync-all/status',
+                                                { method: 'GET' },
+                                            );
+                                            const data = await res
+                                                .json()
+                                                .catch(() => ({}));
+                                            setSyncAllStatus({
+                                                status: String(
+                                                    data?.status || 'idle',
+                                                ),
+                                                total: Number(data?.total || 0),
+                                                pending: Number(
+                                                    data?.pending || 0,
+                                                ),
+                                                start_at:
+                                                    data?.start_at || null,
+                                            });
+                                        } catch {
+                                            setSyncAllStatus(null);
+                                        } finally {
+                                            setSyncAllLoading(false);
+                                        }
+                                    }}
                                     variant="secondary"
                                     className="gap-2 sm:w-auto"
                                     aria-label="Sinkronisasi Rumah"
@@ -198,11 +227,61 @@ export default function Areas({ areaGroups, stats }: Props) {
                             </DialogTitle>
                         </DialogHeader>
                         <div className="space-y-3">
-                            <div className="text-sm text-muted-foreground">
-                                Tindakan ini akan menyinkronkan semua Rumah dan
-                                Kawasan yang memiliki geometri dan minimal satu
-                                data wilayah terisi.
-                            </div>
+                            {syncAllLoading ? (
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Spinner className="h-4 w-4" />
+                                    <span>
+                                        Memeriksa status sinkronisasi...
+                                    </span>
+                                </div>
+                            ) : syncAllStatus?.status === 'running' ? (
+                                <Alert>
+                                    <Spinner className="h-4 w-4 text-primary" />
+                                    <AlertTitle>
+                                        Sinkronisasi Sedang Berjalan
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        <div>
+                                            Proses:{' '}
+                                            {Math.max(
+                                                0,
+                                                syncAllStatus.total -
+                                                    syncAllStatus.pending,
+                                            )}
+                                            /{syncAllStatus.total}
+                                        </div>
+                                        {syncAllStatus.start_at && (
+                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                Dimulai:{' '}
+                                                {new Date(
+                                                    syncAllStatus.start_at,
+                                                ).toLocaleString()}
+                                            </div>
+                                        )}
+                                        <Progress
+                                            value={
+                                                syncAllStatus.total > 0
+                                                    ? (Math.max(
+                                                          0,
+                                                          syncAllStatus.total -
+                                                              syncAllStatus.pending,
+                                                      ) /
+                                                          syncAllStatus.total) *
+                                                      100
+                                                    : 0
+                                            }
+                                            className="mt-2"
+                                        />
+                                    </AlertDescription>
+                                </Alert>
+                            ) : (
+                                <div className="text-sm text-muted-foreground">
+                                    Tindakan ini akan menyinkronkan semua Rumah
+                                    dan Kawasan berdasarkan posisi geografis
+                                    (koordinat lat/long rumah berada di dalam
+                                    poligon kawasan).
+                                </div>
+                            )}
                         </div>
                         <DialogFooter>
                             <Button
@@ -210,44 +289,49 @@ export default function Areas({ areaGroups, stats }: Props) {
                                 variant="ghost"
                                 onClick={() => setSyncAllOpen(false)}
                             >
-                                Batal
+                                {syncAllStatus?.status === 'running'
+                                    ? 'Tutup'
+                                    : 'Batal'}
                             </Button>
-                            <Button
-                                type="button"
-                                onClick={async () => {
-                                    try {
-                                        const res = await csrfFetch(
-                                            '/areas/sync-all',
-                                            { method: 'POST' },
-                                        );
-                                        if (!res.ok) {
+                            {syncAllStatus?.status !== 'running' && (
+                                <Button
+                                    type="button"
+                                    disabled={syncAllLoading}
+                                    onClick={async () => {
+                                        try {
+                                            const res = await csrfFetch(
+                                                '/areas/sync-all',
+                                                { method: 'POST' },
+                                            );
+                                            if (!res.ok) {
+                                                const data = await res
+                                                    .json()
+                                                    .catch(() => ({}));
+                                                toast.error(
+                                                    handleCsrfError(res, data),
+                                                );
+                                                return;
+                                            }
                                             const data = await res
                                                 .json()
                                                 .catch(() => ({}));
-                                            toast.error(
-                                                handleCsrfError(res, data),
+                                            toast.success(
+                                                data.message ||
+                                                    'Sinkronisasi semua kawasan dimulai',
                                             );
-                                            return;
+                                            setSyncAllOpen(false);
+                                            setSyncAllPolling(true);
+                                        } catch {
+                                            toast.error(
+                                                'Terjadi kesalahan jaringan',
+                                            );
                                         }
-                                        const data = await res
-                                            .json()
-                                            .catch(() => ({}));
-                                        toast.success(
-                                            data.message ||
-                                                'Sinkronisasi semua kawasan dimulai',
-                                        );
-                                        setSyncAllOpen(false);
-                                        setSyncAllPolling(true);
-                                    } catch {
-                                        toast.error(
-                                            'Terjadi kesalahan jaringan',
-                                        );
-                                    }
-                                }}
-                                className="gap-2"
-                            >
-                                Mulai Sinkronisasi
-                            </Button>
+                                    }}
+                                    className="gap-2"
+                                >
+                                    Mulai Sinkronisasi
+                                </Button>
+                            )}
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

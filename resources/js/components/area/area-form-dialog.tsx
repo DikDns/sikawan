@@ -57,14 +57,21 @@ export function AreaFormDialog({
 
     // Get initial form data
     const getInitialFormData = () => {
+        // Default values for Muara Enim
+        const DEFAULT_PROVINCE_ID = '16';
+        const DEFAULT_PROVINCE_NAME = 'SUMATERA SELATAN';
+        const DEFAULT_REGENCY_ID = '1603';
+        const DEFAULT_REGENCY_NAME = 'KAB. MUARA ENIM';
+
         return area
             ? {
                   name: area.name || '',
                   description: area.description || '',
-                  province_id: area.province_id || '',
-                  province_name: area.province_name || '',
-                  regency_id: area.regency_id || '',
-                  regency_name: area.regency_name || '',
+                  // Always use Muara Enim defaults for province/regency
+                  province_id: area.province_id || DEFAULT_PROVINCE_ID,
+                  province_name: area.province_name || DEFAULT_PROVINCE_NAME,
+                  regency_id: area.regency_id || DEFAULT_REGENCY_ID,
+                  regency_name: area.regency_name || DEFAULT_REGENCY_NAME,
                   district_id: area.district_id || '',
                   district_name: area.district_name || '',
                   village_id: area.village_id || '',
@@ -77,10 +84,10 @@ export function AreaFormDialog({
                   name: '',
                   description: '',
                   // Auto-fill defaults for Muara Enim
-                  province_id: '16',
-                  province_name: 'SUMATERA SELATAN',
-                  regency_id: '1603',
-                  regency_name: 'KAB. MUARA ENIM',
+                  province_id: DEFAULT_PROVINCE_ID,
+                  province_name: DEFAULT_PROVINCE_NAME,
+                  regency_id: DEFAULT_REGENCY_ID,
+                  regency_name: DEFAULT_REGENCY_NAME,
                   district_id: '',
                   district_name: '',
                   village_id: '',
@@ -154,44 +161,6 @@ export function AreaFormDialog({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.district_id]);
 
-    const handleProvinceChange = useCallback(
-        (value: string) => {
-            const selected = wilayah.provinces.find(
-                (p) => String(p.value) === String(value),
-            );
-            setFormData((prev) => ({
-                ...prev,
-                province_id: value,
-                province_name: selected?.label || '',
-                regency_id: '',
-                regency_name: '',
-                district_id: '',
-                district_name: '',
-                village_id: '',
-                village_name: '',
-            }));
-        },
-        [wilayah.provinces],
-    );
-
-    const handleRegencyChange = useCallback(
-        (value: string) => {
-            const selected = wilayah.cities.find(
-                (c) => String(c.value) === String(value),
-            );
-            setFormData((prev) => ({
-                ...prev,
-                regency_id: value,
-                regency_name: selected?.label || '',
-                district_id: '',
-                district_name: '',
-                village_id: '',
-                village_name: '',
-            }));
-        },
-        [wilayah.cities],
-    );
-
     const handleDistrictChange = useCallback(
         (value: string) => {
             const selected = wilayah.subDistricts.find(
@@ -231,9 +200,13 @@ export function AreaFormDialog({
 
         setIsSubmitting(true);
         try {
-            const response = await csrfFetch(`/areas/${area.id}`, {
-                method: 'DELETE',
-            });
+            // Use nested route: /areas/{areaGroupId}/areas/{areaId}
+            const response = await csrfFetch(
+                `/areas/${areaGroupId}/areas/${area.id}`,
+                {
+                    method: 'DELETE',
+                },
+            );
 
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
@@ -442,49 +415,6 @@ export function AreaFormDialog({
                                             : 'Bukan kawasan kumuh'}
                                     </Label>
                                 </div>
-                            </Field>
-                        </div>
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Field>
-                                <FieldLabel>Provinsi</FieldLabel>
-                                <SearchableSelect
-                                    options={wilayah.provinces}
-                                    value={String(formData.province_id || '')}
-                                    onValueChange={handleProvinceChange}
-                                    placeholder={
-                                        wilayah.loadingProvinces
-                                            ? 'Memuat provinsi...'
-                                            : 'Pilih Provinsi'
-                                    }
-                                    searchPlaceholder="Cari provinsi..."
-                                    emptyMessage="Provinsi tidak ditemukan"
-                                    disabled={wilayah.loadingProvinces}
-                                    clearable={false}
-                                    aria-label="Pilih Provinsi"
-                                />
-                            </Field>
-
-                            <Field>
-                                <FieldLabel>Kota/Kabupaten</FieldLabel>
-                                <SearchableSelect
-                                    options={wilayah.cities}
-                                    value={String(formData.regency_id || '')}
-                                    onValueChange={handleRegencyChange}
-                                    placeholder={
-                                        wilayah.loadingCities
-                                            ? 'Memuat kota/kabupaten...'
-                                            : 'Pilih Kota/Kabupaten'
-                                    }
-                                    searchPlaceholder="Cari kota/kabupaten..."
-                                    emptyMessage="Kota/Kabupaten tidak ditemukan"
-                                    disabled={
-                                        !formData.province_id ||
-                                        wilayah.loadingCities
-                                    }
-                                    clearable={false}
-                                    aria-label="Pilih Kota/Kabupaten"
-                                />
                             </Field>
                         </div>
 

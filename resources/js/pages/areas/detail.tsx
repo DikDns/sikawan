@@ -25,6 +25,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
+import { getOwnershipLabel } from '@/utils/household-formatters';
 import { Head, router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -72,6 +73,7 @@ export interface HouseholdForMap {
     latitude: number;
     longitude: number;
     habitability_status: HabitabilityStatus;
+    ownership_status_building?: string | null;
     province_name?: string | null;
     regency_name?: string | null;
     district_name?: string | null;
@@ -100,10 +102,6 @@ export default function AreaDetail({
     >([]);
     const [relatedLoading, setRelatedLoading] = useState(false);
     const [relatedError, setRelatedError] = useState<string | null>(null);
-    const [syncStatus, setSyncStatus] = useState<{
-        status: string;
-        last_at: string | null;
-    } | null>(null);
 
     // keep local state in sync if server prop changes
     useEffect(() => {
@@ -296,7 +294,6 @@ export default function AreaDetail({
         const load = async () => {
             if (!selectedAreaId) {
                 setRelatedHouseholds([]);
-                setSyncStatus(null);
                 return;
             }
             setRelatedLoading(true);
@@ -310,7 +307,6 @@ export default function AreaDetail({
                     const data = await res.json().catch(() => ({}));
                     setRelatedError(handleCsrfError(res, data));
                     setRelatedHouseholds([]);
-                    setSyncStatus(null);
                     return;
                 }
                 const data = await res.json();
@@ -318,27 +314,26 @@ export default function AreaDetail({
                     (h: {
                         id: number;
                         head_name: string;
+                        address_text?: string;
                         habitability_status?: HabitabilityStatus;
+                        ownership_status_building?: string | null;
                         updated_at?: string | null;
                     }) => ({
                         id: h.id,
                         head_name: h.head_name,
-                        address_text: '',
+                        address_text: h.address_text || '',
                         latitude: 0,
                         longitude: 0,
                         habitability_status: h.habitability_status ?? null,
+                        ownership_status_building:
+                            h.ownership_status_building ?? null,
                         updated_at: h.updated_at ?? null,
                     }),
                 );
                 setRelatedHouseholds(list);
-                setSyncStatus({
-                    status: data?.sync?.status ?? 'unknown',
-                    last_at: data?.sync?.last_at ?? null,
-                });
             } catch {
                 setRelatedError('Gagal memuat data rumah');
                 setRelatedHouseholds([]);
-                setSyncStatus(null);
             } finally {
                 setRelatedLoading(false);
             }
@@ -409,7 +404,7 @@ export default function AreaDetail({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${areaGroup.name} - Detail Kawasan`} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-hidden p-4">
+            <div className="flex flex-col gap-4 p-4">
                 {/* Header */}
                 <div>
                     <h1
@@ -425,8 +420,8 @@ export default function AreaDetail({
                     )}
                 </div>
 
-                <div className="min-h-0 flex-1 gap-4 md:flex md:flex-row md:items-stretch">
-                    <Card className="md:h-full md:max-h-[500px] md:w-1/3">
+                <div className="gap-4 md:flex md:flex-row md:items-stretch">
+                    <Card className="md:w-1/3">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0">
                             <CardTitle>
                                 Daftar Kawasan ({areasState.length})
@@ -443,25 +438,24 @@ export default function AreaDetail({
                                 Tambah
                             </Button>
                         </CardHeader>
-                        <CardContent className="h-full">
-                            <ScrollArea className="h-[calc(100%-80px)]">
+                        <CardContent>
+                            <ScrollArea className="h-[350px]">
                                 <AreaFeatureList
                                     areas={areasState}
                                     selectedAreaId={selectedAreaId}
                                     onAreaSelect={handleAreaSelect}
                                     onAreaEdit={handleAreaEditDetail}
-                                    className="h-full"
                                 />
                             </ScrollArea>
                         </CardContent>
                     </Card>
 
-                    <Card className="mt-4 md:mt-0 md:h-full md:max-h-[500px] md:flex-1">
+                    <Card className="mt-4 md:mt-0 md:flex-1">
                         <CardHeader>
                             <CardTitle>Peta Kawasan</CardTitle>
                         </CardHeader>
-                        <CardContent className="md:h-[calc(100%-80px)]">
-                            <div className="h-[360px] rounded-md border md:h-full">
+                        <CardContent>
+                            <div className="h-[400px] rounded-md border">
                                 <AreaMapDisplay
                                     features={mapFeatures}
                                     defaultColor={areaGroup.legend_color_hex}
@@ -481,166 +475,70 @@ export default function AreaDetail({
                         </CardContent>
                     </Card>
                 </div>
-            </div>
 
-            <div className="p-4">
                 <Card>
                     <CardHeader>
                         <CardTitle>
                             {selectedAreaId
-                                ? `Rumah di ${selectedArea?.name ?? `#${selectedAreaId}`}`
-                                : `Semua Rumah di Kawasan Ini (${households.length})`}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {selectedAreaId && relatedLoading ? (
-                            <div className="text-sm text-muted-foreground">
-                                Memuat data untuk Kawasan{' '}
-                                {selectedArea?.name ?? `#${selectedAreaId}`}...
-                            </div>
-                        ) : selectedAreaId && relatedError ? (
-                            <div className="text-sm text-red-600">
-                                {relatedError}
-                            </div>
-                        ) : (selectedAreaId ? relatedHouseholds : households)
-                              .length === 0 ? (
-                            <div className="text-sm text-muted-foreground">
-                                Data rumah tidak ditemukan.
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                                {(selectedAreaId
-                                    ? relatedHouseholds
-                                    : households
-                                ).map((h) => (
-                                    <div
-                                        key={h.id}
-                                        className="rounded-md border p-3"
-                                    >
-                                        <div className="text-xs text-muted-foreground">
-                                            Nomor rumah
-                                        </div>
-                                        <div className="font-medium">
-                                            {h.id}
-                                        </div>
-                                        <div className="mt-2 text-xs text-muted-foreground">
-                                            Nama penghuni
-                                        </div>
-                                        <div>{h.head_name || '-'}</div>
-                                        <div className="mt-2 text-xs text-muted-foreground">
-                                            Status hunian
-                                        </div>
-                                        <div className="font-medium">
-                                            {h.habitability_status || '-'}
-                                        </div>
-                                        <div className="mt-2 text-xs text-muted-foreground">
-                                            Lokasi
-                                        </div>
-                                        <div className="text-xs">
-                                            {h.village_name}, {h.district_name}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="p-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            {selectedAreaId
-                                ? `Status Sinkronisasi ${selectedArea?.name ?? `#${selectedAreaId}`}`
-                                : 'Status Sinkronisasi'}
+                                ? `Data Rumah di ${selectedArea?.name ?? `Kawasan #${selectedAreaId}`}`
+                                : 'Data Rumah dalam Kawasan'}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {!selectedAreaId ? (
                             <div className="text-sm text-muted-foreground">
-                                Pilih kawasan terlebih dahulu untuk melihat
-                                status sinkronisasi.
+                                Pilih kawasan terlebih dahulu untuk melihat data
+                                rumah.
                             </div>
-                        ) : syncStatus ? (
-                            <div className="flex flex-col gap-1 text-sm">
-                                <div>
-                                    <span className="text-muted-foreground">
-                                        Status:
-                                    </span>{' '}
-                                    {syncStatus.status}
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">
-                                        Terakhir:
-                                    </span>{' '}
-                                    {syncStatus.last_at
-                                        ? new Date(
-                                              syncStatus.last_at,
-                                          ).toLocaleString()
-                                        : '-'}
-                                </div>
+                        ) : relatedLoading ? (
+                            <div className="text-sm text-muted-foreground">
+                                Memuat data untuk Kawasan{' '}
+                                {selectedArea?.name ?? `#${selectedAreaId}`}...
+                            </div>
+                        ) : relatedError ? (
+                            <div className="text-sm text-red-600">
+                                {relatedError}
+                            </div>
+                        ) : relatedHouseholds.length === 0 ? (
+                            <div className="text-sm text-muted-foreground">
+                                Tidak ada data rumah dalam kawasan ini.
                             </div>
                         ) : (
-                            <div className="text-sm text-muted-foreground">
-                                Belum ada informasi sinkronisasi
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="p-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Data Penghuni dalam Kawasan</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[50px]">
-                                        No
-                                    </TableHead>
-                                    <TableHead>NIK</TableHead>
-                                    <TableHead>Kepala Keluarga</TableHead>
-                                    <TableHead>Alamat</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">
-                                        Aksi
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {households.length === 0 ? (
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell
-                                            colSpan={6}
-                                            className="text-center text-muted-foreground"
-                                        >
-                                            Tidak ada data penghuni dalam
-                                            kawasan ini.
-                                        </TableCell>
+                                        <TableHead>Id Rumah</TableHead>
+                                        <TableHead>
+                                            Nama Kepala Keluarga
+                                        </TableHead>
+                                        <TableHead>Alamat</TableHead>
+                                        <TableHead>Kelayakan</TableHead>
+                                        <TableHead>
+                                            Status Kepemilikan
+                                        </TableHead>
+                                        <TableHead className="text-right">
+                                            Aksi
+                                        </TableHead>
                                     </TableRow>
-                                ) : (
-                                    households.map((household, index) => (
+                                </TableHeader>
+                                <TableBody>
+                                    {relatedHouseholds.map((household) => (
                                         <TableRow key={household.id}>
-                                            <TableCell>{index + 1}</TableCell>
                                             <TableCell>
-                                                {household.nik || '-'}
+                                                {household.id}
                                             </TableCell>
                                             <TableCell>
-                                                {household.head_name}
+                                                {household.head_name || '-'}
                                             </TableCell>
                                             <TableCell>
-                                                {household.address_text}
+                                                {household.address_text || '-'}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge
                                                     variant={
                                                         household.habitability_status ===
                                                         'RLH'
-                                                            ? 'success'
+                                                            ? 'default'
                                                             : household.habitability_status ===
                                                                 'RTLH'
                                                               ? 'destructive'
@@ -649,6 +547,14 @@ export default function AreaDetail({
                                                 >
                                                     {household.habitability_status ||
                                                         'Belum Dinilai'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary">
+                                                    {getOwnershipLabel(
+                                                        household.ownership_status_building ??
+                                                            null,
+                                                    )}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -665,10 +571,10 @@ export default function AreaDetail({
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
                     </CardContent>
                 </Card>
             </div>

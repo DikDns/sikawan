@@ -88,11 +88,8 @@ class AreaController extends Controller
       ];
     });
 
-    // Get area IDs for filtering households
-    $areaIds = $areaGroup->areas->pluck('id');
-
+    // Get all households with coordinates (for map display)
     $households = Household::query()
-      ->whereIn('area_id', $areaIds)
       ->where('is_draft', false)
       ->whereNotNull('latitude')
       ->whereNotNull('longitude')
@@ -195,12 +192,14 @@ class AreaController extends Controller
         ->where('area_id', $area->id)
         ->orderByDesc('updated_at')
         ->limit($limit)
-        ->get(['id', 'head_name', 'habitability_status', 'updated_at'])
+        ->get(['id', 'head_name', 'address_text', 'habitability_status', 'ownership_status_building', 'updated_at'])
         ->map(function ($h) {
           return [
             'id' => $h->id,
             'head_name' => $h->head_name,
+            'address_text' => $h->address_text,
             'habitability_status' => $h->habitability_status,
+            'ownership_status_building' => $h->ownership_status_building,
             'updated_at' => optional($h->updated_at)->toIso8601String(),
           ];
         });
