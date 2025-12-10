@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import dayjs from 'dayjs';
+import 'dayjs/locale/id';
+import { forwardRef, useState } from 'react';
 import {
-    ResponsiveContainer,
-    BarChart,
     Bar,
+    BarChart,
+    CartesianGrid,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    Tooltip,
-    CartesianGrid,
-} from "recharts";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { forwardRef, useState } from "react";
-import dayjs from "dayjs";
-import "dayjs/locale/id";
+} from 'recharts';
 
-dayjs.locale("id");
+dayjs.locale('id');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CustomTooltip({ active, payload }: any) {
@@ -23,26 +23,38 @@ function CustomTooltip({ active, payload }: any) {
     const item = payload[0].payload;
 
     return (
-        <div className="bg-white p-2 rounded shadow text-sm">
+        <div className="rounded bg-white p-2 text-sm shadow">
             <div className="font-semibold">{item.name}</div>
             <div>Jumlah: {item.count}</div>
             <div>
-                Tipe:{" "}
-                <span className={item.type === "Polyline" ? "text-purple-600" : "text-green-600"}>
-                    {item.type === "Polyline" ? "Polyline" : "Marker"}
+                Tipe:{' '}
+                <span
+                    className={
+                        item.type === 'Polyline'
+                            ? 'text-purple-600'
+                            : 'text-green-600'
+                    }
+                >
+                    {item.type === 'Polyline' ? 'Polyline' : 'Marker'}
                 </span>
             </div>
-            <div>
-                Kategori: {item.category}
-            </div>
+            <div>Kategori: {item.category}</div>
         </div>
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any[] }>(
-    function InfrastructureBarChart({ infrastructures }, ref)
-{
+interface InfrastructureItem {
+    name: string;
+    infrastructure_count: number;
+    type: string;
+    category: string;
+    created_at: string;
+}
+
+const InfrastructureBarChart = forwardRef<
+    HTMLDivElement,
+    { infrastructures: InfrastructureItem[] }
+>(function InfrastructureBarChart({ infrastructures }, ref) {
     const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(null);
     const [endDate, setEndDate] = useState<dayjs.Dayjs | null>(null);
     const today = dayjs();
@@ -50,8 +62,8 @@ const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any
     const filteredData = infrastructures.filter((item) => {
         const date = dayjs(item.created_at);
 
-        if (startDate && date.isBefore(startDate, "day")) return false;
-        if (endDate && date.isAfter(endDate, "day")) return false;
+        if (startDate && date.isBefore(startDate, 'day')) return false;
+        if (endDate && date.isAfter(endDate, 'day')) return false;
 
         return true;
     });
@@ -63,7 +75,10 @@ const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any
         category: item.category,
     }));
 
-    const totalPSU = filteredData.reduce((sum, i) => sum + i.infrastructure_count, 0);
+    const totalPSU = filteredData.reduce(
+        (sum, i) => sum + i.infrastructure_count,
+        0,
+    );
 
     return (
         <Card ref={ref}>
@@ -77,34 +92,36 @@ const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any
             <div className="flex gap-3 px-6 pb-2">
                 <input
                     type="date"
-                    value={startDate ? startDate.format("YYYY-MM-DD") : ""}
-                    max={today.format("YYYY-MM-DD")}
+                    value={startDate ? startDate.format('YYYY-MM-DD') : ''}
+                    max={today.format('YYYY-MM-DD')}
                     onChange={(e) => {
                         const v = e.target.value ? dayjs(e.target.value) : null;
                         if (v && endDate && v.isAfter(endDate)) return;
                         setStartDate(v);
                     }}
-                    className="border rounded px-2 py-1 text-sm"
+                    className="rounded border px-2 py-1 text-sm"
                 />
-                <div className="mt-1">
-                    -
-                </div>
+                <div className="mt-1">-</div>
                 <input
                     type="date"
-                    value={endDate ? endDate.format("YYYY-MM-DD") : ""}
-                    min={startDate ? startDate.format("YYYY-MM-DD") : ""}
-                    max={today.format("YYYY-MM-DD")}
+                    value={endDate ? endDate.format('YYYY-MM-DD') : ''}
+                    min={startDate ? startDate.format('YYYY-MM-DD') : ''}
+                    max={today.format('YYYY-MM-DD')}
                     onChange={(e) => {
-                        const v = e.target.value ? dayjs(e.target.value).endOf("day") : null;
+                        const v = e.target.value
+                            ? dayjs(e.target.value).endOf('day')
+                            : null;
                         if (startDate && v && v.isBefore(startDate)) return;
                         setEndDate(v);
                     }}
-                    className="border rounded px-2 py-1 text-sm"
+                    className="rounded border px-2 py-1 text-sm"
                 />
             </div>
             <CardContent>
                 {chartData.length === 0 ? (
-                    <div className="py-20 text-center text-gray-500">Tidak ada data PSU</div>
+                    <div className="py-20 text-center text-gray-500">
+                        Tidak ada data PSU
+                    </div>
                 ) : (
                     <ResponsiveContainer width="100%" height={360}>
                         <BarChart
@@ -133,11 +150,12 @@ const InfrastructureBarChart = forwardRef<HTMLDivElement, { infrastructures: any
                                 fillOpacity={1}
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 shape={(props: any) => {
-                                    const { x, y, width, height, payload } = props;
+                                    const { x, y, width, height, payload } =
+                                        props;
                                     const fillColor =
-                                        payload.type === "Polyline"
-                                            ? "#8B5CF6"
-                                            : "#22c55e";
+                                        payload.type === 'Polyline'
+                                            ? '#8B5CF6'
+                                            : '#22c55e';
                                     return (
                                         <g>
                                             <rect
