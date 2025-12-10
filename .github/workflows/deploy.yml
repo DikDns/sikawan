@@ -106,9 +106,8 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Create app directory with proper permissions
-            sudo mkdir -p /opt/sikawan/data
-            sudo chown -R $USER:$USER /opt/sikawan
+            # Create app directory (works for root or user with permissions)
+            mkdir -p /opt/sikawan/data
             cd /opt/sikawan
 
             # Ensure database file exists
