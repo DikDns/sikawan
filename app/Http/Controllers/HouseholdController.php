@@ -13,47 +13,36 @@ use Inertia\Inertia;
 class HouseholdController extends Controller
 {
   /**
-   * Map income string from frontend to integer for database
+   * Parse income value from frontend to integer for database
+   * Now accepts direct numeric values (rupiah)
    *
-   * @param string|null $incomeString
+   * @param string|int|null $incomeValue
    * @return int|null
    */
-  private function mapIncomeStringToInt(?string $incomeString): ?int
+  private function parseIncomeToInt($incomeValue): ?int
   {
-    if (empty($incomeString)) {
+    if (empty($incomeValue)) {
       return null;
     }
 
-    $mapping = [
-      '<1jt' => 1,
-      '1-3jt' => 2,
-      '3-5jt' => 3,
-      '>5jt' => 4,
-    ];
+    // Handle direct numeric input
+    if (is_numeric($incomeValue)) {
+      return (int) $incomeValue;
+    }
 
-    return $mapping[$incomeString] ?? null;
+    return null;
   }
 
   /**
-   * Map income integer from database to string for frontend
+   * Format income integer for frontend display
+   * Returns the raw integer value - formatting is done on frontend
    *
    * @param int|null $incomeInt
-   * @return string|null
+   * @return int|null
    */
-  private function mapIncomeIntToString(?int $incomeInt): ?string
+  private function formatIncomeForFrontend(?int $incomeInt): ?int
   {
-    if ($incomeInt === null) {
-      return null;
-    }
-
-    $mapping = [
-      1 => '<1jt',
-      2 => '1-3jt',
-      3 => '3-5jt',
-      4 => '>5jt',
-    ];
-
-    return $mapping[$incomeInt] ?? null;
+    return $incomeInt;
   }
 
   /**
@@ -250,7 +239,7 @@ class HouseholdController extends Controller
 
         // Non-Physical Data
         'main_occupation' => $household->main_occupation,
-        'monthly_income_idr' => $this->mapIncomeIntToString($household->monthly_income_idr),
+        'monthly_income_idr' => $this->formatIncomeForFrontend($household->monthly_income_idr),
         'health_facility_used' => $household->health_facility_used,
         'health_facility_location' => $household->health_facility_location,
         'education_facility_location' => $household->education_facility_location,
@@ -398,7 +387,7 @@ class HouseholdController extends Controller
         'nik' => $lastDraft->nik,
         'headOfHouseholdName' => $lastDraft->head_name !== 'Draft' ? $lastDraft->head_name : null,
         'mainOccupation' => $lastDraft->main_occupation,
-        'income' => $this->mapIncomeIntToString($lastDraft->monthly_income_idr),
+        'income' => $this->formatIncomeForFrontend($lastDraft->monthly_income_idr),
         'householdStatus' => $lastDraft->status_mbr,
         'numberOfHouseholds' => $lastDraft->kk_count,
         'maleMembers' => $lastDraft->male_count,
@@ -502,13 +491,13 @@ class HouseholdController extends Controller
         'nik' => $generalInfoData['nik'] ?? null,
         'head_name' => $generalInfoData['headOfHouseholdName'] ?? 'Draft',
         'main_occupation' => $generalInfoData['mainOccupation'] ?? null,
-        'monthly_income_idr' => $this->mapIncomeStringToInt($generalInfoData['income'] ?? null),
+        'monthly_income_idr' => $this->parseIncomeToInt($generalInfoData['income'] ?? null),
         'status_mbr' => $generalInfoData['householdStatus'] ?? 'NON_MBR',
-        'kk_count' => $generalInfoData['numberOfHouseholds'] ?? null,
-        'male_count' => $generalInfoData['maleMembers'] ?? null,
-        'female_count' => $generalInfoData['femaleMembers'] ?? null,
-        'disabled_count' => $generalInfoData['disabledMembers'] ?? null,
-        'member_total' => $generalInfoData['totalMembers'] ?? null,
+        'kk_count' => $generalInfoData['numberOfHouseholds'] ?? 0,
+        'male_count' => $generalInfoData['maleMembers'] ?? 0,
+        'female_count' => $generalInfoData['femaleMembers'] ?? 0,
+        'disabled_count' => $generalInfoData['disabledMembers'] ?? 0,
+        'member_total' => $generalInfoData['totalMembers'] ?? 0,
         'education_facility_location' => $generalInfoData['educationFacilityLocation'] ?? null,
         'health_facility_used' => $generalInfoData['healthFacilityUsed'] ?? null,
         'health_facility_location' => $generalInfoData['healthFacilityLocation'] ?? null,
@@ -669,7 +658,7 @@ class HouseholdController extends Controller
       'nik' => $household->nik,
       'headOfHouseholdName' => $household->head_name !== 'Draft' ? $household->head_name : null,
       'mainOccupation' => $household->main_occupation,
-      'income' => $this->mapIncomeIntToString($household->monthly_income_idr),
+      'income' => $this->formatIncomeForFrontend($household->monthly_income_idr),
       'householdStatus' => $household->status_mbr,
       'numberOfHouseholds' => $household->kk_count,
       'maleMembers' => $household->male_count,
@@ -734,13 +723,13 @@ class HouseholdController extends Controller
         'nik' => $lastDraft->nik,
         'headOfHouseholdName' => $lastDraft->head_name !== 'Draft' ? $lastDraft->head_name : null,
         'mainOccupation' => $lastDraft->main_occupation,
-        'income' => $this->mapIncomeIntToString($lastDraft->monthly_income_idr),
+        'income' => $this->formatIncomeForFrontend($lastDraft->monthly_income_idr),
         'householdStatus' => $lastDraft->status_mbr,
-        'numberOfHouseholds' => $lastDraft->kk_count,
-        'maleMembers' => $lastDraft->male_count,
-        'femaleMembers' => $lastDraft->female_count,
-        'disabledMembers' => $lastDraft->disabled_count,
-        'totalMembers' => $lastDraft->member_total,
+        'numberOfHouseholds' => $lastDraft->kk_count ?? 0,
+        'maleMembers' => $lastDraft->male_count ?? 0,
+        'femaleMembers' => $lastDraft->female_count ?? 0,
+        'disabledMembers' => $lastDraft->disabled_count ?? 0,
+        'totalMembers' => $lastDraft->member_total ?? 0,
         'educationFacilityLocation' => $lastDraft->education_facility_location,
         'healthFacilityUsed' => $lastDraft->health_facility_used,
         'healthFacilityLocation' => $lastDraft->health_facility_location,
@@ -827,7 +816,7 @@ class HouseholdController extends Controller
 
         // Non-Physical Data
         'main_occupation' => $household->main_occupation,
-        'monthly_income_idr' => $this->mapIncomeIntToString($household->monthly_income_idr),
+        'monthly_income_idr' => $this->formatIncomeForFrontend($household->monthly_income_idr),
         'health_facility_used' => $household->health_facility_used,
         'health_facility_location' => $household->health_facility_location,
         'education_facility_location' => $household->education_facility_location,
@@ -965,7 +954,7 @@ class HouseholdController extends Controller
           'nik' => $generalInfoData['nik'] ?? null,
           'head_name' => $generalInfoData['headOfHouseholdName'] ?? $household->head_name,
           'main_occupation' => $generalInfoData['mainOccupation'] ?? null,
-          'monthly_income_idr' => $this->mapIncomeStringToInt($generalInfoData['income'] ?? null),
+          'monthly_income_idr' => $this->parseIncomeToInt($generalInfoData['income'] ?? null),
           'status_mbr' => $generalInfoData['householdStatus'] ?? $household->status_mbr,
           'kk_count' => $generalInfoData['numberOfHouseholds'] ?? null,
           'male_count' => $generalInfoData['maleMembers'] ?? null,
@@ -1218,5 +1207,45 @@ class HouseholdController extends Controller
         'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
       ], 500);
     }
+  }
+
+  /**
+   * Validate if a household is still a valid draft for the current user
+   * Used by frontend to check localStorage draft IDs before using them
+   */
+  public function validateDraft(Request $request, $id)
+  {
+    $user = $request->user();
+
+    $household = Household::find($id);
+
+    // Check if household exists
+    if (!$household) {
+      return response()->json([
+        'valid' => false,
+        'reason' => 'not_found',
+      ], 404);
+    }
+
+    // Check if it belongs to current user
+    if ($household->created_by !== $user->id) {
+      return response()->json([
+        'valid' => false,
+        'reason' => 'not_owner',
+      ], 403);
+    }
+
+    // Check if it's still a draft
+    if (!$household->is_draft) {
+      return response()->json([
+        'valid' => false,
+        'reason' => 'not_draft',
+      ]);
+    }
+
+    return response()->json([
+      'valid' => true,
+      'householdId' => $household->id,
+    ]);
   }
 }

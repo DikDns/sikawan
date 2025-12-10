@@ -96,6 +96,16 @@ export function AreaMapDisplay({
         return [avgLat, avgLng] as LatLngExpression;
     }, [features, center]);
 
+    // Cleanup manually drawn layers when features update (sync from backend)
+    useEffect(() => {
+        // Remove all client-side drawn layers that were tracked to prevent duplicates
+        // when the server returns the saved feature
+        Object.values(createdLayersRef.current).forEach((layer) => {
+            drawLayersRef.current?.removeLayer(layer);
+        });
+        createdLayersRef.current = {};
+    }, [features]);
+
     // Parse geometry JSON and render polygons
     const polygons = useMemo(() => {
         return features

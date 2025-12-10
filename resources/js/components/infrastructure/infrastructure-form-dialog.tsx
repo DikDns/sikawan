@@ -87,6 +87,39 @@ export function InfrastructureFormDialog({
         }
     }, [item, open]);
 
+    const handleDelete = async () => {
+        if (!item?.id) return;
+
+        if (!confirm('Apakah Anda yakin ingin menghapus PSU ini?')) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await csrfFetch(
+                `/infrastructure-groups/${groupId}/items/${item.id}`,
+                {
+                    method: 'DELETE',
+                },
+            );
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                const msg = handleCsrfError(response, data);
+                toast.error(`Gagal menghapus PSU: ${msg}`);
+                return;
+            }
+
+            toast.success('PSU berhasil dihapus');
+            onSuccess();
+            window.location.reload();
+        } catch {
+            toast.error('Gagal menghapus PSU: Terjadi kesalahan jaringan');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -223,39 +256,64 @@ export function InfrastructureFormDialog({
                             </Select>
                         </Field>
 
-                        <GeometryEditor
-                            geometryJson={formData.geometry_json}
-                            geometryType={
-                                formData.geometry_type ||
-                                (groupType === 'Marker'
-                                    ? 'Point'
-                                    : groupType === 'Polyline'
-                                      ? 'LineString'
-                                      : groupType === 'Polygon'
-                                        ? 'Polygon'
-                                        : undefined)
-                            }
-                            onGeometryChange={(
-                                geometry: unknown,
-                                geoType?: string,
-                            ) =>
-                                setFormData({
-                                    ...formData,
-                                    geometry_json: geometry,
-                                    geometry_type: (geoType === 'Point'
+                        <Field>
+                            <GeometryEditor
+                                geometryJson={formData.geometry_json}
+                                geometryType={
+                                    formData.geometry_type ||
+                                    (groupType === 'Marker'
                                         ? 'Point'
-                                        : geoType === 'LineString'
+                                        : groupType === 'Polyline'
                                           ? 'LineString'
-                                          : geoType === 'Polygon'
+                                          : groupType === 'Polygon'
                                             ? 'Polygon'
-                                            : formData.geometry_type) as
-                                        | 'Point'
-                                        | 'LineString'
-                                        | 'Polygon'
-                                        | undefined,
-                                })
-                            }
-                        />
+                                            : undefined)
+                                }
+                                onGeometryChange={(
+                                    geometry: unknown,
+                                    geoType?: string,
+                                ) =>
+                                    setFormData({
+                                        ...formData,
+                                        geometry_json: geometry,
+                                        geometry_type: (geoType === 'Point'
+                                            ? 'Point'
+                                            : geoType === 'LineString'
+                                              ? 'LineString'
+                                              : geoType === 'Polygon'
+                                                ? 'Polygon'
+                                                : undefined) as
+                                            | 'Point'
+                                            | 'LineString'
+                                            | 'Polygon',
+                                    })
+                                }
+                            />
+                            {/* Geometry Guidance */}
+                            <div className="text-xs text-muted-foreground">
+                                <p className="font-medium">Panduan Geometri:</p>
+                                <ul className="list-inside list-disc">
+                                    {groupType === 'Marker' && (
+                                        <li>
+                                            Marker membutuhkan minimal 1 titik
+                                            koordinat.
+                                        </li>
+                                    )}
+                                    {groupType === 'Polyline' && (
+                                        <li>
+                                            Garis membutuhkan minimal 2 titik
+                                            koordinat.
+                                        </li>
+                                    )}
+                                    {groupType === 'Polygon' && (
+                                        <li>
+                                            Poligon membutuhkan minimal 3 titik
+                                            koordinat.
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>
+                        </Field>
                     </div>
 
                     <DialogFooter>
@@ -267,11 +325,27 @@ export function InfrastructureFormDialog({
                         >
                             Batal
                         </Button>
+                        {item?.id && (
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={isSubmitting}
+                            >
+                                Hapus
+                            </Button>
+                        )}
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Menyimpan...
+                                </>
+                            ) : item ? (
+                                'Simpan Perubahan'
+                            ) : (
+                                'Tambah PSU'
                             )}
-                            {item ? 'Simpan Perubahan' : 'Tambah PSU'}
                         </Button>
                     </DialogFooter>
                 </form>

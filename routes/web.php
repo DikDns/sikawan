@@ -41,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::match(['put', 'patch', 'post'], 'households/{id}', [App\Http\Controllers\HouseholdController::class, 'update'])->name('households.update');
   Route::delete('households/{id}', [App\Http\Controllers\HouseholdController::class, 'destroy'])->name('households.destroy');
   Route::post('households/{id}/finalize', [App\Http\Controllers\HouseholdController::class, 'finalize'])->name('households.finalize');
+  Route::get('households/{id}/validate-draft', [App\Http\Controllers\HouseholdController::class, 'validateDraft'])->name('households.validateDraft');
 
   // Assistance Routes
   Route::get('households/{householdId}/assistances', [App\Http\Controllers\AssistanceController::class, 'index'])->name('assistances.index');

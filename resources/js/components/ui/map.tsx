@@ -340,7 +340,7 @@ function MapLayers({
 
 function MapLayersControl({
     tileLayersLabel = "Map Type",
-    layerGroupsLabel = "Layers",
+    layerGroupsLabel: _layerGroupsLabel = "Layers",
     className,
     ...props
 }: React.ComponentProps<"button"> & {
@@ -348,6 +348,14 @@ function MapLayersControl({
     layerGroupsLabel?: string
 }) {
     const layersContext = useMapLayersContext()
+    const [searchQuery, setSearchQuery] = useState("")
+
+    // Prevent dropdown from closing when interacting with search input
+    const handleSearchClick = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+    }
+
     if (!layersContext) {
         throw new Error("MapLayersControl must be used within MapLayers")
     }
@@ -360,6 +368,28 @@ function MapLayersControl({
         activeLayerGroups,
         setActiveLayerGroups,
     } = layersContext
+
+    // Group and Filter Layers
+    const processedLayers = useMemo(() => {
+        const filtered = layerGroups.filter(l =>
+            l.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+
+        const groups: Record<string, typeof layerGroups> = {}
+        const others: typeof layerGroups = []
+
+        filtered.forEach(l => {
+            if (l.name.includes(': ')) {
+                const [groupName] = l.name.split(': ')
+                if (!groups[groupName]) groups[groupName] = []
+                groups[groupName].push(l)
+            } else {
+                others.push(l)
+            }
+        })
+
+        return { groups, others }
+    }, [layerGroups, searchQuery])
 
     if (tileLayers.length === 0 && layerGroups.length === 0) {
         return null
@@ -390,14 +420,23 @@ function MapLayersControl({
                     aria-label="Select layers"
                     title="Select layers"
                     className={cn(
-                        "absolute top-1 right-1 z-1000 border",
+                        "absolute top-1 right-1 z-[1000] border",
                         className
                     )}
                     {...props}>
                     <LayersIcon />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-1000">
+            <DropdownMenuContent align="end" className="z-[1000] w-64 max-h-[80vh] overflow-y-auto">
+                <div className="p-2 sticky top-0 bg-popover z-10" onClick={handleSearchClick} onKeyDown={(e) => e.stopPropagation()}>
+                    <input
+                        type="text"
+                        placeholder="Cari layer..."
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
                 {showTileLayersDropdown && (
                     <>
                         <DropdownMenuLabel>{tileLayersLabel}</DropdownMenuLabel>
@@ -417,27 +456,47 @@ function MapLayersControl({
                 {showTileLayersDropdown && showLayerGroupsDropdown && (
                     <DropdownMenuSeparator />
                 )}
+
                 {showLayerGroupsDropdown && (
                     <>
-                        <DropdownMenuLabel>
-                            {layerGroupsLabel}
-                        </DropdownMenuLabel>
-                        {layerGroups.map((layerGroup) => (
-                            <DropdownMenuCheckboxItem
-                                key={layerGroup.name}
-                                checked={activeLayerGroups.includes(
-                                    layerGroup.name
-                                )}
-                                disabled={layerGroup.disabled}
-                                onCheckedChange={(checked) =>
-                                    handleLayerGroupToggle(
-                                        layerGroup.name,
-                                        checked
-                                    )
-                                }>
-                                {layerGroup.name}
-                            </DropdownMenuCheckboxItem>
+                        <DropdownMenuLabel>{_layerGroupsLabel}</DropdownMenuLabel>
+                        {Object.entries(processedLayers.groups).map(([groupName, layers]) => (
+                            <div key={groupName} className="mb-2">
+                                <DropdownMenuLabel className="text-xs font-bold text-muted-foreground uppercase">{groupName}</DropdownMenuLabel>
+                                {layers.map((layerGroup) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={layerGroup.name}
+                                        checked={activeLayerGroups.includes(layerGroup.name)}
+                                        disabled={layerGroup.disabled}
+                                        onCheckedChange={(checked) => handleLayerGroupToggle(layerGroup.name, checked)}
+                                    >
+                                        {layerGroup.name.split(': ')[1] || layerGroup.name}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </div>
                         ))}
+
+                        {processedLayers.others.length > 0 && (
+                            <div className="mb-2">
+                                {Object.keys(processedLayers.groups).length > 0 && <DropdownMenuLabel className="text-xs font-bold text-muted-foreground uppercase">Lainnya</DropdownMenuLabel>}
+                                {processedLayers.others.map((layerGroup) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={layerGroup.name}
+                                        checked={activeLayerGroups.includes(layerGroup.name)}
+                                        disabled={layerGroup.disabled}
+                                        onCheckedChange={(checked) => handleLayerGroupToggle(layerGroup.name, checked)}
+                                    >
+                                        {layerGroup.name}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </div>
+                        )}
+
+                        {Object.keys(processedLayers.groups).length === 0 && processedLayers.others.length === 0 && (
+                            <div className="p-2 text-center text-sm text-muted-foreground">
+                                Tidak ada layer yang cocok.
+                            </div>
+                        )}
                     </>
                 )}
             </DropdownMenuContent>

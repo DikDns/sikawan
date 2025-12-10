@@ -100,6 +100,15 @@ export function InfrastructureMapDisplay({
         >;
     }, [features]);
 
+    // Cleanup manually drawn layers when features update
+    useEffect(() => {
+        if (!drawLayersRef.current) return;
+        Object.values(createdLayersRef.current).forEach((layer) => {
+            drawLayersRef.current?.removeLayer(layer);
+        });
+        createdLayersRef.current = {};
+    }, [features]);
+
     const allowedGeometryType: 'Point' | 'LineString' | 'Polygon' =
         type === 'Marker'
             ? 'Point'

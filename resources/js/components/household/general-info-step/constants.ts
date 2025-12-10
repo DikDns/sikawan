@@ -26,6 +26,7 @@ export const LAND_LEGAL_STATUS_OPTIONS = [
 ] as const;
 
 export const MAIN_OCCUPATION_OPTIONS = [
+    { value: 'tidak-ada', label: 'Tidak Ada' },
     { value: 'pegawai-pemerintah', label: 'Pegawai Pemerintah' },
     {
         value: 'perdagangan-jasa',

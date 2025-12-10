@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Minus, Plus } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface Coordinate {
     lat: string;
@@ -201,6 +201,16 @@ export function GeometryEditor({
         onGeometryChange(newGeometry, effectiveType);
     }, [coordinates, geoType, onGeometryChange]);
 
+    // Auto-save changes
+    useEffect(() => {
+        if (initialized) {
+            const timer = setTimeout(() => {
+                handleApply();
+            }, 300); // Debounce to avoid rapid updates during typing
+            return () => clearTimeout(timer);
+        }
+    }, [coordinates, geoType, initialized, handleApply]);
+
     const getLabel = () => {
         // Show Polygon label if Rectangle has more than 2 points
         const displayType = (geoType === 'Rectangle' && coordinates.length > 2) ? 'Polygon' : geoType;
@@ -317,15 +327,6 @@ export function GeometryEditor({
                             Tambah Titik
                         </Button>
                     )}
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleApply}
-                        disabled={disabled || coordinates.length === 0}
-                    >
-                        Terapkan Koordinat
-                    </Button>
                 </div>
             </div>
         </Field>

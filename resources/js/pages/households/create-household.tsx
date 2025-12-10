@@ -51,8 +51,15 @@ const STEPS = [
 export default function CreateHousehold({ draft: initialDraft }: Props) {
     const [currentStep, setCurrentStep] = useState(1);
     const [isFinalizing, setIsFinalizing] = useState(false);
-    const { updateDraft, saveDraft, isSaving, draftData, clearDraft } =
-        useHouseholdDraft();
+    const [isInitializing, setIsInitializing] = useState(true);
+    const {
+        updateDraft,
+        saveDraft,
+        isSaving,
+        draftData,
+        clearDraft,
+        validateAndSyncDraft,
+    } = useHouseholdDraft();
     const [photos, setPhotos] = useState<PhotoFile[]>(() => {
         // Initialize photos from initialDraft if available
         if (initialDraft) {
@@ -66,26 +73,44 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
         return [];
     });
 
-    // Load draft on mount
+    // Validate draft on mount - ensures localStorage draft is still valid on server
     useEffect(() => {
-        if (initialDraft) {
-            const draftPhotos: PhotoFile[] = initialDraft.photos.map(
-                (photo) => ({
-                    id: photo.id,
-                    preview: photo.preview,
-                    uploaded: true,
-                    path: photo.path,
-                }),
-            );
-            updateDraft({
-                photos: draftPhotos,
-                generalInfo: initialDraft.generalInfo,
-                technicalData: initialDraft.technicalData,
-                mapLocation: initialDraft.mapLocation,
-                householdId: initialDraft.householdId,
-                lastSaved: initialDraft.lastSaved,
-            });
-        }
+        const initializeDraft = async () => {
+            setIsInitializing(true);
+
+            // If we have server-provided draft, use it directly (it's fresh)
+            if (initialDraft) {
+                const draftPhotos: PhotoFile[] = initialDraft.photos.map(
+                    (photo) => ({
+                        id: photo.id,
+                        preview: photo.preview,
+                        uploaded: true,
+                        path: photo.path,
+                    }),
+                );
+                updateDraft({
+                    photos: draftPhotos,
+                    generalInfo: initialDraft.generalInfo,
+                    technicalData: initialDraft.technicalData,
+                    mapLocation: initialDraft.mapLocation,
+                    householdId: initialDraft.householdId,
+                    lastSaved: initialDraft.lastSaved,
+                });
+            } else {
+                // No server draft - validate localStorage draft in case it's stale
+                const isValid = await validateAndSyncDraft();
+                if (!isValid) {
+                    // localStorage was cleared, start fresh
+                    console.log(
+                        '🔄 localStorage draft was invalid, starting fresh',
+                    );
+                }
+            }
+
+            setIsInitializing(false);
+        };
+
+        initializeDraft();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -286,7 +311,7 @@ export default function CreateHousehold({ draft: initialDraft }: Props) {
                 onPrevious={handlePrevious}
                 canGoNext={true}
                 canGoPrevious={currentStep > 1}
-                isLoading={isSaving || isFinalizing}
+                isLoading={isSaving || isFinalizing || isInitializing}
                 nextButtonText={
                     currentStep === STEPS.length ? 'Simpan' : undefined
                 }

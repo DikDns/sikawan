@@ -15,7 +15,6 @@ import {
     FACILITY_LOCATION_OPTIONS,
     HEALTH_FACILITY_USED_OPTIONS,
     HOUSEHOLD_STATUS_OPTIONS,
-    INCOME_OPTIONS,
     MAIN_OCCUPATION_OPTIONS,
 } from '../constants';
 import type { GeneralInfoData } from '../types';
@@ -46,8 +45,10 @@ export function HouseholdDataSection({
                         <Input
                             type="text"
                             placeholder="Masukkan NIK Kepala Keluarga"
-                            pattern="^(1[1-9]|21|[37][1-6]|5[1-3]|6[1-5]|[89][12])\d{2}\d{2}([04][1-9]|[1256][0-9]|[37][01])(0[1-9]|1[0-2])\d{2}\d{4}$"
-                            title="NIK harus berformat 16 digit"
+                            minLength={16}
+                            maxLength={16}
+                            pattern="\d{16}"
+                            title="NIK harus 16 digit angka"
                             value={formData.nik || ''}
                             onChange={(e) => updateField('nik', e.target.value)}
                         />
@@ -99,26 +100,14 @@ export function HouseholdDataSection({
                 <Field className="w-full">
                     <FieldLabel>Penghasilan</FieldLabel>
                     <FieldContent>
-                        <Select
+                        <Input
+                            type="number"
+                            placeholder="Masukkan Penghasilan (Contoh: 2500000)"
                             value={formData.income || ''}
-                            onValueChange={(value) =>
-                                updateField('income', value)
+                            onChange={(e) =>
+                                updateField('income', e.target.value)
                             }
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Pilih Penghasilan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {INCOME_OPTIONS.map((option) => (
-                                    <SelectItem
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        />
                     </FieldContent>
                 </Field>
 

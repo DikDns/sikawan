@@ -1,4 +1,3 @@
-import { Input } from '@/components/ui/input';
 import {
     Map,
     MapLayerGroup,
@@ -22,11 +21,10 @@ import {
     GraduationCap,
     Home,
     Hospital,
-    Search,
     Trash2,
     Zap,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -167,7 +165,6 @@ export default function DistributionMap() {
         households = [],
         areaGroups = [],
         infrastructureGroups = [],
-        error,
     } = usePage<{
         flash?: unknown;
         households: HouseholdForMap[];
@@ -175,8 +172,6 @@ export default function DistributionMap() {
         infrastructureGroups: InfrastructureGroupForMap[];
         error?: string;
     }>().props;
-
-    const [searchQuery, setSearchQuery] = useState('');
 
     // Auto-refresh data periodically and when page becomes visible
     useEffect(() => {
@@ -295,30 +290,10 @@ export default function DistributionMap() {
                             Visualisasi data rumah dan kawasan
                         </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="relative w-64">
-                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                type="text"
-                                placeholder="Cari nama, alamat..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9"
-                            />
-                        </div>
-                        {error && (
-                            <div
-                                role="alert"
-                                className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                            >
-                                {error}
-                            </div>
-                        )}
-                    </div>
                 </div>
 
                 <div className="flex-1 overflow-hidden rounded-lg border">
-                    <Map center={center} className="h-full w-full">
+                    <Map center={center} zoom={15} className="h-full w-full">
                         <MapTileLayer name="OSM" />
 
                         <MapLayers defaultLayerGroups={defaultLayerGroups}>
