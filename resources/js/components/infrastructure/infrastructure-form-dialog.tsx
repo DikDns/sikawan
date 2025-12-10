@@ -70,7 +70,6 @@ export function InfrastructureFormDialog({
                 name: item.name || '',
                 description: item.description || '',
                 geometry_type: item.geometry_type,
-                geometry_type: item.geometry_type,
                 geometry_json: item.geometry_json,
                 condition_status: item.condition_status || 'baik',
             });
@@ -94,6 +93,7 @@ export function InfrastructureFormDialog({
                 description: string | null;
                 geometry_type?: 'Point' | 'LineString' | 'Polygon';
                 geometry_json?: unknown;
+                condition_status?: string;
             } = {
                 name: formData.name,
                 description: formData.description || null,
