@@ -1,18 +1,25 @@
-# Stage 1: Build Frontend Assets
-FROM node:20-alpine AS frontend-builder
+# Stage 1: Build Frontend Assets (needs PHP for wayfinder plugin)
+FROM php:8.3-cli-alpine AS frontend-builder
+
+# Install Node.js and npm
+RUN apk add --no-cache nodejs npm
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy composer files and install PHP dependencies first (for artisan commands)
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
-# Install dependencies
+# Copy package files and install npm dependencies
+COPY package*.json ./
 RUN npm ci
 
-# Copy frontend source files
-COPY resources ./resources
-COPY vite.config.ts tsconfig.json ./
-COPY public ./public
+# Copy all Laravel files needed for the build
+COPY . .
+
+# Finish composer setup
+RUN composer dump-autoload --optimize
 
 # Build assets
 RUN npm run build
