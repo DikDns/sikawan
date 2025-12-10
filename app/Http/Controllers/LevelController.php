@@ -13,7 +13,8 @@ class LevelController extends Controller
         $custom = [
             'dashboard' => 'Halaman Dashboard',
             'distribution-map' => 'Halaman Peta Sebaran',
-            'infrastructure' => 'Halaman infrastructure',
+            'infrastructure' => 'Halaman Infrastruktur',
+            'infrastructure.show' => 'Lihat Infrastruktur',
             'households.index' => 'Halaman Data Rumah',
             'households.create' => 'Buat Data Rumah',
             'households.draft.get' => 'Ambil Data Draft Rumah',
@@ -42,19 +43,12 @@ class LevelController extends Controller
             'superadmin.logs.activity.edit' => 'Edit Log Aktivitas',
             'superadmin.logs.activity.show' => 'Lihat Log Aktivitas',
             'superadmin.logs.index' => 'Halaman Log',
-            'api.wilayah.provinces' => 'API Provinsi',
-            'api.wilayah.cities' => 'API Kota',
-            'api.wilayah.sub-districts' => 'API Kecamatan',
-            'api.wilayah.villages' => 'API Kelurahan/Desa',
             'areas' => 'Halaman Kawasan',
             'areas.create' => 'Tambah Kawasan',
             'areas.edit' => 'Edit Kawasan',
             'areas.show' => 'Lihat Kawasan',
             'areas.syncAllStatus' => 'Sinkron Semua Status Kawasan',
             'areas.households' => 'Rumah Berdasarkan Kawasan',
-
-            // settings route
-            'appearance.edit' => 'Edit Tampilan',
         ];
 
         if (isset($custom[$routeName])) {
@@ -90,15 +84,29 @@ class LevelController extends Controller
     private function groupPermissions() {
         $permissions = Permission::orderBy('name')->get();
 
+        $customGroup = [
+            'dashboard' => 'Dashboard',
+            'areas' => 'Kawasan',
+            'distribution-map' => 'Peta Sebaran',
+            'households' => 'Rumah',
+            'infrastructure' => 'Infrastruktur',
+            'messages' => 'Pesan',
+            'reports' => 'Laporan',
+            'superadmin' => 'Superadmin Log',
+            'users' => 'Pengguna',
+        ];
+
         $grouped = [];
 
         foreach ($permissions as $permission) {
             $parts = explode('.', $permission->name);
             $group = $parts[0];
 
+            $groupLabel = $customGroup[$group] ?? ucwords(str_replace(['-', '_'], ' ', $group));
+
             if (!isset($grouped[$group])) {
                 $grouped[$group] = [
-                    'group_name' => ucwords(str_replace(['-', '_'], ' ', $group)),
+                    'group_name' => $groupLabel,
                     'children' => [],
                 ];
             }
