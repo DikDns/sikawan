@@ -28,6 +28,26 @@ php artisan view:cache
 # Run migrations
 php artisan migrate --force
 
+# Seed essential data on first run only (permissions, roles, superadmin)
+if [ ! -f /var/www/html/storage/.seeded ]; then
+    echo "First run detected. Seeding essential data..."
+    php artisan db:seed --class=PermissionsFromRoutesSeeder --force
+    php artisan db:seed --class=RoleSeeder --force
+
+    # Create superadmin user via tinker
+    php artisan tinker --execute="
+        \$user = \\App\\Models\\User::firstOrCreate(
+            ['email' => 'superadmin@sikawan.com'],
+            ['name' => 'Super Admin', 'password' => bcrypt('password'), 'email_verified_at' => now()]
+        );
+        \$user->assignRole('superadmin');
+        echo 'Superadmin user created/verified.';
+    "
+
+    touch /var/www/html/storage/.seeded
+    echo "Essential data seeded successfully!"
+fi
+
 # Optimize
 php artisan optimize
 
