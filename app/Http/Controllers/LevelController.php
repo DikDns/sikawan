@@ -9,6 +9,84 @@ use Spatie\Permission\Models\Permission;
 
 class LevelController extends Controller
 {
+    private function formatLabel(string $routeName): string {
+        $custom = [
+            'dashboard' => 'Halaman Dashboard',
+            'distribution-map' => 'Halaman Peta Sebaran',
+            'infrastructure' => 'Halaman infrastructure',
+            'households.index' => 'Halaman Data Rumah',
+            'households.create' => 'Buat Data Rumah',
+            'households.draft.get' => 'Ambil Data Draft Rumah',
+            'households.show' => 'Lihat Data Rumah',
+            'households.edit' => 'Edit Data Rumah',
+            'levels' => 'Halaman Level',
+            'levels.create' => 'Tambah Level',
+            'levels.update' => 'Edit Level',
+            'levels.show' => 'Lihat Level',
+            'levels.destroy' => 'Hapus Level',
+            'messages' => 'Halaman Pesan',
+            'messages.show' => 'Lihat Pesan',
+            'messages.destroy' => 'Hapus Pesan',
+            'reports' => 'Halaman Laporan',
+            'reports.download' => 'Download Laporan',
+            'reports.store' => 'Tambah laporan',
+            'reports.update' => 'Edit Laporan',
+            'reports.destroy' => 'Hapus Laporan',
+            'users' => 'Halaman Pengguna',
+            'users.create' => 'Tambah Pengguna',
+            'users.show' => 'Lihat Data Pengguna',
+            'users.edit' => 'Edit Data Pengguna',
+            'users.destroy' => 'Hapus Data Pengguna',
+            'superadmin.logs.activity.create' => 'Membuat Log Aktivitas',
+            'superadmin.logs.activity.index' => 'Halaman Log Aktivitas',
+            'superadmin.logs.activity.edit' => 'Edit Log Aktivitas',
+            'superadmin.logs.activity.show' => 'Lihat Log Aktivitas',
+            'superadmin.logs.index' => 'Halaman Log',
+            'api.wilayah.provinces' => 'API Provinsi',
+            'api.wilayah.cities' => 'API Kota',
+            'api.wilayah.sub-districts' => 'API Kecamatan',
+            'api.wilayah.villages' => 'API Kelurahan/Desa',
+            'areas' => 'Halaman Kawasan',
+            'areas.create' => 'Tambah Kawasan',
+            'areas.edit' => 'Edit Kawasan',
+            'areas.show' => 'Lihat Kawasan',
+            'areas.syncAllStatus' => 'Sinkron Semua Status Kawasan',
+            'areas.households' => 'Rumah Berdasarkan Kawasan',
+
+            // settings route
+            'appearance.edit' => 'Edit Tampilan',
+        ];
+
+        if (isset($custom[$routeName])) {
+            return $custom[$routeName];
+        }
+
+        $parts = explode('.', $routeName);
+        $count = count($parts);
+
+        $last = $parts[$count - 1];
+        $resources = array_slice($parts, 0, $count - 1);
+
+        $actionMap = [
+            'index'   => 'Halaman',
+            'create'  => 'Tambah',
+            'store'   => 'Simpan',
+            'edit'    => 'Edit',
+            'update'  => 'Perbarui',
+            'destroy' => 'Hapus',
+            'delete'  => 'Hapus',
+            'show'    => 'Lihat',
+        ];
+
+        $actionLabel = $actionMap[$last] ?? ucfirst($last);
+
+        $resourceLabel = implode(' ', array_map(function ($item) {
+            return ucfirst(str_replace(['-', '_'], ' ', $item));
+        }, $resources));
+
+        return "{$actionLabel} {$resourceLabel}";
+    }
+
     private function groupPermissions() {
         $permissions = Permission::orderBy('name')->get();
 
@@ -28,7 +106,7 @@ class LevelController extends Controller
             $grouped[$group]['children'][] = [
                 'id' => $permission->id,
                 'name' => $permission->name,
-                'label' => str_replace('.', ' → ', $permission->name),
+                'label' => $this->formatLabel($permission->name),
             ];
         }
 

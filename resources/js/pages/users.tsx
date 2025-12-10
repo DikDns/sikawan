@@ -94,9 +94,6 @@ export default function Users() {
     const { flash, users } = usePage<{ flash?: any; users: User[] }>().props;
     const hasShownToast = React.useRef(false);
 
-    const { props } = usePage<PageProps>();
-    const { auth } = props;
-    const user = auth.user;
     const can = useCan();
 
     useEffect(() => {
@@ -375,9 +372,9 @@ export default function Users() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                {can('users.view') ||
+                                                {can('users.show') ||
                                                 can('users.edit') ||
-                                                can('users.delete') ? (
+                                                can('users.destroy') ? (
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger
                                                             asChild
@@ -399,7 +396,7 @@ export default function Users() {
                                                             </DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
                                                             {can(
-                                                                'users.view',
+                                                                'users.show',
                                                             ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
@@ -430,7 +427,7 @@ export default function Users() {
                                                             )}
                                                             <DropdownMenuSeparator />
                                                             {can(
-                                                                'users.delete',
+                                                                'users.destroy',
                                                             ) && (
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
@@ -491,56 +488,71 @@ export default function Users() {
                                                     userId={dialog.id}
                                                 />
                                             )}
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <MoreVertical className="h-4 w-4" />
-                                                        <span className="sr-only">
-                                                            Open menu
-                                                        </span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>
-                                                        Aksi
-                                                    </DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleView(user.id)
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        Lihat Detail
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleEdit(user.id)
-                                                        }
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                user.id,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Hapus
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            {can('users.show') ||
+                                            can('users.edit') ||
+                                            can('users.destroy') ? (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                        >
+                                                            <MoreVertical className="h-4 w-4" />
+                                                            <span className="sr-only">
+                                                                Open menu
+                                                            </span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>
+                                                            Aksi
+                                                        </DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        {can('users.show') && (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleView(user.id)
+                                                                }
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <Eye className="mr-2 h-4 w-4" />
+                                                                Lihat Detail
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {can('users.edit') && (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleEdit(user.id)
+                                                                }
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <Edit className="mr-2 h-4 w-4" />
+                                                                Edit
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        <DropdownMenuSeparator />
+                                                        {can('users.destroy') && (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        user.id,
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer text-destructive focus:text-destructive"
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Hapus
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            ) : (
+                                                    <span className="text-sm text-muted-foreground">
+                                                        -
+                                                    </span>
+                                                )
+                                            }
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
