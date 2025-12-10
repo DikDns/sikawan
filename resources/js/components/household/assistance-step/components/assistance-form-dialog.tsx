@@ -350,7 +350,7 @@ export function AssistanceFormDialog({
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    accept=".pdf,.doc,.docx"
                                     onChange={handleFileChange}
                                     className="hidden"
                                 />
@@ -387,7 +387,7 @@ export function AssistanceFormDialog({
                                     </p>
                                 )}
                                 <p className="text-xs text-muted-foreground">
-                                    Format: PDF, JPG, PNG (Maks. 5MB)
+                                    Format: PDF, DOC, DOCX (Maks. 5MB)
                                 </p>
                             </div>
                         </div>

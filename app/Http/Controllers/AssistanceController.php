@@ -51,7 +51,7 @@ class AssistanceController extends Controller
             'completed_at' => 'nullable|date',
             'cost_amount_idr' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
-            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB max
+            'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120', // 5MB max
         ]);
 
         // Handle document upload
@@ -101,7 +101,7 @@ class AssistanceController extends Controller
             'completed_at' => 'nullable|date',
             'cost_amount_idr' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
-            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
 
         // Handle document upload
