@@ -29,4 +29,9 @@ class Infrastructure extends Model
   {
     return $this->belongsTo(InfrastructureGroup::class, 'infrastructure_group_id');
   }
+
+  public function assistances(): HasMany
+  {
+    return $this->hasMany(InfrastructureAssistance::class);
+  }
 }

@@ -2,26 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Household\Assistance;
-use App\Models\Household\Household;
+use App\Models\Infrastructure;
+use App\Models\InfrastructureAssistance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class AssistanceController extends Controller
+class InfrastructureAssistanceController extends Controller
 {
     /**
-     * Get all assistances for a household
+     * Get all assistances for an infrastructure item
      */
-    public function index(Request $request, $householdId)
+    public function index(Request $request, $infrastructureId)
     {
-        $user = $request->user();
+        $infrastructure = Infrastructure::findOrFail($infrastructureId);
 
-        // Verify household belongs to user
-        $household = Household::where('id', $householdId)
-            ->where('created_by', $user->id)
-            ->firstOrFail();
-
-        $assistances = $household->assistances()
+        $assistances = $infrastructure->assistances()
             ->orderBy('started_at', 'desc')
             ->get();
 
@@ -31,16 +26,11 @@ class AssistanceController extends Controller
     }
 
     /**
-     * Store a new assistance
+     * Store a new assistance for an infrastructure item
      */
-    public function store(Request $request, $householdId)
+    public function store(Request $request, $infrastructureId)
     {
-        $user = $request->user();
-
-        // Verify household belongs to user
-        $household = Household::where('id', $householdId)
-            ->where('created_by', $user->id)
-            ->firstOrFail();
+        $infrastructure = Infrastructure::findOrFail($infrastructureId);
 
         $validated = $request->validate([
             'assistance_type' => 'required|string|in:RELOKASI,REHABILITASI,BSPS,LAINNYA',
@@ -51,16 +41,16 @@ class AssistanceController extends Controller
             'completed_at' => 'nullable|date',
             'cost_amount_idr' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
-            'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120', // 5MB max
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB max
         ]);
 
         // Handle document upload
         $documentPath = null;
         if ($request->hasFile('document')) {
-            $documentPath = $request->file('document')->store('assistance-documents', 'public');
+            $documentPath = $request->file('document')->store('infrastructure-assistance-documents', 'public');
         }
 
-        $assistance = $household->assistances()->create([
+        $assistance = $infrastructure->assistances()->create([
             'assistance_type' => $validated['assistance_type'],
             'program' => $validated['program'] ?? null,
             'funding_source' => $validated['funding_source'] ?? null,
@@ -74,23 +64,17 @@ class AssistanceController extends Controller
 
         return response()->json([
             'assistance' => $assistance,
-            'message' => 'Bantuan berhasil ditambahkan',
+            'message' => 'Riwayat perbaikan berhasil ditambahkan',
         ], 201);
     }
 
     /**
      * Update an assistance
      */
-    public function update(Request $request, $householdId, $assistanceId)
+    public function update(Request $request, $infrastructureId, $assistanceId)
     {
-        $user = $request->user();
-
-        // Verify household belongs to user
-        $household = Household::where('id', $householdId)
-            ->where('created_by', $user->id)
-            ->firstOrFail();
-
-        $assistance = $household->assistances()->findOrFail($assistanceId);
+        $infrastructure = Infrastructure::findOrFail($infrastructureId);
+        $assistance = $infrastructure->assistances()->findOrFail($assistanceId);
 
         $validated = $request->validate([
             'assistance_type' => 'required|string|in:RELOKASI,REHABILITASI,BSPS,LAINNYA',
@@ -101,7 +85,7 @@ class AssistanceController extends Controller
             'completed_at' => 'nullable|date',
             'cost_amount_idr' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
-            'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         // Handle document upload
@@ -110,7 +94,7 @@ class AssistanceController extends Controller
             if ($assistance->document_path && Storage::disk('public')->exists($assistance->document_path)) {
                 Storage::disk('public')->delete($assistance->document_path);
             }
-            $validated['document_path'] = $request->file('document')->store('assistance-documents', 'public');
+            $validated['document_path'] = $request->file('document')->store('infrastructure-assistance-documents', 'public');
         }
 
         $assistance->update([
@@ -127,51 +111,17 @@ class AssistanceController extends Controller
 
         return response()->json([
             'assistance' => $assistance->fresh(),
-            'message' => 'Bantuan berhasil diperbarui',
-        ]);
-    }
-
-    /**
-     * Update only the status of an assistance
-     */
-    public function updateStatus(Request $request, $householdId, $assistanceId)
-    {
-        $user = $request->user();
-
-        // Verify household belongs to user
-        $household = Household::where('id', $householdId)
-            ->where('created_by', $user->id)
-            ->firstOrFail();
-
-        $assistance = $household->assistances()->findOrFail($assistanceId);
-
-        $validated = $request->validate([
-            'status' => 'required|string|in:SELESAI,PROSES,DIBATALKAN',
-        ]);
-
-        $assistance->update([
-            'status' => $validated['status'],
-        ]);
-
-        return response()->json([
-            'assistance' => $assistance->fresh(),
-            'message' => 'Status bantuan berhasil diperbarui',
+            'message' => 'Riwayat perbaikan berhasil diperbarui',
         ]);
     }
 
     /**
      * Delete an assistance
      */
-    public function destroy(Request $request, $householdId, $assistanceId)
+    public function destroy(Request $request, $infrastructureId, $assistanceId)
     {
-        $user = $request->user();
-
-        // Verify household belongs to user
-        $household = Household::where('id', $householdId)
-            ->where('created_by', $user->id)
-            ->firstOrFail();
-
-        $assistance = $household->assistances()->findOrFail($assistanceId);
+        $infrastructure = Infrastructure::findOrFail($infrastructureId);
+        $assistance = $infrastructure->assistances()->findOrFail($assistanceId);
 
         // Delete document if exists
         if ($assistance->document_path && Storage::disk('public')->exists($assistance->document_path)) {
@@ -181,7 +131,7 @@ class AssistanceController extends Controller
         $assistance->delete();
 
         return response()->json([
-            'message' => 'Bantuan berhasil dihapus',
+            'message' => 'Riwayat perbaikan berhasil dihapus',
         ]);
     }
 }

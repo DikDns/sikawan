@@ -165,7 +165,20 @@ class HouseholdSeeder extends Seeder
                 'konstruksi-bangunan',
             ];
 
-            $incomeOptions = [1, 2, 3, 4];
+            // Actual income values in Rupiah (random between 500K - 10M)
+            $incomeOptions = [
+                500000,   // 500K
+                1000000,  // 1M
+                1500000,  // 1.5M
+                2000000,  // 2M
+                2500000,  // 2.5M
+                3000000,  // 3M
+                3500000,  // 3.5M
+                4000000,  // 4M
+                5000000,  // 5M
+                7500000,  // 7.5M
+                10000000, // 10M
+            ];
 
             $streets = [
                 'Jl. Merdeka', 'Jl. Sudirman', 'Jl. Gatot Subroto', 'Jl. Ahmad Yani',

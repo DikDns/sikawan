@@ -103,6 +103,7 @@ class AreaController extends Controller
         return [
           'id' => $h->id,
           'head_name' => $h->head_name,
+          'nik' => $h->nik,
           'address_text' => $h->address_text,
           'latitude' => (float) $h->latitude,
           'longitude' => (float) $h->longitude,

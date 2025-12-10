@@ -23,10 +23,21 @@ import {
     WATER_FULFILLMENT_OPTIONS,
 } from '@/components/household/technical-data-step/constants';
 
-export const formatIncome = (value: string | null): string => {
-    if (!value) return '-';
+export const formatIncome = (value: string | number | null): string => {
+    if (value === null || value === undefined || value === '') return '-';
+
+    // Handle numeric values (new format)
+    if (typeof value === 'number' || !isNaN(Number(value))) {
+        const numValue = Number(value);
+        if (numValue > 0) {
+            return formatCurrency(numValue);
+        }
+        return '-';
+    }
+
+    // Handle legacy string values (old format)
     const option = INCOME_OPTIONS.find((opt) => opt.value === value);
-    return option?.label || value;
+    return option?.label || String(value);
 };
 
 export const formatCurrency = (value: number | null): string => {

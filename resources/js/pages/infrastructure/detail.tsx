@@ -10,12 +10,14 @@ import {
     InfrastructureMapDisplay,
     type InfrastructureFeatureGeometry,
 } from '@/components/infrastructure/infrastructure-map-display';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import AppLayout from '@/layouts/app-layout';
 import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -42,7 +44,6 @@ interface Props {
 }
 
 export default function InfrastructureDetail({ group, items }: Props) {
-    const [selectedId, setSelectedId] = useState<number | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingItem, setEditingItem] =
         useState<InfrastructureItemForm | null>(null);
@@ -268,19 +269,26 @@ export default function InfrastructureDetail({ group, items }: Props) {
 
                 <div className="min-h-0 flex-1 gap-4 md:flex md:flex-row md:items-stretch">
                     <Card className="md:h-[calc(100%-196px)] md:w-1/3">
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
                             <CardTitle>
                                 Daftar Fitur ({itemsState.length})
                             </CardTitle>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                    setEditingItem(null);
+                                    setIsDialogOpen(true);
+                                }}
+                            >
+                                <Plus className="mr-1 size-4" />
+                                Tambah
+                            </Button>
                         </CardHeader>
                         <CardContent className="h-full">
                             <ScrollArea className="h-[calc(100%-80px)]">
                                 <InfrastructureFeatureList
                                     items={itemsState}
-                                    selectedItemId={selectedId}
-                                    onItemSelect={(item) =>
-                                        setSelectedId(item.id)
-                                    }
                                     onItemEdit={handleItemEditDetail}
                                     className="h-full"
                                 />
@@ -319,6 +327,7 @@ export default function InfrastructureDetail({ group, items }: Props) {
                     if (!open) setEditingItem(null);
                 }}
                 groupId={group.id}
+                groupType={group.type}
                 item={editingItem}
                 onSuccess={handleFormSuccess}
             />

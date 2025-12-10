@@ -6,14 +6,25 @@ import { useWilayah } from '@/hooks/use-wilayah';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GeneralInfoData, GeneralInfoDataSerialized } from './types';
 
+// Default location: Sumatera Selatan > Muara Enim (auto-filled)
+const DEFAULT_PROVINCE_ID = '16';
+const DEFAULT_PROVINCE_NAME = 'SUMATERA SELATAN';
+const DEFAULT_REGENCY_ID = '1603';
+const DEFAULT_REGENCY_NAME = 'KAB. MUARA ENIM';
+
 export function useGeneralInfoForm(
     initialData: GeneralInfoData = {},
     onChange?: (data: GeneralInfoDataSerialized) => void,
 ) {
-    // Normalize initial data
+    // Normalize initial data with default province/regency
     const normalizedData = useMemo(
         () => ({
             ...initialData,
+            // Auto-fill province and regency if not already set
+            provinceId: initialData.provinceId || DEFAULT_PROVINCE_ID,
+            provinceName: initialData.provinceName || DEFAULT_PROVINCE_NAME,
+            regencyId: initialData.regencyId || DEFAULT_REGENCY_ID,
+            regencyName: initialData.regencyName || DEFAULT_REGENCY_NAME,
             dataCollectionDate:
                 initialData.dataCollectionDate instanceof Date
                     ? initialData.dataCollectionDate

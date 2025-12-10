@@ -24,8 +24,6 @@ export default function GeneralInfoStep({
         wilayah,
         totalMembers,
         updateField,
-        handleProvinceChange,
-        handleRegencyChange,
         handleDistrictChange,
         handleVillageChange,
         getDatePickerValue,
@@ -37,8 +35,6 @@ export default function GeneralInfoStep({
                 formData={formData}
                 wilayah={wilayah}
                 updateField={updateField}
-                handleProvinceChange={handleProvinceChange}
-                handleRegencyChange={handleRegencyChange}
                 handleDistrictChange={handleDistrictChange}
                 handleVillageChange={handleVillageChange}
                 getDatePickerValue={getDatePickerValue}

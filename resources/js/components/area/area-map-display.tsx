@@ -96,6 +96,16 @@ export function AreaMapDisplay({
         return [avgLat, avgLng] as LatLngExpression;
     }, [features, center]);
 
+    // Cleanup manually drawn layers when features update (sync from backend)
+    useEffect(() => {
+        // Remove all client-side drawn layers that were tracked to prevent duplicates
+        // when the server returns the saved feature
+        Object.values(createdLayersRef.current).forEach((layer) => {
+            drawLayersRef.current?.removeLayer(layer);
+        });
+        createdLayersRef.current = {};
+    }, [features]);
+
     // Parse geometry JSON and render polygons
     const polygons = useMemo(() => {
         return features
@@ -464,12 +474,10 @@ export function AreaMapDisplay({
                     if (typeof id !== 'number' || id <= 0) return;
 
                     let geometry: Record<string, unknown> | null = null;
-                    if (
-                        'getBounds' in layer &&
-                        typeof (layer as { getBounds?: () => L.LatLngBounds })
-                            .getBounds === 'function'
-                    ) {
-                        const bounds = (layer as any).getBounds();
+
+                    // Check specifically for Rectangle first (not just getBounds, since Polygon also has it)
+                    if (layer instanceof L.Rectangle) {
+                        const bounds = layer.getBounds();
                         geometry = {
                             type: 'Polygon',
                             coordinates: [
@@ -482,9 +490,10 @@ export function AreaMapDisplay({
                                 ],
                             ],
                         };
-                    } else if ((layer as any).getLatLngs) {
+                    } else if ((layer as L.Polygon).getLatLngs) {
+                        // For Polygon (including edited rectangles that became polygons)
                         const latlngs = (
-                            layer as any
+                            layer as L.Polygon
                         ).getLatLngs() as L.LatLng[][];
                         geometry = {
                             type: 'Polygon',

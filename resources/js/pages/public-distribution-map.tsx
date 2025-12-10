@@ -334,8 +334,8 @@ export default function PublicDistributionMap() {
             </header>
             <div className="relative h-[calc(100vh-64px)] w-full pt-16">
                 <Map
-                    center={[-4.2327, 103.6141]}
-                    zoom={13}
+                    center={[-3.6632234, 103.7781606]}
+                    zoom={15}
                     className="h-full w-full"
                 >
                     <MapTileLayer name="OSM" />

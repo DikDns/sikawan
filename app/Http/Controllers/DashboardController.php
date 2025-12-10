@@ -92,21 +92,18 @@ class DashboardController extends Controller
       if ($economicYear) {
         $economicQuery->whereRaw('strftime("%Y", created_at) = ?', [$economicYear]);
       }
-      // Income is stored as category index: 1=<1jt, 2=1-3jt, 3=3-5jt, 4=>5jt
-      // Calculate mode (most common income category) instead of meaningless average
-      $incomeLabels = [
-        1 => '< 1 Juta',
-        2 => '1-3 Juta',
-        3 => '3-5 Juta',
-        4 => '> 5 Juta',
-      ];
-      $incomeCounts = (clone $economicQuery)
+
+      // Calculate average income (now stored as actual rupiah values)
+      $avgIncome = (clone $economicQuery)
         ->whereNotNull('monthly_income_idr')
-        ->selectRaw('monthly_income_idr, count(*) as cnt')
-        ->groupBy('monthly_income_idr')
-        ->orderByDesc('cnt')
-        ->first();
-      $avgIncomeStr = $incomeCounts ? ($incomeLabels[$incomeCounts->monthly_income_idr] ?? '-') : '-';
+        ->where('monthly_income_idr', '>', 0)
+        ->avg('monthly_income_idr');
+
+      // Format average income as currency
+      $avgIncomeStr = $avgIncome
+        ? 'Rp ' . number_format((int) $avgIncome, 0, ',', '.')
+        : '-';
+
       $totalHouseholdsEco = (int) (clone $economicQuery)->count();
       $educationAccessCount = (int) (clone $economicQuery)->whereNotNull('education_facility_location')->count();
       $healthAccessCount = (int) (clone $economicQuery)->whereNotNull('health_facility_used')->count();
@@ -123,7 +120,7 @@ class DashboardController extends Controller
         ->toArray();
 
       $economicData = [
-        ['indicator' => 'Pendapatan mayoritas', 'value' => $avgIncomeStr],
+        ['indicator' => 'Pendapatan Rata-rata', 'value' => $avgIncomeStr],
         ['indicator' => 'Akses Pendidikan Dasar', 'value' => $educationAccessPct],
         ['indicator' => 'Akses Kesehatan', 'value' => $healthAccessPct],
       ];

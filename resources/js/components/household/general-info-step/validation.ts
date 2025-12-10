@@ -57,8 +57,7 @@ export function validateGeneralInfo(data: GeneralInfoData): ValidationResult {
         errors.nik = 'NIK harus diisi';
     } else {
         // Validate NIK format: 16 digits with specific pattern
-        const nikPattern =
-            /^(1[1-9]|21|[37][1-6]|5[1-3]|6[1-5]|[89][12])\d{2}\d{2}([04][1-9]|[1256][0-9]|[37][01])(0[1-9]|1[0-2])\d{2}\d{4}$/;
+        const nikPattern = /^\d{16}$/;
         const nikCleaned = data.nik.replace(/\s/g, ''); // Remove spaces
 
         if (nikCleaned.length !== 16) {

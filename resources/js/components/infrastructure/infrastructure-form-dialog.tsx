@@ -8,6 +8,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { GeometryEditor } from '@/components/ui/geometry-editor';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -21,6 +22,7 @@ import { csrfFetch, handleCsrfError } from '@/lib/csrf';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { InfrastructureAssistanceSection } from './infrastructure-assistance-card';
 
 export interface InfrastructureItemForm {
     id?: number;
@@ -35,6 +37,7 @@ export interface InfrastructureFormDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     groupId: number;
+    groupType?: 'Marker' | 'Polyline' | 'Polygon';
     item?: InfrastructureItemForm | null;
     onSuccess: () => void;
 }
@@ -43,6 +46,7 @@ export function InfrastructureFormDialog({
     open,
     onOpenChange,
     groupId,
+    groupType,
     item,
     onSuccess,
 }: InfrastructureFormDialogProps) {
@@ -82,6 +86,39 @@ export function InfrastructureFormDialog({
             });
         }
     }, [item, open]);
+
+    const handleDelete = async () => {
+        if (!item?.id) return;
+
+        if (!confirm('Apakah Anda yakin ingin menghapus PSU ini?')) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await csrfFetch(
+                `/infrastructure-groups/${groupId}/items/${item.id}`,
+                {
+                    method: 'DELETE',
+                },
+            );
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                const msg = handleCsrfError(response, data);
+                toast.error(`Gagal menghapus PSU: ${msg}`);
+                return;
+            }
+
+            toast.success('PSU berhasil dihapus');
+            onSuccess();
+            window.location.reload();
+        } catch {
+            toast.error('Gagal menghapus PSU: Terjadi kesalahan jaringan');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -218,6 +255,65 @@ export function InfrastructureFormDialog({
                                 </SelectContent>
                             </Select>
                         </Field>
+
+                        <Field>
+                            <GeometryEditor
+                                geometryJson={formData.geometry_json}
+                                geometryType={
+                                    formData.geometry_type ||
+                                    (groupType === 'Marker'
+                                        ? 'Point'
+                                        : groupType === 'Polyline'
+                                          ? 'LineString'
+                                          : groupType === 'Polygon'
+                                            ? 'Polygon'
+                                            : undefined)
+                                }
+                                onGeometryChange={(
+                                    geometry: unknown,
+                                    geoType?: string,
+                                ) =>
+                                    setFormData({
+                                        ...formData,
+                                        geometry_json: geometry,
+                                        geometry_type: (geoType === 'Point'
+                                            ? 'Point'
+                                            : geoType === 'LineString'
+                                              ? 'LineString'
+                                              : geoType === 'Polygon'
+                                                ? 'Polygon'
+                                                : undefined) as
+                                            | 'Point'
+                                            | 'LineString'
+                                            | 'Polygon',
+                                    })
+                                }
+                            />
+                            {/* Geometry Guidance */}
+                            <div className="text-xs text-muted-foreground">
+                                <p className="font-medium">Panduan Geometri:</p>
+                                <ul className="list-inside list-disc">
+                                    {groupType === 'Marker' && (
+                                        <li>
+                                            Marker membutuhkan minimal 1 titik
+                                            koordinat.
+                                        </li>
+                                    )}
+                                    {groupType === 'Polyline' && (
+                                        <li>
+                                            Garis membutuhkan minimal 2 titik
+                                            koordinat.
+                                        </li>
+                                    )}
+                                    {groupType === 'Polygon' && (
+                                        <li>
+                                            Poligon membutuhkan minimal 3 titik
+                                            koordinat.
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>
+                        </Field>
                     </div>
 
                     <DialogFooter>
@@ -229,14 +325,37 @@ export function InfrastructureFormDialog({
                         >
                             Batal
                         </Button>
+                        {item?.id && (
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={isSubmitting}
+                            >
+                                Hapus
+                            </Button>
+                        )}
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Menyimpan...
+                                </>
+                            ) : item ? (
+                                'Simpan Perubahan'
+                            ) : (
+                                'Tambah PSU'
                             )}
-                            {item ? 'Simpan Perubahan' : 'Tambah PSU'}
                         </Button>
                     </DialogFooter>
                 </form>
+
+                {/* Show assistance section only when editing existing item */}
+                {item?.id && (
+                    <InfrastructureAssistanceSection
+                        infrastructureId={item.id}
+                    />
+                )}
             </DialogContent>
         </Dialog>
     );

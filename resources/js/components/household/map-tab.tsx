@@ -7,6 +7,11 @@ interface Household {
     address_text: string;
     latitude: number | null;
     longitude: number | null;
+    province_name?: string | null;
+    regency_name?: string | null;
+    district_name?: string | null;
+    village_name?: string | null;
+    habitability_status?: string | null;
 }
 
 const MapComponent = lazy(() => import('./map-component'));
@@ -38,6 +43,11 @@ export default function HouseholdMapTab({
                         longitude={household.longitude}
                         householdName={household.head_name}
                         address={household.address_text}
+                        provinceName={household.province_name}
+                        regencyName={household.regency_name}
+                        districtName={household.district_name}
+                        villageName={household.village_name}
+                        habitabilityStatus={household.habitability_status}
                     />
                 </Suspense>
             ) : (

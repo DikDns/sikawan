@@ -8,6 +8,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { GeometryEditor } from '@/components/ui/geometry-editor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
@@ -75,10 +76,11 @@ export function AreaFormDialog({
             : {
                   name: '',
                   description: '',
-                  province_id: '',
-                  province_name: '',
-                  regency_id: '',
-                  regency_name: '',
+                  // Auto-fill defaults for Muara Enim
+                  province_id: '16',
+                  province_name: 'SUMATERA SELATAN',
+                  regency_id: '1603',
+                  regency_name: 'KAB. MUARA ENIM',
                   district_id: '',
                   district_name: '',
                   village_id: '',
@@ -219,6 +221,36 @@ export function AreaFormDialog({
         },
         [wilayah.villages],
     );
+
+    const handleDelete = async () => {
+        if (!area?.id) return;
+
+        if (!confirm('Apakah Anda yakin ingin menghapus kawasan ini?')) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await csrfFetch(`/areas/${area.id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                const msg = handleCsrfError(response, data);
+                toast.error(`Gagal menghapus kawasan: ${msg}`);
+                return;
+            }
+
+            toast.success('Kawasan berhasil dihapus');
+            onSuccess();
+            window.location.reload(); // Reload page to reflect changes
+        } catch {
+            toast.error('Gagal menghapus kawasan: Terjadi kesalahan jaringan');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -501,6 +533,17 @@ export function AreaFormDialog({
                                 />
                             </Field>
                         </div>
+
+                        <GeometryEditor
+                            geometryJson={formData.geometry_json}
+                            onGeometryChange={(geometry: unknown) =>
+                                setFormData({
+                                    ...formData,
+                                    geometry_json:
+                                        geometry as typeof formData.geometry_json,
+                                })
+                            }
+                        />
                     </div>
 
                     <DialogFooter>
@@ -512,11 +555,27 @@ export function AreaFormDialog({
                         >
                             Batal
                         </Button>
+                        {area?.id && (
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={isSubmitting}
+                            >
+                                Hapus
+                            </Button>
+                        )}
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Menyimpan...
+                                </>
+                            ) : area ? (
+                                'Simpan Perubahan'
+                            ) : (
+                                'Tambah Kawasan'
                             )}
-                            {area ? 'Simpan Perubahan' : 'Tambah Kawasan'}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -9,11 +9,13 @@ services:
       - ./data/database.sqlite:/var/www/html/database/database.sqlite
       - ./data/storage:/var/www/html/storage
     environment:
+      - APP_NAME="SIHUMA"
       - APP_ENV=production
       - APP_DEBUG=false
       - APP_URL=https://sihuma.rplupiproject.com
       - DB_CONNECTION=sqlite
       - DB_DATABASE=/var/www/html/database/database.sqlite
+      - VITE_APP_NAME="${APP_NAME}"
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost/']
       interval: 30s
