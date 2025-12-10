@@ -118,7 +118,7 @@ jobs:
             cat > docker-compose.yml << 'COMPOSE_EOF'
             services:
               app:
-                image: ghcr.io/${{ github.repository }}:latest
+                image: ghcr.io/dikdns/sikawan:latest
                 container_name: sikawan-app
                 restart: unless-stopped
                 ports:
