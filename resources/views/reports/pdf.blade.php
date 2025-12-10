@@ -132,7 +132,7 @@
                     <tr>
                         <td>{{ $i->name }}</td>
                         <td>{{ $i->category }}</td>
-                        <td>{{ $i->jenis }}</td>
+                        <td>{{ $i->type }}</td>
                         <td>{{ $i->infrastructure_count }}</td>
                     </tr>
                 @endforeach

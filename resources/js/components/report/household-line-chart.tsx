@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, forwardRef } from "react";
+import { useMemo, useState, forwardRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     LineChart,
@@ -26,12 +26,30 @@ interface Household {
     habitability_status: string | null;
 }
 
-const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(function HouseholdLineChart({ houses }, ref) {
+const HouseholdLineChart = forwardRef<HTMLDivElement, {
+    houses: Household[],
+    startDate?: string | null,
+    endDate?: string | null
+}>(
+    function HouseholdLineChart({ houses }, ref)
+{
     const today = dayjs().endOf('day');
     const defaultEnd = today;
     const defaultStart = today.subtract(10, "day").startOf('day');
     const [startDate, setStartDate] = useState(defaultStart);
     const [endDate, setEndDate] = useState(defaultEnd);
+
+    const [localStart, setLocalStart] = useState(
+        startDate ? dayjs(startDate).startOf("day") : defaultStart
+    );
+    const [localEnd, setLocalEnd] = useState(
+        endDate ? dayjs(endDate).endOf("day") : defaultEnd
+    );
+
+    useEffect(() => {
+        if (startDate) setLocalStart(dayjs(startDate).startOf("day"));
+        if (endDate) setLocalEnd(dayjs(endDate).endOf("day"));
+    }, [startDate, endDate]);
 
     const generateDateRange = (start: dayjs.Dayjs, end: dayjs.Dayjs) => {
         const dates: string[] = [];
@@ -45,7 +63,7 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(f
     };
 
     const chartData = useMemo(() => {
-        const range = generateDateRange(startDate, endDate);
+        const range = generateDateRange(localStart, localEnd);
         const grouped: Record<string, number> = {};
 
         range.forEach((d) => (grouped[d] = 0));
@@ -54,7 +72,7 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(f
             const d = dayjs(h.created_at);
             if (!d.isValid()) return;
 
-            if (d.isBefore(startDate) || d.isAfter(endDate)) return;
+            if (d.isBefore(localStart) || d.isAfter(localEnd)) return;
 
             const key = d.format("YYYY-MM-DD");
             grouped[key] = (grouped[key] || 0) + 1;
@@ -64,21 +82,7 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(f
             date: dayjs(date).format("DD MMM"),
             total: grouped[date] ?? 0,
         }));
-    }, [houses, startDate, endDate]);
-
-    const handleStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = dayjs(e.target.value).startOf("day");
-        if (value.isAfter(endDate)) return;
-        if (value.isAfter(today)) return;
-        setStartDate(value);
-    };
-
-    const handleEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = dayjs(e.target.value).endOf("day");
-        if (value.isBefore(startDate)) return;
-        if (value.isAfter(today.endOf("day"))) return;
-        setEndDate(value);
-    };
+    }, [houses, localStart, localEnd]);
 
     return (
         <Card className="w-full" ref={ref}>
@@ -88,9 +92,16 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(f
                     <div className="flex items-center gap-2">
                         <input
                             type="date"
-                            value={startDate.format("YYYY-MM-DD")}
+                            value={localStart.format("YYYY-MM-DD")}
                             max={today.format("YYYY-MM-DD")}
-                            onChange={handleStartChange}
+                            onChange={(e) => {
+                                const v = dayjs(e.target.value).startOf("day");
+                                    if (!v.isValid()) return;
+                                    if (localEnd && v.isAfter(localEnd)) return;
+                                    if (v.isAfter(today)) return;
+
+                                    setStartDate(v);
+                                }}
                             className="border rounded px-2 py-1 text-sm"
                         />
                     </div>
@@ -100,15 +111,22 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, { houses: Household[] }>(f
                     <div className="flex items-center gap-2">
                         <input
                             type="date"
-                            value={endDate.format("YYYY-MM-DD")}
+                            value={localEnd.format("YYYY-MM-DD")}
                             max={today.format("YYYY-MM-DD")}
-                            min={startDate.format("YYYY-MM-DD")}
-                            onChange={handleEndChange}
+                            min={localStart.format("YYYY-MM-DD")}
+                            onChange={(e) => {
+                                const v = dayjs(e.target.value).endOf("day");
+                                    if (!v.isValid()) return;
+                                    if (localStart && v.isBefore(localStart)) return;
+                                    if (v.isAfter(today)) return;
+
+                                    setEndDate(v);
+                                }}
                             className="border rounded px-2 py-1 text-sm"
                         />
                     </div>
                     <Button variant="ghost" size="sm" className="gap-2">
-                        {startDate.format("DD MMM")} - {endDate.format("DD MMM")}
+                        {localStart.format("DD MMM")} - {localEnd.format("DD MMM")}
                     </Button>
                 </div>
             </CardHeader>
