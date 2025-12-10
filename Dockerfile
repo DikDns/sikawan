@@ -1,11 +1,11 @@
 # Stage 1: Build Frontend Assets (needs PHP for wayfinder plugin)
 FROM php:8.3-cli-alpine AS frontend-builder
 
-# Install Node.js, npm, and GD dependencies
+# Install Node.js, npm, and PHP extension dependencies
 RUN apk add --no-cache nodejs npm \
-    libpng-dev libjpeg-turbo-dev freetype-dev \
+    libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd
+    && docker-php-ext-install gd zip
 
 WORKDIR /app
 
