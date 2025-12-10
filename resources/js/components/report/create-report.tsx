@@ -17,14 +17,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { router, useForm, usePage } from '@inertiajs/react';
 import dayjs from 'dayjs';
@@ -33,31 +25,19 @@ import type { DebouncedFunc } from 'lodash';
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
-
-type SheetData = {
-    headers: string[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rows: any[][];
-};
 
 export default function ReportGenerateDialog({
     open,
     onOpenChange,
+    onDateChange,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: any) {
     const today = dayjs().format('YYYY-MM-DD');
-    const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
-    const [excelData, setExcelData] = useState<Record<
-        string,
-        SheetData
-    > | null>(null);
     const [loadingPreview, setLoadingPreview] = useState(false);
     type FormPayload = typeof data;
     const generatePreviewRef = useRef<DebouncedFunc<
         (payload: FormPayload) => void
     > | null>(null);
-    const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
 
     const takeSnapshot = async (element: HTMLElement) => {
         return await htmlToImage.toPng(element, {
@@ -68,40 +48,6 @@ export default function ReportGenerateDialog({
             fontEmbedCSS: '',
         });
     };
-
-    async function loadExcelPreview(url: string) {
-        try {
-            const res = await fetch(url);
-            const arrayBuffer = await res.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer);
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const allSheets: any = {};
-
-            workbook.SheetNames.forEach((sheetName) => {
-                const sheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-                if (!jsonData || jsonData.length === 0 || !jsonData[0]) {
-                    allSheets[sheetName] = { headers: [], rows: [] };
-                    return;
-                }
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const firstRow = jsonData[0] as any[];
-                const headers = firstRow.map((h) => String(h || ''));
-                const rows = jsonData.slice(1);
-
-                allSheets[sheetName] = { headers, rows };
-            });
-
-            setExcelData(allSheets);
-            setSelectedSheet(workbook.SheetNames[0]);
-        } catch (e) {
-            console.log('error bang: ', e);
-            setExcelData(null);
-        }
-    }
 
     const { data, setData, processing, reset, errors } = useForm({
         title: '',
@@ -210,18 +156,17 @@ export default function ReportGenerateDialog({
                 const json = await res.json();
 
                 if (payload.format === 'PDF') {
-                    setPreviewPdfUrl(json.url);
-                    setExcelData(null);
+                    window.open(json.url, '_blank');
                 }
 
                 if (payload.format === 'EXCEL') {
-                    await loadExcelPreview(json.url);
-                    setPreviewPdfUrl(null);
+                    window.open(
+                        `https://docs.google.com/viewer?url=${encodeURIComponent(json.url)}&embedded=true`,
+                        '_blank'
+                    );
                 }
             } catch (e) {
                 console.log('error preview:', e);
-                setPreviewPdfUrl(null);
-                setExcelData(null);
             } finally {
                 setLoadingPreview(false);
             }
@@ -231,18 +176,6 @@ export default function ReportGenerateDialog({
             generatePreviewRef.current?.cancel?.();
         };
     }, []);
-
-    useEffect(() => {
-        generatePreviewRef.current?.(data);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-        data.title,
-        data.description,
-        data.type,
-        data.start_date,
-        data.end_date,
-        data.format,
-    ]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -277,6 +210,30 @@ export default function ReportGenerateDialog({
                 onError: () => toast.error('Gagal membuat laporan.'),
             },
         );
+    };
+
+    const handlePreview = async () => {
+        if (!data.format) return;
+
+        const payload = {
+            ...data
+        };
+
+        await fetch("/reports/preview/pdf/store", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement).content,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const endpoint =
+            data.format === "PDF"
+                ? "/reports/preview/pdf"
+                : "/reports/preview/excel";
+
+        window.open(endpoint, "_blank");
     };
 
     return (
@@ -332,9 +289,10 @@ export default function ReportGenerateDialog({
                                     type="date"
                                     value={data.start_date}
                                     max={today}
-                                    onChange={(e) =>
-                                        setData('start_date', e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setData('start_date', e.target.value);
+                                        onDateChange?.({ start: e.target.value, end: data.end_date });
+                                    }}
                                 />
                             </div>
                             <div className="flex flex-col gap-1">
@@ -346,9 +304,10 @@ export default function ReportGenerateDialog({
                                     value={data.end_date}
                                     min={data.start_date}
                                     max={today}
-                                    onChange={(e) =>
-                                        setData('end_date', e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setData('end_date', e.target.value);
+                                        onDateChange?.({ start: data.start_date, end: e.target.value });
+                                    }}
                                 />
                             </div>
                         </div>
@@ -370,117 +329,14 @@ export default function ReportGenerateDialog({
                             <label className="text-sm font-medium">
                                 Preview
                             </label>
-                            {data.format === 'PDF' && (
-                                <div className="mt-1 h-[400px] overflow-hidden rounded-md border">
-                                    {loadingPreview && (
-                                        <div className="p-4 text-center text-gray-500">
-                                            Memuat preview...
-                                        </div>
-                                    )}
-                                    {!loadingPreview && previewPdfUrl && (
-                                        <iframe
-                                            src={previewPdfUrl}
-                                            className="h-full w-full"
-                                            title="Preview PDF"
-                                        ></iframe>
-                                    )}
-                                </div>
-                            )}
-                            {data.format === 'EXCEL' && (
-                                <div className="mt-1 h-[400px] max-w-[450px] rounded-md border bg-white">
-                                    <div className="h-full w-full max-w-[450px] overflow-auto">
-                                        {loadingPreview && (
-                                            <div className="p-4 text-center text-gray-500">
-                                                Memuat preview...
-                                            </div>
-                                        )}
-                                        {excelData &&
-                                            Object.keys(excelData).length >
-                                                1 && (
-                                                <div className="sticky top-0 z-20 my-2 flex gap-2 border-b-2 border-b-gray-500 bg-white py-2 ps-2">
-                                                    {Object.keys(excelData).map(
-                                                        (name) => (
-                                                            <button
-                                                                type="button"
-                                                                key={name}
-                                                                onClick={() =>
-                                                                    setSelectedSheet(
-                                                                        name,
-                                                                    )
-                                                                }
-                                                                className={`cursor-pointer rounded border px-2 py-1 text-xs ${
-                                                                    selectedSheet ===
-                                                                    name
-                                                                        ? 'bg-blue-500 text-white'
-                                                                        : 'bg-gray-100'
-                                                                }`}
-                                                            >
-                                                                {name}
-                                                            </button>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            )}
-                                        {!loadingPreview &&
-                                            excelData &&
-                                            selectedSheet &&
-                                            excelData[selectedSheet] && (
-                                                <Table className="max-w-[450px] min-w-[400px] table-auto border-separate border-spacing-0">
-                                                    <TableHeader>
-                                                        <TableRow className="bg-gray-100">
-                                                            {excelData[
-                                                                selectedSheet
-                                                            ]?.headers?.map(
-                                                                (
-                                                                    header,
-                                                                    idx,
-                                                                ) => (
-                                                                    <TableHead
-                                                                        key={
-                                                                            idx
-                                                                        }
-                                                                        className="sticky top-0 z-10 border-b bg-gray-100 px-4 py-3 text-sm font-semibold whitespace-nowrap"
-                                                                    >
-                                                                        {header}
-                                                                    </TableHead>
-                                                                ),
-                                                            )}
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {excelData[
-                                                            selectedSheet
-                                                        ]?.rows?.map(
-                                                            (row, rowIdx) => (
-                                                                <TableRow
-                                                                    key={rowIdx}
-                                                                    className="transition-colors hover:bg-gray-50"
-                                                                >
-                                                                    {row.map(
-                                                                        (
-                                                                            cell,
-                                                                            cellIdx,
-                                                                        ) => (
-                                                                            <TableCell
-                                                                                key={
-                                                                                    cellIdx
-                                                                                }
-                                                                                className="border-b px-4 py-3 text-sm whitespace-nowrap"
-                                                                            >
-                                                                                {cell ??
-                                                                                    ''}
-                                                                            </TableCell>
-                                                                        ),
-                                                                    )}
-                                                                </TableRow>
-                                                            ),
-                                                        )}
-                                                    </TableBody>
-                                                </Table>
-                                            )}
-                                    </div>
-                                </div>
-                            )}
+                            <button
+                                type="button"
+                                onClick={handlePreview}
+                                disabled={loadingPreview}
+                                className="mt-2 w-fit rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+                            >
+                                {loadingPreview ? "Memuat preview..." : "Lihat Preview"}
+                            </button>
                         </div>
                     </div>
                     <DialogFooter className="border-t bg-white p-4">

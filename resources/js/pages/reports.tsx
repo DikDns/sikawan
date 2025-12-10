@@ -108,6 +108,7 @@ export default function Reports({
         id: number;
         name?: string | null;
         category?: string | null;
+        created_at?: string | null;
     }[];
 }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -160,6 +161,33 @@ export default function Reports({
         window.open(`/reports/download/${encoded}`, '_blank');
     };
 
+    const [openCreate, setOpenCreate] = useState(false);
+    const [formDates, setFormDates] = useState({ start: '', end: '' });
+
+    const filteredHouses = useMemo(() => {
+        if (!formDates.start && !formDates.end) return houses;
+        return houses.filter(h => {
+            const created = h.created_at ? dayjs(h.created_at) : null;
+            const start = formDates.start ? dayjs(formDates.start) : null;
+            const end = formDates.end ? dayjs(formDates.end) : null;
+            if (start && created && created.isBefore(start, 'day')) return false;
+            if (end && created && created.isAfter(end, 'day')) return false;
+            return true;
+        });
+    }, [houses, formDates]);
+
+    const filteredInfras = useMemo(() => {
+        if (!formDates.start && !formDates.end) return infrastructures;
+        return infrastructures.filter(i => {
+            const created = i.created_at ? dayjs(i.created_at) : null;
+            const start = formDates.start ? dayjs(formDates.start) : null;
+            const end = formDates.end ? dayjs(formDates.end) : null;
+            if (start && created && created.isBefore(start, 'day')) return false;
+            if (end && created && created.isAfter(end, 'day')) return false;
+            return true;
+        });
+    }, [infrastructures, formDates]);
+
     const handleAdd = () => {
         setOpenCreate(true);
     };
@@ -209,7 +237,6 @@ export default function Reports({
         (page - 1) * perPage,
         page * perPage,
     );
-    const [openCreate, setOpenCreate] = useState(false);
     const truncateText = (text: string, maxLength: number = 50) => {
         if (!text) return '';
         return text.length > maxLength
@@ -746,15 +773,15 @@ export default function Reports({
                 </Card>
                 {/* charts */}
                 <div id="chart-status">
-                    <HouseholdStatusChart ref={refStatus} houses={houses} />
+                    <HouseholdStatusChart ref={refStatus} houses={filteredHouses} />
                 </div>
                 <div id="chart-line">
-                    <HouseholdLineChart ref={refLine} houses={houses} />
+                    <HouseholdLineChart ref={refLine} houses={filteredHouses} />
                 </div>
                 <div id="chart-infra">
                     <InfrastructureBarChart
                         ref={refInfra}
-                        infrastructures={infrastructures}
+                        infrastructures={filteredInfras}
                     />
                 </div>
 
@@ -762,6 +789,7 @@ export default function Reports({
                 <ReportGenerateDialog
                     open={openCreate}
                     onOpenChange={setOpenCreate}
+                    onDateChange={setFormDates}
                 />
                 <DeleteReport
                     open={deleteOpen}

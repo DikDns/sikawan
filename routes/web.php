@@ -22,6 +22,16 @@ Route::get('/', function () {
 Route::get('peta-sebaran', [PublicDistributionMapController::class, 'index'])
   ->name('distribution-map.public');
 
+Route::post('/messages/store', [MessageController::class, 'store'])->name('messages.store');
+
+Route::get('/reports/preview/pdf', function () {
+  return Inertia::render('reports/pdf-preview');
+})->name('reports.preview.pdf');
+
+Route::get('/reports/preview/excel', function () {
+  return Inertia::render('reports/excel-preview');
+})->name('reports.preview.excel');
+
 Route::middleware(['auth', 'verified'])->group(function () {
   Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -105,7 +115,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
   Route::controller(MessageController::class)->group(function () {
     Route::get('/messages', 'index')->name('messages');
-    Route::post('/messages/store', 'store')->name('messages.store');
     Route::post('/messages/destroy', 'destroy')->name('messages.destroy');
   });
 
@@ -116,6 +125,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports/download/{encoded}', 'download')->where('encoded', '.*')->name('reports.download');
     Route::post('/reports/update/{report_id}', 'update')->name('reports.update');
     Route::post('/reports/preview', 'preview')->name('reports.preview');
+    Route::get('/reports/preview/pdf', 'previewPdf')->name('reports.pdf-preview');
+    Route::post('/reports/preview/pdf/store', 'storePreview')->name('reports.pdf-store');
+    Route::get('/reports/preview/excel', 'previewExcel')->name('reports.excel-preview');
   });
 
   Route::prefix('superadmin/logs')->middleware(['auth', 'verified'])->group(function () {
