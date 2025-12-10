@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
     $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+    // Trust all proxies (for reverse proxy setup like Nginx)
+    $middleware->trustProxies(at: '*');
+
     $middleware->web(append: [
       \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
       HandleAppearance::class,
