@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelect } from '@/components/ui/multi-select';
 
@@ -21,7 +21,6 @@ export function DashboardFilter({
     selectedDistrict?: string;
     selectedVillage?: string;
 }) {
-    // Use useState instead of useForm to avoid auto-submission
     const [filters, setFilters] = useState({
         year: Array.isArray(selectedEconomicYear)
             ? selectedEconomicYear.map(String)
@@ -33,17 +32,14 @@ export function DashboardFilter({
     const triggerFilter = (years: string[], district: string, village: string) => {
         const params: Record<string, string | string[]> = {};
 
-        // Add years as array
         if (years.length > 0) {
             params['economic_year'] = years;
         }
 
-        // Add district if exists
         if (district) {
             params.district = district;
         }
 
-        // Add village if exists
         if (village) {
             params.village = village;
         }
@@ -82,60 +78,69 @@ export function DashboardFilter({
         });
     };
 
+    const hasActiveFilters = filters.year.length > 0 || filters.district || filters.village;
+
     return (
-        <Card className="flex flex-row items-center justify-end gap-4 px-4 py-2 w-full">
-            <div className="flex flex-row items-center gap-2 mr-auto">
-                <Filter className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium text-sm whitespace-nowrap">
-                    Filter by
-                </span>
+        <Card className="w-full">
+            <div className="flex flex-col gap-4 p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Filter className="w-5 h-5 text-muted-foreground" />
+                        <span className="font-medium text-sm">Filter by</span>
+                    </div>
+                    {hasActiveFilters && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={handleReset}
+                        >
+                            <X className="w-4 h-4 mr-1" />
+                            Reset
+                        </Button>
+                    )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="w-full">
+                        <MultiSelect
+                            options={years.map((y) => ({ value: y, label: y }))}
+                            value={filters.year}
+                            onChange={handleYearChange}
+                            placeholder="Pilih Tahun"
+                            searchPlaceholder="Cari tahun..."
+                        />
+                    </div>
+                    <div className="w-full">
+                        <SearchableSelect
+                            options={districts.map((d) => ({
+                                value: d.id,
+                                label: d.name
+                            }))}
+                            value={filters.district}
+                            onValueChange={handleDistrictChange}
+                            placeholder="Pilih Kecamatan"
+                            searchPlaceholder="Cari kecamatan..."
+                            emptyMessage="Kecamatan tidak ditemukan"
+                            clearable={true}
+                        />
+                    </div>
+                    <div className="w-full sm:col-span-2 lg:col-span-1">
+                        <SearchableSelect
+                            options={villages.map((v) => ({
+                                value: v.id,
+                                label: v.name
+                            }))}
+                            value={filters.village}
+                            onValueChange={handleVillageChange}
+                            placeholder="Pilih Kelurahan"
+                            searchPlaceholder="Cari kelurahan..."
+                            emptyMessage="Kelurahan tidak ditemukan"
+                            clearable={true}
+                        />
+                    </div>
+                </div>
             </div>
-            <div className="min-w-[180px]">
-                <MultiSelect
-                    options={years.map((y) => ({ value: y, label: y }))}
-                    value={filters.year}
-                    onChange={handleYearChange}
-                    placeholder="Pilih Tahun"
-                    searchPlaceholder="Cari tahun..."
-                />
-            </div>
-            <div className="min-w-[200px]">
-                <SearchableSelect
-                    options={districts.map((d) => ({
-                        value: d.id,
-                        label: d.name
-                    }))}
-                    value={filters.district}
-                    onValueChange={handleDistrictChange}
-                    placeholder="Pilih Kecamatan"
-                    searchPlaceholder="Cari kecamatan..."
-                    emptyMessage="Kecamatan tidak ditemukan"
-                    clearable={true}
-                />
-            </div>
-            <div className="min-w-[200px]">
-                <SearchableSelect
-                    options={villages.map((v) => ({
-                        value: v.id,
-                        label: v.name
-                    }))}
-                    value={filters.village}
-                    onValueChange={handleVillageChange}
-                    placeholder="Pilih Kelurahan"
-                    searchPlaceholder="Cari kelurahan..."
-                    emptyMessage="Kelurahan tidak ditemukan"
-                    clearable={true}
-                />
-            </div>
-            <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-red-500 border-red-400 hover:bg-red-50"
-                onClick={handleReset}
-            >
-                Reset
-            </Button>
         </Card>
     );
 }
