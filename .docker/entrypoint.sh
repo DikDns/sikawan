@@ -24,7 +24,7 @@ chmod -R 775 /var/www/html/database
 # Enable WAL mode for better concurrency
 sqlite3 /var/www/html/database/database.sqlite "PRAGMA journal_mode=WAL;"
 sqlite3 /var/www/html/database/database.sqlite "PRAGMA synchronous=NORMAL;"
-sqlite3 /var/www/html/database/database.sqlite "PRAGMA busy_timeout=5000;"
+sqlite3 /var/www/html/database/database.sqlite "PRAGMA busy_timeout=30000;"
 
 # Fix permissions recursively for storage (again, to be safe)
 chown -R www-data:www-data /var/www/html/storage
