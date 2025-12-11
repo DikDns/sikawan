@@ -175,6 +175,8 @@ export default function AreaDetail({
                     );
                 }
 
+                window.location.reload();
+
                 const data = await response.json();
                 toast.success(data.message || 'Area berhasil ditambahkan');
                 // Optimistically add to local state if backend returns the new area
@@ -260,6 +262,8 @@ export default function AreaDetail({
 
                     throw new Error('Gagal menghapus area');
                 }
+
+                window.location.reload();
 
                 const data = await response.json();
                 toast.success(data.message || 'Area berhasil dihapus');
@@ -375,6 +379,8 @@ export default function AreaDetail({
 
                     throw new Error(errText || 'Gagal mengedit area');
                 }
+
+                window.location.reload();
 
                 const data = await response.json().catch(() => ({}));
                 toast.success(data.message || 'Area berhasil diperbarui');
