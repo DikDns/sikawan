@@ -1487,7 +1487,59 @@ function useDebounceLoadingState(delay = 200) {
     return [showLoading, setIsLoading] as const
 }
 
+// Component to auto-fit map bounds to coordinates
+interface MapFitBoundsProps {
+    bounds: [number, number][] // Array of [lat, lng] coordinates
+    padding?: [number, number]
+    maxZoom?: number
+}
+
+function MapFitBounds({ bounds, padding = [50, 50], maxZoom = 18 }: MapFitBoundsProps) {
+    const map = useMap()
+
+    useEffect(() => {
+        if (!map || bounds.length === 0) return
+
+        try {
+            const leafletBounds = map.getBounds().pad(0) // Create empty bounds
+            let validBounds = false
+
+            bounds.forEach(([lat, lng]) => {
+                if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
+                    leafletBounds.extend([lat, lng])
+                    validBounds = true
+                }
+            })
+
+            if (validBounds && bounds.length > 1) {
+                // Rebuild bounds properly
+                const latLngs = bounds.filter(([lat, lng]) =>
+                    typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)
+                )
+                if (latLngs.length > 1) {
+                    const properBounds = latLngs.reduce((acc, [lat, lng]) => {
+                        if (!acc) return [[lat, lng], [lat, lng]] as [[number, number], [number, number]]
+                        return [
+                            [Math.min(acc[0][0], lat), Math.min(acc[0][1], lng)],
+                            [Math.max(acc[1][0], lat), Math.max(acc[1][1], lng)]
+                        ] as [[number, number], [number, number]]
+                    }, null as [[number, number], [number, number]] | null)
+
+                    if (properBounds) {
+                        map.fitBounds(properBounds, { padding, maxZoom })
+                    }
+                }
+            }
+        } catch {
+            // Silently ignore bounds errors
+        }
+    }, [map, bounds, padding, maxZoom])
+
+    return null
+}
+
 export {
+    DEFAULT_CENTER,
     Map,
     MapCircle,
     MapCircleMarker,
@@ -1501,6 +1553,7 @@ export {
     MapDrawRectangle,
     MapDrawUndo,
     MapFeatureGroup,
+    MapFitBounds,
     MapLayerGroup,
     MapLayers,
     MapLayersControl,

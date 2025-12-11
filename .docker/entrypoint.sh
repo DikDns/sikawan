@@ -4,8 +4,12 @@ set -e
 # Ensure storage directories exist with proper permissions
 mkdir -p /var/www/html/storage/framework/{sessions,views,cache}
 mkdir -p /var/www/html/storage/logs
+mkdir -p /var/www/html/storage/app/public
 chown -R www-data:www-data /var/www/html/storage
 chmod -R 775 /var/www/html/storage
+
+# Create storage symlink (important for accessing files via /storage URLs)
+php artisan storage:link --force
 
 # Ensure database directory and file exist
 if [ ! -f /var/www/html/database/database.sqlite ]; then
