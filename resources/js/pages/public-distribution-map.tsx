@@ -1,11 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
-import { Input } from '@/components/ui/input';
 import {
     Map,
     MapLayerGroup,
     MapLayers,
+    MapLayersControl,
     MapLocateControl,
     MapMarker,
     MapPolygon,
@@ -20,16 +19,13 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Building2,
     Droplet,
-    Eye,
-    EyeOff,
     GraduationCap,
     Home,
     Hospital,
-    Search,
     Trash2,
     Zap,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 
 type HabitabilityStatus = 'RLH' | 'RTLH' | null;
 
@@ -116,22 +112,17 @@ const HouseholdMarkerIcon = (status: HabitabilityStatus) => {
     );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const parsePolygon = (geometry: any) => {
-    if (
-        !geometry ||
-        geometry.type !== 'Polygon' ||
-        !Array.isArray(geometry.coordinates)
-    )
+const parsePolygon = (geometry: unknown) => {
+    const g = geometry as { type?: unknown; coordinates?: unknown };
+    if (!g || g.type !== 'Polygon' || !Array.isArray(g.coordinates))
         return null;
-    const rings = geometry.coordinates as number[][][];
+    const rings = g.coordinates as number[][][];
     return rings.map((ring) =>
         ring.map(([lng, lat]) => [lat, lng] as [number, number]),
     );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const parseRectangle = (geometry: any) => {
+const parseRectangle = (geometry: unknown) => {
     if (!Array.isArray(geometry) || geometry.length !== 2) return null;
     const [[west, north], [east, south]] = geometry as [
         [number, number],
@@ -143,27 +134,18 @@ const parseRectangle = (geometry: any) => {
     ] as [[number, number], [number, number]];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const parsePoint = (geometry: any) => {
-    if (
-        !geometry ||
-        geometry.type !== 'Point' ||
-        !Array.isArray(geometry.coordinates)
-    )
-        return null;
-    const [lng, lat] = geometry.coordinates as [number, number];
+const parsePoint = (geometry: unknown) => {
+    const g = geometry as { type?: unknown; coordinates?: unknown };
+    if (!g || g.type !== 'Point' || !Array.isArray(g.coordinates)) return null;
+    const [lng, lat] = g.coordinates as [number, number];
     return [lat, lng] as [number, number];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const parseLineString = (geometry: any) => {
-    if (
-        !geometry ||
-        geometry.type !== 'LineString' ||
-        !Array.isArray(geometry.coordinates)
-    )
+const parseLineString = (geometry: unknown) => {
+    const g = geometry as { type?: unknown; coordinates?: unknown };
+    if (!g || g.type !== 'LineString' || !Array.isArray(g.coordinates))
         return null;
-    return (geometry.coordinates as [number, number][]).map(
+    return (g.coordinates as [number, number][])?.map(
         ([lng, lat]) => [lat, lng] as [number, number],
     );
 };
@@ -173,7 +155,6 @@ export default function PublicDistributionMap() {
         households = [],
         areaGroups = [],
         infrastructureGroups = [],
-        error,
     } = usePage<{
         households: HouseholdForMap[];
         areaGroups: AreaGroupForMap[];
@@ -181,62 +162,43 @@ export default function PublicDistributionMap() {
         error?: string;
     }>().props;
 
-    const [query, setQuery] = useState('');
-    const [showRumah, setShowRumah] = useState(true);
-    const [showKawasan, setShowKawasan] = useState(true);
-    const [showPSU, setShowPSU] = useState(true);
-
+    // Auto-refresh data periodically
     useEffect(() => {
-        const id = setInterval(() => {
+        const reloadData = () => {
             router.reload({
                 only: ['households', 'areaGroups', 'infrastructureGroups'],
             });
-        }, 60000);
-        return () => clearInterval(id);
+        };
+
+        const intervalId = setInterval(reloadData, 15000);
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                reloadData();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(intervalId);
+            document.removeEventListener(
+                'visibilitychange',
+                handleVisibilityChange,
+            );
+        };
     }, []);
 
-    const filteredHouseholds = useMemo(() => {
-        if (!query) return households;
-        const q = query.toLowerCase();
-        return households.filter(
-            (h) =>
-                h.head_name.toLowerCase().includes(q) ||
-                h.address_text.toLowerCase().includes(q) ||
-                h.village_name?.toLowerCase().includes(q) ||
-                h.district_name?.toLowerCase().includes(q),
-        );
-    }, [households, query]);
-
-    const filteredAreaGroups = useMemo(() => {
-        if (!query) return areaGroups;
-        const q = query.toLowerCase();
-        return areaGroups.filter((g) => g.name.toLowerCase().includes(q));
-    }, [areaGroups, query]);
-
-    const filteredInfraGroups = useMemo(() => {
-        if (!query) return infrastructureGroups;
-        const q = query.toLowerCase();
-        return infrastructureGroups
-            .map((g) => ({
-                ...g,
-                items: g.items.filter((i) =>
-                    (i.name || '').toLowerCase().includes(q),
-                ),
-            }))
-            .filter((g) => g.items.length > 0);
-    }, [infrastructureGroups, query]);
-
-    // Compute center for potential future use (currently using fixed center)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _center = useMemo(() => {
-        const list =
-            filteredHouseholds.length > 0 ? filteredHouseholds : households;
-        if (list.length > 0) {
-            const lat = list.reduce((s, h) => s + h.latitude, 0) / list.length;
-            const lng = list.reduce((s, h) => s + h.longitude, 0) / list.length;
+    const center = useMemo(() => {
+        if (households.length > 0) {
+            const lat =
+                households.reduce((s, h) => s + h.latitude, 0) /
+                households.length;
+            const lng =
+                households.reduce((s, h) => s + h.longitude, 0) /
+                households.length;
             return [lat, lng] as [number, number];
         }
-        const withCentroid = (areaGroups || []).filter(
+        const withCentroid = areaGroups.filter(
             (g) => g.centroid_lat && g.centroid_lng,
         );
         if (withCentroid.length > 0) {
@@ -248,25 +210,26 @@ export default function PublicDistributionMap() {
                 withCentroid.length;
             return [lat, lng] as [number, number];
         }
-        return [-4.2327, 103.6141] as [number, number];
-    }, [filteredHouseholds, households, areaGroups]);
+        return [-3.6632234, 103.7781606] as [number, number];
+    }, [households, areaGroups]);
 
+    // Layer names grouped by category - matching distribution-map.tsx format
+    const rumahLayerNames = useMemo(
+        () => ['Rumah: Layak Huni (RLH)', 'Rumah: Tidak Layak Huni (RTLH)'],
+        [],
+    );
     const kawasanLayerNames = useMemo(
-        () => filteredAreaGroups.map((g) => `Kawasan ${g.name}`),
-        [filteredAreaGroups],
+        () => areaGroups.map((g) => `Kawasan: ${g.name}`),
+        [areaGroups],
     );
     const psuLayerNames = useMemo(
-        () => filteredInfraGroups.map((g) => `PSU ${g.name}`),
-        [filteredInfraGroups],
+        () => infrastructureGroups.map((g) => `PSU: ${g.name}`),
+        [infrastructureGroups],
     );
-
-    const activeGroups = useMemo(() => {
-        const base: string[] = [];
-        if (showRumah) base.push('Rumah Layak Huni', 'Rumah Tidak Layak Huni');
-        if (showKawasan) base.push(...kawasanLayerNames);
-        if (showPSU) base.push(...psuLayerNames);
-        return base;
-    }, [showRumah, showKawasan, showPSU, kawasanLayerNames, psuLayerNames]);
+    const defaultLayerGroups = useMemo(
+        () => [...rumahLayerNames, ...kawasanLayerNames, ...psuLayerNames],
+        [rumahLayerNames, kawasanLayerNames, psuLayerNames],
+    );
 
     function PSUMarkerIcon(group: InfrastructureGroupForMap) {
         const color = group.legend_color_hex || DEFAULT_COLOR;
@@ -304,51 +267,49 @@ export default function PublicDistributionMap() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col">
+        <div className="flex h-screen flex-col">
             <Head title="Peta Sebaran" />
-            <header className="fixed z-50 w-full">
-                <div className="bg-secondary/75 text-secondary-foreground backdrop-blur-sm">
-                    <Container>
-                        <div className="flex h-16 items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <img
-                                    src="/images/sikawan-logo.png"
-                                    alt="SIHUMA"
-                                    className="h-8 w-8"
-                                />
-                                <span className="text-lg font-semibold text-primary">
-                                    SIHUMA
-                                </span>
-                            </div>
-                            <nav className="flex items-center gap-2">
-                                <Button variant="ghost" asChild>
-                                    <Link href={home()}>Home</Link>
-                                </Button>
-                                <Button asChild>
-                                    <Link href={login()}>Login</Link>
-                                </Button>
-                            </nav>
+            {/* Fixed Header */}
+            <header className="fixed top-0 z-50 w-full bg-secondary/95 text-secondary-foreground backdrop-blur-sm">
+                <Container>
+                    <div className="flex h-16 items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <img
+                                src="/images/sikawan-logo.png"
+                                alt="SIHUMA"
+                                className="h-8 w-8"
+                            />
+                            <span className="text-lg font-semibold text-primary">
+                                SIHUMA
+                            </span>
                         </div>
-                    </Container>
-                </div>
+                        <nav className="flex items-center gap-2">
+                            <Button variant="ghost" asChild>
+                                <Link href={home()}>Home</Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={login()}>Login</Link>
+                            </Button>
+                        </nav>
+                    </div>
+                </Container>
             </header>
-            <div className="relative h-[calc(100vh-64px)] w-full pt-16">
-                <Map
-                    center={[-4.2327, 103.6141]}
-                    zoom={13}
-                    className="h-full w-full"
-                >
+
+            {/* Map Container - fills remaining height after header */}
+            <div className="flex-1 pt-16">
+                <Map center={center} zoom={15} className="h-full w-full">
                     <MapTileLayer name="OSM" />
 
-                    <MapLayers
-                        key={activeGroups.sort().join('|')}
-                        defaultLayerGroups={activeGroups}
-                    >
+                    <MapLayers defaultLayerGroups={defaultLayerGroups}>
+                        <MapLayersControl
+                            layerGroupsLabel="Layer"
+                            tileLayersLabel="Tipe Peta"
+                        />
                         <MapZoomControl />
                         <MapLocateControl />
 
-                        <MapLayerGroup name="Rumah Layak Huni">
-                            {filteredHouseholds
+                        <MapLayerGroup name="Rumah: Layak Huni (RLH)">
+                            {households
                                 .filter((h) => h.habitability_status === 'RLH')
                                 .map((h) => (
                                     <MapMarker
@@ -373,14 +334,32 @@ export default function PublicDistributionMap() {
                                                 <div className="text-xs">
                                                     Status: RLH
                                                 </div>
+                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                    <div>
+                                                        Provinsi:{' '}
+                                                        {h.province_name || '-'}
+                                                    </div>
+                                                    <div>
+                                                        Kab/Kota:{' '}
+                                                        {h.regency_name || '-'}
+                                                    </div>
+                                                    <div>
+                                                        Kecamatan:{' '}
+                                                        {h.district_name || '-'}
+                                                    </div>
+                                                    <div>
+                                                        Desa:{' '}
+                                                        {h.village_name || '-'}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </MapPopup>
                                     </MapMarker>
                                 ))}
                         </MapLayerGroup>
 
-                        <MapLayerGroup name="Rumah Tidak Layak Huni">
-                            {filteredHouseholds
+                        <MapLayerGroup name="Rumah: Tidak Layak Huni (RTLH)">
+                            {households
                                 .filter((h) => h.habitability_status === 'RTLH')
                                 .map((h) => (
                                     <MapMarker
@@ -405,20 +384,37 @@ export default function PublicDistributionMap() {
                                                 <div className="text-xs">
                                                     Status: RTLH
                                                 </div>
+                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                    <div>
+                                                        Provinsi:{' '}
+                                                        {h.province_name || '-'}
+                                                    </div>
+                                                    <div>
+                                                        Kab/Kota:{' '}
+                                                        {h.regency_name || '-'}
+                                                    </div>
+                                                    <div>
+                                                        Kecamatan:{' '}
+                                                        {h.district_name || '-'}
+                                                    </div>
+                                                    <div>
+                                                        Desa:{' '}
+                                                        {h.village_name || '-'}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </MapPopup>
                                     </MapMarker>
                                 ))}
                         </MapLayerGroup>
 
-                        {filteredAreaGroups.map((group) => (
+                        {areaGroups.map((group) => (
                             <MapLayerGroup
                                 key={`group-${group.id}`}
-                                name={`Kawasan ${group.name}`}
+                                name={`Kawasan: ${group.name}`}
                             >
                                 {group.areas.map((area) => {
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    let raw: any = area.geometry_json;
+                                    let raw = area.geometry_json;
                                     if (typeof raw === 'string') {
                                         try {
                                             raw = JSON.parse(raw);
@@ -446,7 +442,6 @@ export default function PublicDistributionMap() {
                                                     opacity: 0.9,
                                                     fillOpacity: 0.2,
                                                 }}
-                                                className={`cursor-pointer fill-[${color}] stroke-[${color}] stroke-2 transition-all duration-300 hover:opacity-80`}
                                             >
                                                 <MapPopup>
                                                     <div
@@ -459,6 +454,28 @@ export default function PublicDistributionMap() {
                                                         <div className="text-xs whitespace-pre-line text-muted-foreground">
                                                             {area.description ||
                                                                 '-'}
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                                            <div>
+                                                                Provinsi:{' '}
+                                                                {area.province_name ||
+                                                                    '-'}
+                                                            </div>
+                                                            <div>
+                                                                Kab/Kota:{' '}
+                                                                {area.regency_name ||
+                                                                    '-'}
+                                                            </div>
+                                                            <div>
+                                                                Kecamatan:{' '}
+                                                                {area.district_name ||
+                                                                    '-'}
+                                                            </div>
+                                                            <div>
+                                                                Desa:{' '}
+                                                                {area.village_name ||
+                                                                    '-'}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </MapPopup>
@@ -477,7 +494,6 @@ export default function PublicDistributionMap() {
                                                     opacity: 0.9,
                                                     fillOpacity: 0.2,
                                                 }}
-                                                className={`cursor-pointer transition-all fill-[${color}] stroke-[${color}] stroke-2 duration-300 hover:opacity-80`}
                                             >
                                                 <MapPopup>
                                                     <div
@@ -501,14 +517,13 @@ export default function PublicDistributionMap() {
                             </MapLayerGroup>
                         ))}
 
-                        {filteredInfraGroups.map((group) => (
+                        {infrastructureGroups.map((group) => (
                             <MapLayerGroup
                                 key={`psu-${group.id}`}
-                                name={`PSU ${group.name}`}
+                                name={`PSU: ${group.name}`}
                             >
                                 {group.items.map((item) => {
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    let raw: any = item.geometry_json;
+                                    let raw = item.geometry_json;
                                     if (typeof raw === 'string') {
                                         try {
                                             raw = JSON.parse(raw);
@@ -534,7 +549,8 @@ export default function PublicDistributionMap() {
                                                 key={`psu-point-${item.id}`}
                                                 position={point}
                                                 icon={PSUMarkerIcon(group)}
-                                                iconAnchor={[12, 12]}
+                                                iconAnchor={[14, 14]}
+                                                popupAnchor={[0, -14]}
                                                 aria-label={`PSU: ${item.name || 'Titik'}`}
                                             >
                                                 <MapPopup>
@@ -564,7 +580,22 @@ export default function PublicDistributionMap() {
                                                     weight: 3,
                                                     opacity: 0.9,
                                                 }}
-                                            />
+                                            >
+                                                <MapPopup>
+                                                    <div
+                                                        className="space-y-2"
+                                                        aria-label="Informasi PSU"
+                                                    >
+                                                        <div className="font-medium">
+                                                            {item.name || 'PSU'}
+                                                        </div>
+                                                        <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                            {item.description ||
+                                                                '-'}
+                                                        </div>
+                                                    </div>
+                                                </MapPopup>
+                                            </MapPolyline>
                                         );
                                     }
                                     if (poly) {
@@ -579,7 +610,22 @@ export default function PublicDistributionMap() {
                                                     opacity: 0.9,
                                                     fillOpacity: 0.15,
                                                 }}
-                                            />
+                                            >
+                                                <MapPopup>
+                                                    <div
+                                                        className="space-y-2"
+                                                        aria-label="Informasi PSU"
+                                                    >
+                                                        <div className="font-medium">
+                                                            {item.name || 'PSU'}
+                                                        </div>
+                                                        <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                            {item.description ||
+                                                                '-'}
+                                                        </div>
+                                                    </div>
+                                                </MapPopup>
+                                            </MapPolygon>
                                         );
                                     }
                                     return null;
@@ -588,103 +634,7 @@ export default function PublicDistributionMap() {
                         ))}
                     </MapLayers>
                 </Map>
-
-                <div className="pointer-events-none absolute inset-0">
-                    <div className="pointer-events-auto absolute top-20 right-3 z-[1000] w-[86vw] max-w-[320px] rounded-xl border bg-background/95 p-3 shadow-lg backdrop-blur-sm sm:w-[360px]">
-                        <div className="relative">
-                            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Cari"
-                                className="pl-10"
-                                aria-label="Cari"
-                            />
-                        </div>
-                        <div className="mt-3 space-y-2">
-                            <Card className="bg-card">
-                                <CardContent className="flex items-center justify-between p-3">
-                                    <div className="font-medium">Rumah</div>
-                                    <Button
-                                        type="button"
-                                        size="icon-sm"
-                                        variant={
-                                            showRumah ? 'default' : 'secondary'
-                                        }
-                                        aria-label="Tampilkan Rumah"
-                                        onClick={() => setShowRumah((v) => !v)}
-                                    >
-                                        {showRumah ? (
-                                            <Eye className="size-4" />
-                                        ) : (
-                                            <EyeOff className="size-4" />
-                                        )}
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-card">
-                                <CardContent className="flex items-center justify-between p-3">
-                                    <div className="font-medium">Kawasan</div>
-                                    <Button
-                                        type="button"
-                                        size="icon-sm"
-                                        variant={
-                                            showKawasan
-                                                ? 'default'
-                                                : 'secondary'
-                                        }
-                                        aria-label="Tampilkan Kawasan"
-                                        onClick={() =>
-                                            setShowKawasan((v) => !v)
-                                        }
-                                    >
-                                        {showKawasan ? (
-                                            <Eye className="size-4" />
-                                        ) : (
-                                            <EyeOff className="size-4" />
-                                        )}
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-card">
-                                <CardContent className="flex items-center justify-between p-3">
-                                    <div className="font-medium">PSU</div>
-                                    <Button
-                                        type="button"
-                                        size="icon-sm"
-                                        variant={
-                                            showPSU ? 'default' : 'secondary'
-                                        }
-                                        aria-label="Tampilkan PSU"
-                                        onClick={() => setShowPSU((v) => !v)}
-                                    >
-                                        {showPSU ? (
-                                            <Eye className="size-4" />
-                                        ) : (
-                                            <EyeOff className="size-4" />
-                                        )}
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </div>
-                        {error && (
-                            <div
-                                role="alert"
-                                className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                            >
-                                {error}
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
-
-            <footer className="bg-secondary py-3">
-                <p className="text-center text-xs text-secondary-foreground/80">
-                    ©2025 Dinas Perumahan Rakyat dan Kawasan Permukiman
-                    Kabupaten Muara Enim. All rights reserved.
-                </p>
-            </footer>
         </div>
     );
 }

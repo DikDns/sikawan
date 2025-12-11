@@ -40,24 +40,6 @@ class SyncAreaHouseholdsJob implements ShouldQueue
         return;
       }
 
-      $adminColumn = null;
-      $adminValue = null;
-      if ($area->village_id) {
-        $adminColumn = 'village_id';
-        $adminValue = $area->village_id;
-      } elseif ($area->district_id) {
-        $adminColumn = 'district_id';
-        $adminValue = $area->district_id;
-      } elseif ($area->regency_id) {
-        $adminColumn = 'regency_id';
-        $adminValue = $area->regency_id;
-      } elseif ($area->province_id) {
-        $adminColumn = 'province_id';
-        $adminValue = $area->province_id;
-      } else {
-        return;
-      }
-
       $geometry = $area->geometry_json;
       if (is_string($geometry)) {
         $decoded = json_decode($geometry, true);
@@ -78,10 +60,10 @@ class SyncAreaHouseholdsJob implements ShouldQueue
 
       [$minLat, $maxLat, $minLng, $maxLng] = $bounds;
 
+      // Pure geographic query - no wilayah filtering
       $base = Household::query()
         ->whereNotNull('latitude')
         ->whereNotNull('longitude')
-        ->where($adminColumn, $adminValue)
         ->whereBetween('latitude', [$minLat, $maxLat])
         ->whereBetween('longitude', [$minLng, $maxLng])
         ->select(['id', 'latitude', 'longitude']);

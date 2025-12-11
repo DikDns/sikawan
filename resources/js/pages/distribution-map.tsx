@@ -165,7 +165,6 @@ export default function DistributionMap() {
         households = [],
         areaGroups = [],
         infrastructureGroups = [],
-        error,
     } = usePage<{
         flash?: unknown;
         households: HouseholdForMap[];
@@ -174,13 +173,32 @@ export default function DistributionMap() {
         error?: string;
     }>().props;
 
+    // Auto-refresh data periodically and when page becomes visible
     useEffect(() => {
-        const id = setInterval(() => {
+        const reloadData = () => {
             router.reload({
                 only: ['households', 'areaGroups', 'infrastructureGroups'],
             });
-        }, 60000);
-        return () => clearInterval(id);
+        };
+
+        // Refresh every 15 seconds
+        const intervalId = setInterval(reloadData, 15000);
+
+        // Refresh when page becomes visible (user switches back to tab)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                reloadData();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(intervalId);
+            document.removeEventListener(
+                'visibilitychange',
+                handleVisibilityChange,
+            );
+        };
     }, []);
 
     const center = useMemo(() => {
@@ -208,22 +226,22 @@ export default function DistributionMap() {
         return [-3.6632234, 103.7781606] as [number, number];
     }, [households, areaGroups]);
 
-    const groupLayerNames = useMemo(
-        () => areaGroups.map((g) => `Kawasan ${g.name}`),
+    // Layer names grouped by category
+    const rumahLayerNames = useMemo(
+        () => ['Rumah: Layak Huni (RLH)', 'Rumah: Tidak Layak Huni (RTLH)'],
+        [],
+    );
+    const kawasanLayerNames = useMemo(
+        () => areaGroups.map((g) => `Kawasan: ${g.name}`),
         [areaGroups],
     );
     const psuLayerNames = useMemo(
-        () => infrastructureGroups.map((g) => `PSU ${g.name}`),
+        () => infrastructureGroups.map((g) => `PSU: ${g.name}`),
         [infrastructureGroups],
     );
     const defaultLayerGroups = useMemo(
-        () => [
-            'Rumah Layak Huni',
-            'Rumah Tidak Layak Huni',
-            ...groupLayerNames,
-            ...psuLayerNames,
-        ],
-        [groupLayerNames, psuLayerNames],
+        () => [...rumahLayerNames, ...kawasanLayerNames, ...psuLayerNames],
+        [rumahLayerNames, kawasanLayerNames, psuLayerNames],
     );
 
     function PSUMarkerIcon(group: InfrastructureGroupForMap) {
@@ -265,25 +283,17 @@ export default function DistributionMap() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Peta Sebaran" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-hidden rounded-xl p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold">Peta Sebaran</h1>
                         <p className="text-muted-foreground">
                             Visualisasi data rumah dan kawasan
                         </p>
                     </div>
-                    {error && (
-                        <div
-                            role="alert"
-                            className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                        >
-                            {error}
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex-1 overflow-hidden rounded-lg border">
-                    <Map center={center} className="h-full w-full">
+                    <Map center={center} zoom={15} className="h-full w-full">
                         <MapTileLayer name="OSM" />
 
                         <MapLayers defaultLayerGroups={defaultLayerGroups}>
@@ -294,7 +304,7 @@ export default function DistributionMap() {
                             <MapZoomControl />
                             <MapLocateControl />
 
-                            <MapLayerGroup name="Rumah Layak Huni">
+                            <MapLayerGroup name="Rumah: Layak Huni (RLH)">
                                 {households
                                     .filter(
                                         (h) => h.habitability_status === 'RLH',
@@ -350,7 +360,7 @@ export default function DistributionMap() {
                                     ))}
                             </MapLayerGroup>
 
-                            <MapLayerGroup name="Rumah Tidak Layak Huni">
+                            <MapLayerGroup name="Rumah: Tidak Layak Huni (RTLH)">
                                 {households
                                     .filter(
                                         (h) => h.habitability_status === 'RTLH',
@@ -407,7 +417,7 @@ export default function DistributionMap() {
                             </MapLayerGroup>
 
                             {areaGroups.map((group) => {
-                                const groupLayerName = `Kawasan ${group.name}`;
+                                const groupLayerName = `Kawasan: ${group.name}`;
                                 return (
                                     <MapLayerGroup
                                         key={`group-${group.id}`}
@@ -544,7 +554,7 @@ export default function DistributionMap() {
                             {infrastructureGroups.map((group) => (
                                 <MapLayerGroup
                                     key={`psu-group-${group.id}`}
-                                    name={`PSU ${group.name}`}
+                                    name={`PSU: ${group.name}`}
                                 >
                                     {group.items.map((item) => {
                                         let raw: unknown = item.geometry_json;

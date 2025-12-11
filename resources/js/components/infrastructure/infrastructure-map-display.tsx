@@ -2,6 +2,7 @@
 // This file uses dynamic Leaflet layer properties that require 'any' type assertions
 import { Badge } from '@/components/ui/badge';
 import {
+    DEFAULT_CENTER,
     Map,
     MapDrawControl,
     MapDrawDelete,
@@ -61,7 +62,7 @@ export function InfrastructureMapDisplay({
     defaultColor = '#4C6EF5',
     className,
     center,
-    zoom = 13,
+    zoom = 15,
     onLayerCreated,
     onLayerDeleted,
     onLayerEdited,
@@ -98,6 +99,15 @@ export function InfrastructureMapDisplay({
             .filter((f) => f !== null) as Array<
             InfrastructureFeatureGeometry & { geometry: any }
         >;
+    }, [features]);
+
+    // Cleanup manually drawn layers when features update
+    useEffect(() => {
+        if (!drawLayersRef.current) return;
+        Object.values(createdLayersRef.current).forEach((layer) => {
+            drawLayersRef.current?.removeLayer(layer);
+        });
+        createdLayersRef.current = {};
     }, [features]);
 
     const allowedGeometryType: 'Point' | 'LineString' | 'Polygon' =
@@ -197,10 +207,10 @@ export function InfrastructureMapDisplay({
         return shapes;
     }, [parsedFeatures, allowedGeometryType, defaultColor]);
 
-    const mapCenter = useMemo(() => {
-        if (center) return center;
+    // Extract all coordinates for center and bounds calculation
+    const allCoords = useMemo(() => {
+        const coords: [number, number][] = [];
         try {
-            const coords: [number, number][] = [];
             parsedFeatures.forEach((f) => {
                 const g: any = (f as any).geometry;
                 if (!g) return;
@@ -229,18 +239,23 @@ export function InfrastructureMapDisplay({
                     });
                 }
             });
-            if (coords.length > 0) {
-                const avgLat =
-                    coords.reduce((s, [lat]) => s + lat, 0) / coords.length;
-                const avgLng =
-                    coords.reduce((s, [, lng]) => s + lng, 0) / coords.length;
-                return [avgLat, avgLng] as LatLngExpression;
-            }
         } catch {
-            // Parsing error, use default center
+            // Parsing error
         }
-        return [-4.2327, 103.6141] as LatLngExpression;
-    }, [center, parsedFeatures, allowedGeometryType]);
+        return coords;
+    }, [parsedFeatures, allowedGeometryType]);
+
+    const mapCenter = useMemo(() => {
+        if (center) return center;
+        if (allCoords.length > 0) {
+            const avgLat =
+                allCoords.reduce((s, [lat]) => s + lat, 0) / allCoords.length;
+            const avgLng =
+                allCoords.reduce((s, [, lng]) => s + lng, 0) / allCoords.length;
+            return [avgLat, avgLng] as LatLngExpression;
+        }
+        return DEFAULT_CENTER as LatLngExpression;
+    }, [center, allCoords]);
 
     const POPUP_CLASSNAME =
         'bg-popover text-popover-foreground animate-in fade-out-0 fade-in-0 zoom-out-95 zoom-in-95 slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 font-sans shadow-md outline-hidden';
@@ -544,6 +559,9 @@ export function InfrastructureMapDisplay({
         <div className={className}>
             <Map center={mapCenter} zoom={zoom} className="h-full w-full">
                 <MapTileLayer />
+                {allCoords.length > 1 && (
+                    <MapFitBounds bounds={allCoords} maxZoom={zoom} />
+                )}
                 <MapDrawControl
                     onLayersChange={handleLayersChange}
                     initialShapes={initialShapes}

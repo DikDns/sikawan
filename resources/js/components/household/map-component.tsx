@@ -1,72 +1,86 @@
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { useEffect, useRef } from 'react';
+import {
+    Map,
+    MapMarker,
+    MapPopup,
+    MapTileLayer,
+    MapZoomControl,
+} from '@/components/ui/map';
+import { Home } from 'lucide-react';
 
 interface MapComponentProps {
     latitude: number;
     longitude: number;
     householdName: string;
     address: string;
+    provinceName?: string | null;
+    regencyName?: string | null;
+    districtName?: string | null;
+    villageName?: string | null;
+    habitabilityStatus?: string | null;
 }
+
+const MarkerIcon = () => (
+    <div
+        className="flex size-8 items-center justify-center rounded-full border border-primary bg-background shadow-sm"
+        aria-label="Lokasi rumah"
+        tabIndex={0}
+    >
+        <Home className="size-5 text-primary" />
+    </div>
+);
 
 export default function MapComponent({
     latitude,
     longitude,
     householdName,
     address,
+    provinceName,
+    regencyName,
+    districtName,
+    villageName,
+    habitabilityStatus,
 }: MapComponentProps) {
-    const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstance = useRef<L.Map | null>(null);
-
-    useEffect(() => {
-        if (!mapRef.current) return;
-
-        // Initialize map
-        if (!mapInstance.current) {
-            mapInstance.current = L.map(mapRef.current).setView(
-                [latitude, longitude],
-                14,
-            );
-
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19,
-            }).addTo(mapInstance.current);
-
-            L.marker([latitude, longitude], {
-                icon: L.icon({
-                    iconUrl:
-                        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                    shadowUrl:
-                        'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41],
-                }),
-            })
-                .addTo(mapInstance.current)
-                .bindPopup(
-                    `<div class="p-2">
-                    <p class="font-semibold text-foreground">${householdName}</p>
-                    <p class="text-sm text-muted-foreground">${address}</p>
-                    <p class="text-xs text-muted-foreground mt-1">
-                        Lat: ${latitude}, Lng: ${longitude}
-                    </p>
-                </div>`,
-                );
-        }
-
-        return () => {
-            // Cleanup
-        };
-    }, [latitude, longitude, householdName, address]);
-
     return (
-        <div
-            ref={mapRef}
-            className="h-96 w-full rounded-lg border border-border bg-muted"
-        />
+        <div className="h-96 w-full overflow-hidden rounded-lg border border-border">
+            <Map
+                center={[latitude, longitude]}
+                zoom={15}
+                className="h-full w-full"
+            >
+                <MapTileLayer name="OSM" />
+                <MapZoomControl />
+                <MapMarker
+                    position={[latitude, longitude]}
+                    icon={<MarkerIcon />}
+                    iconAnchor={[16, 16]}
+                    popupAnchor={[0, -16]}
+                    aria-label={`Lokasi rumah: ${householdName}`}
+                >
+                    <MapPopup>
+                        <div className="space-y-2" aria-label="Informasi rumah">
+                            <div className="font-medium">{householdName}</div>
+                            <div className="text-xs text-muted-foreground">
+                                {address}
+                            </div>
+                            {habitabilityStatus && (
+                                <div className="text-xs">
+                                    Status: {habitabilityStatus}
+                                </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>Provinsi: {provinceName || '-'}</div>
+                                <div>Kab/Kota: {regencyName || '-'}</div>
+                                <div>Kecamatan: {districtName || '-'}</div>
+                                <div>Desa: {villageName || '-'}</div>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                Koordinat: {Number(latitude).toFixed(6)},{' '}
+                                {Number(longitude).toFixed(6)}
+                            </div>
+                        </div>
+                    </MapPopup>
+                </MapMarker>
+            </Map>
+        </div>
     );
 }

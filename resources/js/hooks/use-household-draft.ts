@@ -438,6 +438,63 @@ export function useHouseholdDraft() {
         }
     }, []);
 
+    const [isValidating, setIsValidating] = useState(false);
+
+    // Validate localStorage draft against server
+    // Returns true if draft is valid, false if cleared
+    const validateAndSyncDraft = useCallback(async (): Promise<boolean> => {
+        if (typeof window === 'undefined') return true;
+
+        const localData = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (!localData) return true; // No local draft, nothing to validate
+
+        try {
+            const parsed = JSON.parse(localData);
+            if (!parsed.householdId) return true; // No ID yet, nothing to validate
+
+            setIsValidating(true);
+
+            // Check if household exists and is still a draft
+            const response = await csrfFetch(
+                `/households/${parsed.householdId}/validate-draft`,
+            );
+
+            if (!response.ok) {
+                // Household doesn't exist or is not accessible - clear local storage
+                console.warn(
+                    '⚠️ Draft household invalid (status: ' +
+                        response.status +
+                        '), clearing local storage',
+                );
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
+                setDraftData({ photos: [] });
+                setIsValidating(false);
+                return false;
+            }
+
+            const data = await response.json();
+            if (!data.valid) {
+                // Draft is no longer valid (not_draft, not_owner, etc.)
+                console.warn(
+                    '⚠️ Draft household invalid (reason: ' +
+                        data.reason +
+                        '), clearing local storage',
+                );
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
+                setDraftData({ photos: [] });
+                setIsValidating(false);
+                return false;
+            }
+
+            setIsValidating(false);
+            return true;
+        } catch (error) {
+            console.debug('Error validating draft:', error);
+            setIsValidating(false);
+            return true; // Don't clear on network errors, let it fail later
+        }
+    }, []);
+
     return {
         draftData,
         updateDraft,
@@ -445,5 +502,7 @@ export function useHouseholdDraft() {
         loadLastDraft,
         saveDraft,
         isSaving,
+        validateAndSyncDraft,
+        isValidating,
     };
 }

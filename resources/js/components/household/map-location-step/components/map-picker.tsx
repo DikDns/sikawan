@@ -278,12 +278,16 @@ export function MapPicker({
                             parseFloat(data.longitude.toString()),
                         ]);
 
-                        // Only center on marker if coordinates changed externally
-                        if (coordsChangedExternally) {
+                        // Center on marker if coordinates changed externally OR if it's the initial load
+                        if (coordsChangedExternally || !hasLoadedRef.current) {
                             setMapCenter([
                                 parseFloat(data.latitude.toString()),
                                 parseFloat(data.longitude.toString()),
                             ]);
+                            // If initial load, set zoom to 16 for better visibility
+                            if (!hasLoadedRef.current) {
+                                setMapZoom(16);
+                            }
                         }
 
                         console.log('✅ Using existing marker:', [

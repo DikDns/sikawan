@@ -22,6 +22,16 @@ Route::get('/', function () {
 Route::get('peta-sebaran', [PublicDistributionMapController::class, 'index'])
   ->name('distribution-map.public');
 
+Route::post('/messages/store', [MessageController::class, 'store'])->name('messages.store');
+
+Route::get('/reports/preview/pdf', function () {
+  return Inertia::render('reports/pdf-preview');
+})->name('reports.preview.pdf');
+
+Route::get('/reports/preview/excel', function () {
+  return Inertia::render('reports/excel-preview');
+})->name('reports.preview.excel');
+
 Route::middleware(['auth', 'verified'])->group(function () {
   Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -41,6 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::match(['put', 'patch', 'post'], 'households/{id}', [App\Http\Controllers\HouseholdController::class, 'update'])->name('households.update');
   Route::delete('households/{id}', [App\Http\Controllers\HouseholdController::class, 'destroy'])->name('households.destroy');
   Route::post('households/{id}/finalize', [App\Http\Controllers\HouseholdController::class, 'finalize'])->name('households.finalize');
+  Route::get('households/{id}/validate-draft', [App\Http\Controllers\HouseholdController::class, 'validateDraft'])->name('households.validateDraft');
 
   // Assistance Routes
   Route::get('households/{householdId}/assistances', [App\Http\Controllers\AssistanceController::class, 'index'])->name('assistances.index');
@@ -78,6 +89,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::put('infrastructure/{groupId}/items/{itemId}', [App\Http\Controllers\InfrastructureController::class, 'update'])->name('infrastructure.items.update');
   Route::delete('infrastructure/{groupId}/items/{itemId}', [App\Http\Controllers\InfrastructureController::class, 'destroy'])->name('infrastructure.items.destroy');
 
+  // Infrastructure Assistance Routes
+  Route::get('infrastructure-items/{infrastructureId}/assistances', [App\Http\Controllers\InfrastructureAssistanceController::class, 'index'])->name('infrastructure.assistances.index');
+  Route::post('infrastructure-items/{infrastructureId}/assistances', [App\Http\Controllers\InfrastructureAssistanceController::class, 'store'])->name('infrastructure.assistances.store');
+  Route::put('infrastructure-items/{infrastructureId}/assistances/{assistanceId}', [App\Http\Controllers\InfrastructureAssistanceController::class, 'update'])->name('infrastructure.assistances.update');
+  Route::delete('infrastructure-items/{infrastructureId}/assistances/{assistanceId}', [App\Http\Controllers\InfrastructureAssistanceController::class, 'destroy'])->name('infrastructure.assistances.destroy');
+
   Route::controller(UserController::class)->group(function () {
     Route::get('/users', 'index')->name('users');
     Route::get('/users/create', 'create')->name('users.create');
@@ -98,7 +115,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
   Route::controller(MessageController::class)->group(function () {
     Route::get('/messages', 'index')->name('messages');
-    Route::post('/messages/store', 'store')->name('messages.store');
     Route::post('/messages/destroy', 'destroy')->name('messages.destroy');
   });
 
@@ -109,6 +125,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports/download/{encoded}', 'download')->where('encoded', '.*')->name('reports.download');
     Route::post('/reports/update/{report_id}', 'update')->name('reports.update');
     Route::post('/reports/preview', 'preview')->name('reports.preview');
+    Route::get('/reports/preview/pdf', 'previewPdf')->name('reports.pdf-preview');
+    Route::post('/reports/preview/pdf/store', 'storePreview')->name('reports.pdf-store');
+    Route::get('/reports/preview/excel', 'previewExcel')->name('reports.excel-preview');
   });
 
   Route::prefix('superadmin/logs')->middleware(['auth', 'verified'])->group(function () {

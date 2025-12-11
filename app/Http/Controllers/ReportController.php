@@ -148,6 +148,15 @@ class ReportController extends Controller
             'file_path' => $filePath
         ]);
 
+        // Return JSON for AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan berhasil digenerate.',
+                'download_url' => asset('storage/' . $filePath),
+            ]);
+        }
+
         return redirect()->back()->with([
             'success' => [
                 'message' => 'Laporan berhasil digenerate.',
@@ -244,58 +253,83 @@ class ReportController extends Controller
         }
 
         if ($type === 'UMUM') {
+            $houses = Household::query()
+                ->when($start, fn($q) => $q->whereDate('created_at', '>=', $start))
+                ->when($end, fn($q) => $q->whereDate('created_at', '<=', $end))
+                ->get();
+
+            $infrastructures = InfrastructureGroup::query()
+                ->when($start, fn($q) => $q->whereDate('created_at', '>=', $start))
+                ->when($end, fn($q) => $q->whereDate('created_at', '<=', $end))
+                ->get();
+
+            $areas = AreaGroup::query()
+                ->when($start, fn($q) => $q->whereDate('created_at', '>=', $start))
+                ->when($end, fn($q) => $q->whereDate('created_at', '<=', $end))
+                ->get();
+
             return [
-                'houses' => Household::all(),
-                'psu'    => InfrastructureGroup::all(),
-                'areas'  => AreaGroup::all(),
+                'houses' => $houses,
+                'psu'    => $infrastructures,
+                'areas'  => $areas,
             ];
         }
 
         return [];
     }
 
-    public function preview(Request $request) {
+    public function previewPdf() {
+        $payload = session('preview_data');
+
+        if (!$payload) {
+            abort(404, "Preview data not found.");
+        }
+
         $data = $this->getReportData(
-            $request->type,
-            $request->start_date,
-            $request->end_date
+            $payload['type'],
+            $payload['start_date'],
+            $payload['end_date']
         );
 
-        if ($request->format === 'EXCEL') {
-            $filename = "report_preview.xlsx";
+        return Inertia::render('reports/pdf-preview', [
+            'title'        => $payload['title'],
+            'description'  => $payload['description'],
+            'type'         => $payload['type'],
+            'format'       => $payload['format'] ?? 'PDF',
+            'start'        => $payload['start_date'],
+            'end'          => $payload['end_date'],
+            'data'         => $data,
+            'chartStatus'  => $payload['chart_household_status'] ?? null,
+            'chartLine'    => $payload['chart_household_line'] ?? null,
+            'chartInfra'   => $payload['chart_infrastructure'] ?? null,
+        ]);
+    }
 
-            if ($request->type === "UMUM") {
-                Excel::store(new \App\Exports\GenericReportExport($data), $filename, 'public');
-            } else {
-                Excel::store(new \App\Exports\ReportExport($data), $filename, 'public');
-            }
+    public function storePreview(Request $request) {
+        session()->put('preview_data', $request->all());
+        return response()->json(['success' => true]);
+    }
 
-            return response()->json([
-                'url' => asset("storage/" . $filename),
-            ]);
-        } else {
-            $html = view('reports.pdf', [
-                'title'   => $request->title,
-                'description' => $request->description,
-                'type'    => $request->type,
-                'start'   => $request->start_date,
-                'end'     => $request->end_date,
-                'data'    => $data,
-                'chartStatus' => $request->chart_household_status,
-                'chartLine'   => $request->chart_household_line,
-                'chartInfra'  => $request->chart_infrastructure,
-            ])->render();
-
-            $pdf = Pdf::loadHTML($html);
-            $output = $pdf->output();
-
-            $filename = 'preview.pdf';
-            $path = storage_path('app/public/' . $filename);
-            File::put($path, $output);
-
-            return response()->json([
-                'url' => asset('storage/' . $filename)
-            ]);
+    public function previewExcel() {
+        $payload = session('preview_data');
+        if (!$payload) {
+            abort(404, "Preview data not found.");
         }
+
+        $data = $this->getReportData(
+            $payload['type'],
+            $payload['start_date'],
+            $payload['end_date']
+        );
+
+        return Inertia::render('reports/excel-preview', [
+            'title'       => $payload['title'],
+            'description' => $payload['description'] ?? null,
+            'type'        => $payload['type'],
+            'format'      => $payload['format'] ?? 'EXCEL',
+            'start'       => $payload['start_date'],
+            'end'         => $payload['end_date'],
+            'data'        => $data,
+        ]);
     }
 }

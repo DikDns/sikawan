@@ -32,6 +32,20 @@ class PermissionsFromRoutesSeeder extends Seeder
                 'storage.local',
                 'verification.notice',
                 'verification.verify',
+                'two-factor.login',
+                'two-factor.qr-code',
+                'two-factor.secret-key',
+                'two-factor.recovery-codes',
+                'two-factor.show',
+                'appearance.edit',
+                'user-password.edit',
+                'profile.edit',
+                'assistances.index',
+                'api.wilayah.provinces',
+                'api.wilayah.cities',
+                'api.wilayah.sub-districts',
+                'api.wilayah.villages',
+                'logs',
             ];
             if (in_array($routeName, $exclude)) continue;
             Permission::firstOrCreate(['name' => $routeName]);

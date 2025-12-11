@@ -17,8 +17,6 @@ interface GeneralInfoSectionProps {
         field: keyof GeneralInfoData,
         value: string | number | Date | undefined,
     ) => void;
-    handleProvinceChange: (value: string) => void;
-    handleRegencyChange: (value: string) => void;
     handleDistrictChange: (value: string) => void;
     handleVillageChange: (value: string) => void;
     getDatePickerValue: () => Date;
@@ -28,8 +26,6 @@ export function GeneralInfoSection({
     formData,
     wilayah,
     updateField,
-    handleProvinceChange,
-    handleRegencyChange,
     handleDistrictChange,
     handleVillageChange,
     getDatePickerValue,
@@ -62,48 +58,6 @@ export function GeneralInfoSection({
                                 updateField('address', e.target.value)
                             }
                             rows={3}
-                        />
-                    </FieldContent>
-                </Field>
-
-                <Field className="w-full">
-                    <FieldLabel>Provinsi</FieldLabel>
-                    <FieldContent>
-                        <SearchableSelect
-                            options={wilayah.provinces}
-                            value={String(formData.provinceId || '')}
-                            onValueChange={handleProvinceChange}
-                            placeholder={
-                                wilayah.loadingProvinces
-                                    ? 'Memuat provinsi...'
-                                    : 'Pilih Provinsi'
-                            }
-                            searchPlaceholder="Cari provinsi..."
-                            emptyMessage="Provinsi tidak ditemukan"
-                            disabled={wilayah.loadingProvinces}
-                            clearable={false}
-                        />
-                    </FieldContent>
-                </Field>
-
-                <Field className="w-full">
-                    <FieldLabel>Kota/Kabupaten</FieldLabel>
-                    <FieldContent>
-                        <SearchableSelect
-                            options={wilayah.cities}
-                            value={String(formData.regencyId || '')}
-                            onValueChange={handleRegencyChange}
-                            placeholder={
-                                wilayah.loadingCities
-                                    ? 'Memuat kota/kabupaten...'
-                                    : 'Pilih Kota/Kabupaten'
-                            }
-                            searchPlaceholder="Cari kota/kabupaten..."
-                            emptyMessage="Kota/Kabupaten tidak ditemukan"
-                            disabled={
-                                !formData.provinceId || wilayah.loadingCities
-                            }
-                            clearable={true}
                         />
                     </FieldContent>
                 </Field>

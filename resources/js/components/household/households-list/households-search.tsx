@@ -11,6 +11,9 @@ import { useWilayah } from '@/hooks/use-wilayah';
 import { Search } from 'lucide-react';
 import { useEffect } from 'react';
 
+// Muara Enim regency ID (locked)
+const MUARA_ENIM_REGENCY_ID = '1606';
+
 interface AreaOption {
     value: string;
     label: string;
@@ -22,8 +25,6 @@ interface Props {
     areas?: AreaOption[];
     filters?: {
         habitability_status?: string;
-        province_id?: string;
-        regency_id?: string;
         district_id?: string;
         village_id?: string;
         area_id?: string;
@@ -38,45 +39,13 @@ export default function HouseholdsSearch({
     onFilterChange,
     areas,
 }: Props) {
-    const {
-        provinces,
-        cities,
-        subDistricts,
-        villages,
-        loadProvinces,
-        loadCities,
-        loadSubDistricts,
-        loadVillages,
-    } = useWilayah();
+    const { subDistricts, villages, loadSubDistricts, loadVillages } =
+        useWilayah();
 
+    // Load sub-districts for Muara Enim on mount
     useEffect(() => {
-        loadProvinces();
-    }, [loadProvinces]);
-
-    console.log(filters);
-    console.log(
-        filters?.province_id
-            ? provinces.find(
-                  (p) => Number(p.value) === Number(filters.province_id),
-              )
-            : null,
-    );
-
-    useEffect(() => {
-        if (filters?.province_id) {
-            loadCities(filters.province_id);
-        } else {
-            // Clear cities if province is deselected or not present
-            // But we can't clear here because useWilayah doesn't expose clearCities
-            // It's fine, the select will just show empty or previous options but disabled
-        }
-    }, [filters?.province_id, loadCities]);
-
-    useEffect(() => {
-        if (filters?.regency_id) {
-            loadSubDistricts(filters.regency_id);
-        }
-    }, [filters?.regency_id, loadSubDistricts]);
+        loadSubDistricts(MUARA_ENIM_REGENCY_ID);
+    }, [loadSubDistricts]);
 
     useEffect(() => {
         if (filters?.district_id) {
@@ -128,58 +97,9 @@ export default function HouseholdsSearch({
                         </Select>
                     </div>
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                    <Select
-                        value={filters?.province_id ? filters.province_id : ''}
-                        onValueChange={(value) =>
-                            onFilterChange?.({
-                                province_id: value === 'all' ? null : value,
-                                regency_id: null,
-                                district_id: null,
-                                village_id: null,
-                            })
-                        }
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Provinsi" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Semua Provinsi</SelectItem>
-                            {provinces.map((p) => (
-                                <SelectItem key={p.value} value={p.value}>
-                                    {p.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Select
-                        value={filters?.regency_id ? filters.regency_id : ''}
-                        disabled={!filters?.province_id}
-                        onValueChange={(value) =>
-                            onFilterChange?.({
-                                regency_id: value === 'all' ? null : value,
-                                district_id: null,
-                                village_id: null,
-                            })
-                        }
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Kabupaten/Kota" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Semua Kab/Kota</SelectItem>
-                            {cities.map((c) => (
-                                <SelectItem key={c.value} value={c.value}>
-                                    {c.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <Select
                         value={filters?.district_id ? filters.district_id : ''}
-                        disabled={!filters?.regency_id}
                         onValueChange={(value) =>
                             onFilterChange?.({
                                 district_id: value === 'all' ? null : value,

@@ -82,6 +82,60 @@ function formatDescription(row: {
     return `${actionName} ${entityName}`;
 }
 
+// Helper to extract metadata entries for CREATE/DELETE actions
+function getMetadataEntries(
+    metadata: Record<string, unknown> | null | undefined,
+    action: string,
+): Array<[string, unknown]> {
+    if (!metadata || typeof metadata !== 'object') return [];
+
+    // If metadata has before/after structure, extract the appropriate data
+    if ('before' in metadata || 'after' in metadata) {
+        let data: unknown = null;
+        if (action === 'CREATE' && 'after' in metadata) {
+            data = metadata.after;
+        } else if (action === 'DELETE' && 'before' in metadata) {
+            data = metadata.before;
+        } else if ('after' in metadata) {
+            data = metadata.after;
+        } else if ('before' in metadata) {
+            data = metadata.before;
+        }
+
+        // If data is a string (JSON), try to parse it
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                // If parsing fails, return as single entry
+                return [['Data', data]];
+            }
+        }
+
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+            return Object.entries(data as Record<string, unknown>);
+        }
+        return data ? [['Data', data]] : [];
+    }
+
+    // Flat structure - return all entries
+    return Object.entries(metadata);
+}
+
+// Helper to render a single metadata value
+function renderMetadataValue(value: unknown): string {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'boolean') return value ? 'Ya' : 'Tidak';
+    if (typeof value === 'object') {
+        try {
+            return JSON.stringify(value, null, 2);
+        } catch {
+            return String(value);
+        }
+    }
+    return String(value);
+}
+
 interface LogRow {
     id: number;
     created_at: string;
@@ -529,7 +583,118 @@ export default function SuperadminLogs() {
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
+                                                                            ) : row.action ===
+                                                                              'CREATE' ? (
+                                                                                // CREATE Action - Green Card
+                                                                                <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30">
+                                                                                    <div className="border-b border-green-200 px-3 py-2 dark:border-green-900">
+                                                                                        <span className="text-xs font-semibold text-green-700 dark:text-green-400">
+                                                                                            DATA
+                                                                                            DITAMBAHKAN
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div className="p-3">
+                                                                                        <div className="space-y-1.5">
+                                                                                            {getMetadataEntries(
+                                                                                                row.metadata_json,
+                                                                                                'CREATE',
+                                                                                            )
+                                                                                                .length >
+                                                                                            0 ? (
+                                                                                                getMetadataEntries(
+                                                                                                    row.metadata_json,
+                                                                                                    'CREATE',
+                                                                                                ).map(
+                                                                                                    ([
+                                                                                                        key,
+                                                                                                        value,
+                                                                                                    ]) => (
+                                                                                                        <div
+                                                                                                            key={
+                                                                                                                key
+                                                                                                            }
+                                                                                                            className="flex flex-col gap-0.5 text-xs"
+                                                                                                        >
+                                                                                                            <span className="font-medium text-muted-foreground">
+                                                                                                                {
+                                                                                                                    key
+                                                                                                                }
+                                                                                                            </span>
+                                                                                                            <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
+                                                                                                                {renderMetadataValue(
+                                                                                                                    value,
+                                                                                                                )}
+                                                                                                            </span>
+                                                                                                        </div>
+                                                                                                    ),
+                                                                                                )
+                                                                                            ) : (
+                                                                                                <span className="text-xs text-muted-foreground">
+                                                                                                    Tidak
+                                                                                                    ada
+                                                                                                    data
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ) : row.action ===
+                                                                              'DELETE' ? (
+                                                                                // DELETE Action - Red Card
+                                                                                <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30">
+                                                                                    <div className="border-b border-red-200 px-3 py-2 dark:border-red-900">
+                                                                                        <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                                                                                            DATA
+                                                                                            DIHAPUS
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div className="p-3">
+                                                                                        <div className="space-y-1.5">
+                                                                                            {getMetadataEntries(
+                                                                                                row.metadata_json,
+                                                                                                'DELETE',
+                                                                                            )
+                                                                                                .length >
+                                                                                            0 ? (
+                                                                                                getMetadataEntries(
+                                                                                                    row.metadata_json,
+                                                                                                    'DELETE',
+                                                                                                ).map(
+                                                                                                    ([
+                                                                                                        key,
+                                                                                                        value,
+                                                                                                    ]) => (
+                                                                                                        <div
+                                                                                                            key={
+                                                                                                                key
+                                                                                                            }
+                                                                                                            className="flex flex-col gap-0.5 text-xs"
+                                                                                                        >
+                                                                                                            <span className="font-medium text-muted-foreground">
+                                                                                                                {
+                                                                                                                    key
+                                                                                                                }
+                                                                                                            </span>
+                                                                                                            <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
+                                                                                                                {renderMetadataValue(
+                                                                                                                    value,
+                                                                                                                )}
+                                                                                                            </span>
+                                                                                                        </div>
+                                                                                                    ),
+                                                                                                )
+                                                                                            ) : (
+                                                                                                <span className="text-xs text-muted-foreground">
+                                                                                                    Tidak
+                                                                                                    ada
+                                                                                                    data
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
                                                                             ) : (
+                                                                                // Fallback for other actions
                                                                                 <div className="rounded-lg border bg-muted/50 p-3">
                                                                                     <div className="space-y-1.5">
                                                                                         {typeof row.metadata_json ===
