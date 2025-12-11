@@ -97,7 +97,7 @@ export function InfrastructureFormDialog({
         setIsSubmitting(true);
         try {
             const response = await csrfFetch(
-                `/infrastructure-groups/${groupId}/items/${item.id}`,
+                `/infrastructure/${groupId}/items/${item.id}`,
                 {
                     method: 'DELETE',
                 },

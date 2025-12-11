@@ -18,13 +18,7 @@ class SyncAllEligibleAreasJob implements ShouldQueue
   public function handle(): void
   {
     $query = Area::query()
-      ->whereNotNull('geometry_json')
-      ->where(function ($q) {
-        $q->whereNotNull('village_id')
-          ->orWhereNotNull('district_id')
-          ->orWhereNotNull('regency_id')
-          ->orWhereNotNull('province_id');
-      });
+      ->whereNotNull('geometry_json');
 
     $total = (clone $query)->count();
     $runId = (string) Str::uuid();

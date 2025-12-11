@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { useMemo, useState, forwardRef, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import dayjs from 'dayjs';
+import 'dayjs/locale/id';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { forwardRef, useMemo, useState } from 'react';
 import {
-    LineChart,
+    CartesianGrid,
+    Legend,
     Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-} from "recharts";
-import { Button } from "@/components/ui/button";
-import dayjs from "dayjs";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import "dayjs/locale/id";
+} from 'recharts';
 
-dayjs.locale("id");
+dayjs.locale('id');
 dayjs.extend(isSameOrBefore);
 
 interface Household {
@@ -26,44 +26,33 @@ interface Household {
     habitability_status: string | null;
 }
 
-const HouseholdLineChart = forwardRef<HTMLDivElement, {
-    houses: Household[],
-    startDate?: string | null,
-    endDate?: string | null
-}>(
-    function HouseholdLineChart({ houses }, ref)
-{
+const HouseholdLineChart = forwardRef<
+    HTMLDivElement,
+    {
+        houses: Household[];
+        startDate?: string | null;
+        endDate?: string | null;
+    }
+>(function HouseholdLineChart({ houses }, ref) {
     const today = dayjs().endOf('day');
     const defaultEnd = today;
-    const defaultStart = today.subtract(10, "day").startOf('day');
+    const defaultStart = today.subtract(10, 'day').startOf('day');
     const [startDate, setStartDate] = useState(defaultStart);
     const [endDate, setEndDate] = useState(defaultEnd);
-
-    const [localStart, setLocalStart] = useState(
-        startDate ? dayjs(startDate).startOf("day") : defaultStart
-    );
-    const [localEnd, setLocalEnd] = useState(
-        endDate ? dayjs(endDate).endOf("day") : defaultEnd
-    );
-
-    useEffect(() => {
-        if (startDate) setLocalStart(dayjs(startDate).startOf("day"));
-        if (endDate) setLocalEnd(dayjs(endDate).endOf("day"));
-    }, [startDate, endDate]);
 
     const generateDateRange = (start: dayjs.Dayjs, end: dayjs.Dayjs) => {
         const dates: string[] = [];
         let current = start.clone();
 
         while (current.isSameOrBefore(end)) {
-            dates.push(current.format("YYYY-MM-DD"));
-            current = current.add(1, "day");
+            dates.push(current.format('YYYY-MM-DD'));
+            current = current.add(1, 'day');
         }
         return dates;
     };
 
     const chartData = useMemo(() => {
-        const range = generateDateRange(localStart, localEnd);
+        const range = generateDateRange(startDate, endDate);
         const grouped: Record<string, number> = {};
 
         range.forEach((d) => (grouped[d] = 0));
@@ -72,17 +61,17 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, {
             const d = dayjs(h.created_at);
             if (!d.isValid()) return;
 
-            if (d.isBefore(localStart) || d.isAfter(localEnd)) return;
+            if (d.isBefore(startDate) || d.isAfter(endDate)) return;
 
-            const key = d.format("YYYY-MM-DD");
+            const key = d.format('YYYY-MM-DD');
             grouped[key] = (grouped[key] || 0) + 1;
         });
 
         return range.map((date) => ({
-            date: dayjs(date).format("DD MMM"),
+            date: dayjs(date).format('DD MMM'),
             total: grouped[date] ?? 0,
         }));
-    }, [houses, localStart, localEnd]);
+    }, [houses, startDate, endDate]);
 
     return (
         <Card className="w-full" ref={ref}>
@@ -92,41 +81,40 @@ const HouseholdLineChart = forwardRef<HTMLDivElement, {
                     <div className="flex items-center gap-2">
                         <input
                             type="date"
-                            value={localStart.format("YYYY-MM-DD")}
-                            max={today.format("YYYY-MM-DD")}
+                            value={startDate.format('YYYY-MM-DD')}
+                            max={today.format('YYYY-MM-DD')}
                             onChange={(e) => {
-                                const v = dayjs(e.target.value).startOf("day");
-                                    if (!v.isValid()) return;
-                                    if (localEnd && v.isAfter(localEnd)) return;
-                                    if (v.isAfter(today)) return;
+                                const v = dayjs(e.target.value).startOf('day');
+                                if (!v.isValid()) return;
+                                if (endDate && v.isAfter(endDate)) return;
+                                if (v.isAfter(today)) return;
 
-                                    setStartDate(v);
-                                }}
-                            className="border rounded px-2 py-1 text-sm"
+                                setStartDate(v);
+                            }}
+                            className="rounded border px-2 py-1 text-sm"
                         />
                     </div>
-                    <div className="mt-1">
-                        -
-                    </div>
+                    <div className="mt-1">-</div>
                     <div className="flex items-center gap-2">
                         <input
                             type="date"
-                            value={localEnd.format("YYYY-MM-DD")}
-                            max={today.format("YYYY-MM-DD")}
-                            min={localStart.format("YYYY-MM-DD")}
+                            value={endDate.format('YYYY-MM-DD')}
+                            max={today.format('YYYY-MM-DD')}
+                            min={startDate.format('YYYY-MM-DD')}
                             onChange={(e) => {
-                                const v = dayjs(e.target.value).endOf("day");
-                                    if (!v.isValid()) return;
-                                    if (localStart && v.isBefore(localStart)) return;
-                                    if (v.isAfter(today)) return;
+                                const v = dayjs(e.target.value).endOf('day');
+                                if (!v.isValid()) return;
+                                if (startDate && v.isBefore(startDate)) return;
+                                if (v.isAfter(today)) return;
 
-                                    setEndDate(v);
-                                }}
-                            className="border rounded px-2 py-1 text-sm"
+                                setEndDate(v);
+                            }}
+                            className="rounded border px-2 py-1 text-sm"
                         />
                     </div>
                     <Button variant="ghost" size="sm" className="gap-2">
-                        {localStart.format("DD MMM")} - {localEnd.format("DD MMM")}
+                        {startDate.format('DD MMM')} -{' '}
+                        {endDate.format('DD MMM')}
                     </Button>
                 </div>
             </CardHeader>

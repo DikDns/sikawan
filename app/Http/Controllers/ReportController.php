@@ -148,6 +148,15 @@ class ReportController extends Controller
             'file_path' => $filePath
         ]);
 
+        // Return JSON for AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan berhasil digenerate.',
+                'download_url' => asset('storage/' . $filePath),
+            ]);
+        }
+
         return redirect()->back()->with([
             'success' => [
                 'message' => 'Laporan berhasil digenerate.',
@@ -286,12 +295,13 @@ class ReportController extends Controller
             'title'        => $payload['title'],
             'description'  => $payload['description'],
             'type'         => $payload['type'],
+            'format'       => $payload['format'] ?? 'PDF',
             'start'        => $payload['start_date'],
             'end'          => $payload['end_date'],
             'data'         => $data,
-            'chartStatus'  => $payload['chart_household_status'],
-            'chartLine'    => $payload['chart_household_line'],
-            'chartInfra'   => $payload['chart_infrastructure'],
+            'chartStatus'  => $payload['chart_household_status'] ?? null,
+            'chartLine'    => $payload['chart_household_line'] ?? null,
+            'chartInfra'   => $payload['chart_infrastructure'] ?? null,
         ]);
     }
 
@@ -313,9 +323,13 @@ class ReportController extends Controller
         );
 
         return Inertia::render('reports/excel-preview', [
-            'title' => $payload['title'],
-            'type'  => $payload['type'],
-            'data'  => $data,
+            'title'       => $payload['title'],
+            'description' => $payload['description'] ?? null,
+            'type'        => $payload['type'],
+            'format'      => $payload['format'] ?? 'EXCEL',
+            'start'       => $payload['start_date'],
+            'end'         => $payload['end_date'],
+            'data'        => $data,
         ]);
     }
 }
