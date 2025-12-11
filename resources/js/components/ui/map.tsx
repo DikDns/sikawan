@@ -60,6 +60,7 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useRef,
     useState,
     type ReactNode,
@@ -1539,7 +1540,6 @@ function MapFitBounds({ bounds, padding = [50, 50], maxZoom = 18 }: MapFitBounds
 }
 
 export {
-    DEFAULT_CENTER,
     Map,
     MapCircle,
     MapCircleMarker,
