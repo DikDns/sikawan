@@ -9,7 +9,7 @@ import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 import { registerCsrfSync } from './lib/csrf';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'SIHUMA';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
