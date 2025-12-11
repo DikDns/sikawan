@@ -27,7 +27,6 @@ export default function Dashboard() {
     const {
         statCardsData,
         analysisData,
-        chartSectionData,
         psuData,
         improvedPSUData,
         bottomStatsData,
@@ -37,7 +36,6 @@ export default function Dashboard() {
         areaSummaryRows,
         slumAreaTotalM2 = 0,
         householdsInSlumArea = 0,
-        rtlhTotal = 0,
         selectedDistrict,
         selectedVillage,
     } = usePage<DashboardProps>().props;
