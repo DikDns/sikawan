@@ -84,23 +84,33 @@ class LevelController extends Controller
     private function groupPermissions() {
         $permissions = Permission::orderBy('name')->get();
 
+        // Define custom group labels
         $customGroup = [
             'dashboard' => 'Dashboard',
-            'areas' => 'Kawasan',
             'distribution-map' => 'Peta Sebaran',
             'households' => 'Rumah',
-            'infrastructure' => 'Infrastruktur',
-            'messages' => 'Pesan',
+            'areas' => 'Kawasan',
+            'infrastructure' => 'PSU',
             'reports' => 'Laporan',
-            'superadmin' => 'Superadmin Log',
+            'messages' => 'Pesan',
             'users' => 'Pengguna',
+            'levels' => 'Level',
+            'superadmin' => 'Logs',
         ];
+
+        // Only allow these groups (filter out appearance, api-wilayah, etc.)
+        $allowedGroups = array_keys($customGroup);
 
         $grouped = [];
 
         foreach ($permissions as $permission) {
             $parts = explode('.', $permission->name);
             $group = $parts[0];
+
+            // Skip if not in allowed groups
+            if (!in_array($group, $allowedGroups)) {
+                continue;
+            }
 
             $groupLabel = $customGroup[$group] ?? ucwords(str_replace(['-', '_'], ' ', $group));
 
@@ -118,7 +128,15 @@ class LevelController extends Controller
             ];
         }
 
-        return array_values($grouped);
+        // Sort by custom order
+        $orderedGroups = [];
+        foreach ($allowedGroups as $key) {
+            if (isset($grouped[$key])) {
+                $orderedGroups[] = $grouped[$key];
+            }
+        }
+
+        return $orderedGroups;
     }
 
     public function index() {

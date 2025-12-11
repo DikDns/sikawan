@@ -1,4 +1,5 @@
 import {
+    DEFAULT_CENTER,
     Map,
     MapLayerGroup,
     MapLayers,
@@ -201,30 +202,30 @@ export default function DistributionMap() {
         };
     }, []);
 
-    const center = useMemo(() => {
-        if (households.length > 0) {
-            const lat =
-                households.reduce((s, h) => s + h.latitude, 0) /
-                households.length;
-            const lng =
-                households.reduce((s, h) => s + h.longitude, 0) /
-                households.length;
-            return [lat, lng] as [number, number];
-        }
-        const withCentroid = areaGroups.filter(
-            (g) => g.centroid_lat && g.centroid_lng,
-        );
-        if (withCentroid.length > 0) {
-            const lat =
-                withCentroid.reduce((s, g) => s + (g.centroid_lat || 0), 0) /
-                withCentroid.length;
-            const lng =
-                withCentroid.reduce((s, g) => s + (g.centroid_lng || 0), 0) /
-                withCentroid.length;
-            return [lat, lng] as [number, number];
-        }
-        return [-3.6632234, 103.7781606] as [number, number];
-    }, [households, areaGroups]);
+    // const center = useMemo(() => {
+    //     if (households.length > 0) {
+    //         const lat =
+    //             households.reduce((s, h) => s + h.latitude, 0) /
+    //             households.length;
+    //         const lng =
+    //             households.reduce((s, h) => s + h.longitude, 0) /
+    //             households.length;
+    //         return [lat, lng] as [number, number];
+    //     }
+    //     const withCentroid = areaGroups.filter(
+    //         (g) => g.centroid_lat && g.centroid_lng,
+    //     );
+    //     if (withCentroid.length > 0) {
+    //         const lat =
+    //             withCentroid.reduce((s, g) => s + (g.centroid_lat || 0), 0) /
+    //             withCentroid.length;
+    //         const lng =
+    //             withCentroid.reduce((s, g) => s + (g.centroid_lng || 0), 0) /
+    //             withCentroid.length;
+    //         return [lat, lng] as [number, number];
+    //     }
+    //     return [-3.6632234, 103.7781606] as [number, number];
+    // }, [households, areaGroups]);
 
     // Layer names grouped by category
     const rumahLayerNames = useMemo(
@@ -293,7 +294,11 @@ export default function DistributionMap() {
                 </div>
 
                 <div className="flex-1 overflow-hidden rounded-lg border">
-                    <Map center={center} zoom={15} className="h-full w-full">
+                    <Map
+                        center={DEFAULT_CENTER}
+                        zoom={15}
+                        className="h-full w-full"
+                    >
                         <MapTileLayer name="OSM" />
 
                         <MapLayers defaultLayerGroups={defaultLayerGroups}>
