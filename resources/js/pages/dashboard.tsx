@@ -42,6 +42,10 @@ export default function Dashboard() {
         slumAreaTotalM2 = 0,
         householdsInSlumArea = 0,
         rtlhTotal = 0,
+        districts = [],
+        villages = [],
+        selectedDistrict,
+        selectedVillage,
     } = usePage<DashboardProps>().props;
 
     return (
@@ -49,7 +53,14 @@ export default function Dashboard() {
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <main className="min-h-screen space-y-6 bg-background">
-                    <DashboardHeader />
+                    <DashboardHeader
+                        years={availableYears}
+                        districts={districts}
+                        villages={villages}
+                        selectedYear={selectedEconomicYear}
+                        selectedDistrict={selectedDistrict}
+                        selectedVillage={selectedVillage}
+                    />
                     <StatCards data={statCardsData.slice(0, 3)} columns={3} />
                     <StatCards data={statCardsData.slice(3, 5)} columns={2} />
 
