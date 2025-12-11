@@ -138,7 +138,47 @@ class DashboardController extends Controller
         ['name' => 'Rusak Ringan', 'value' => $psuRusakRingan, 'color' => '#FFAA22'],
         ['name' => 'Rusak Berat', 'value' => $psuRusakBerat, 'color' => '#EF4C4C'],
       ];
-      $improvedPSUData = $psuData;
+
+      // Improved PSU Data (Perbaikan PSU) based on InfrastructureAssistance status
+      // We need to filter assistance based on location filters as well
+      // But Assistance belongs to Infrastructure.
+      $assistanceQuery = \App\Models\InfrastructureAssistance::query()
+        ->whereHas('infrastructure', function ($q) use ($district, $village) {
+            if ($district) $q->where('district_id', $district);
+            if ($village) $q->where('village_id', $village);
+        });
+
+      $assistanceStats = (clone $assistanceQuery)
+        ->select('status', DB::raw('count(*) as total'))
+        ->groupBy('status')
+        ->get();
+
+      $improvedPSUData = $assistanceStats->map(function($item) {
+          $color = '#94a3b8'; // Default gray
+          $statusUpper = strtoupper($item->status);
+
+          switch ($statusUpper) {
+              case 'SELESAI':
+                  $color = '#10b981'; // Green
+                  break;
+              case 'PROSES':
+                  $color = '#f59e0b'; // Yellow/Amber (matches bg-yellow-100)
+                  break;
+              case 'DIBATALKAN':
+                  $color = '#ef4444'; // Red (matches bg-red-100)
+                  break;
+          }
+
+          return [
+              'name' => ucfirst(strtolower($item->status)),
+              'value' => $item->total,
+              'color' => $color
+          ];
+      })->toArray();
+
+      if (empty($improvedPSUData)) {
+          $improvedPSUData = []; // Return empty if no data
+      }
 
       // Economic Data Calculations
 
