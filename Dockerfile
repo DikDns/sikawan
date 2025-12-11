@@ -74,6 +74,8 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Copy Docker configuration files
 COPY .docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY .docker/supervisor.conf /etc/supervisor.d/app.ini
+COPY .docker/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY .docker/www.conf /usr/local/etc/php-fpm.d/www.conf
 COPY .docker/entrypoint.sh /entrypoint.sh
 
 # Set permissions
