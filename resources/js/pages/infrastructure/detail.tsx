@@ -126,6 +126,8 @@ export default function InfrastructureDetail({ group, items }: Props) {
                     );
                 }
 
+                window.location.reload();
+
                 const data = await response.json();
                 toast.success(data.message || 'PSU berhasil ditambahkan');
                 const created = data?.data?.item || data?.item;
@@ -186,6 +188,9 @@ export default function InfrastructureDetail({ group, items }: Props) {
                     }
                     throw new Error('Gagal menghapus PSU');
                 }
+
+                window.location.reload();
+
                 const data = await response.json().catch(() => ({}));
                 toast.success(data.message || 'PSU berhasil dihapus');
                 setItemsState((prev) => prev.filter((a) => a.id !== itemId));
@@ -233,6 +238,9 @@ export default function InfrastructureDetail({ group, items }: Props) {
                     }
                     throw new Error(errText || 'Gagal mengedit PSU');
                 }
+
+                window.location.reload();
+
                 const data = await response.json().catch(() => ({}));
                 toast.success(data.message || 'PSU berhasil diperbarui');
                 setItemsState((prev) =>

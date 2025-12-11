@@ -10,7 +10,6 @@ import {
     MapDrawMarker,
     MapDrawPolygon,
     MapDrawPolyline,
-    MapFitBounds,
     MapTileLayer,
     useLeaflet,
 } from '@/components/ui/map';
@@ -560,9 +559,6 @@ export function InfrastructureMapDisplay({
         <div className={className}>
             <Map center={mapCenter} zoom={zoom} className="h-full w-full">
                 <MapTileLayer />
-                {allCoords.length > 1 && (
-                    <MapFitBounds bounds={allCoords} maxZoom={zoom} />
-                )}
                 <MapDrawControl
                     onLayersChange={handleLayersChange}
                     initialShapes={initialShapes}

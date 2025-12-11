@@ -914,17 +914,6 @@ function MapDrawControl({
         }
     }, [])
 
-    // Validate helpers
-    function isValidLatLngPair(pair: unknown): pair is [number, number] {
-        return (
-            Array.isArray(pair) &&
-            pair.length === 2 &&
-            typeof pair[0] === "number" &&
-            typeof pair[1] === "number" &&
-            Number.isFinite(pair[0]) &&
-            Number.isFinite(pair[1])
-        )
-    }
 
     // Add initial shapes into the FeatureGroup once L and group are ready
     useEffect(() => {
@@ -939,74 +928,55 @@ function MapDrawControl({
             try {
                 if (shape.type === "polygon") {
                     const positions = shape.positions
-                    const valid = Array.isArray(positions) &&
-                        positions.every(
-                            (ring) => Array.isArray(ring) && ring.every(isValidLatLngPair)
-                        )
-                    if (!valid) {
-                        console.error("Invalid polygon positions", shape)
-                        return
+                    if (Array.isArray(positions)) {
+                        const layer = L.polygon(positions, {
+                            color: shape.color || "var(--color-primary)",
+                            weight: 4,
+                            opacity: 1,
+                            fillOpacity: 0.25,
+                        })
+                        ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
+                        group.addLayer(layer)
+                        addedCount += 1
                     }
-                    const layer = L.polygon(positions, {
-                        color: shape.color || "var(--color-primary)",
-                        weight: 4,
-                        opacity: 1,
-                        fillOpacity: 0.25,
-                    })
-                    ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
-                    group.addLayer(layer)
-                    addedCount += 1
                 } else if (shape.type === "rectangle") {
                     const bounds = shape.bounds
-                    const valid =
-                        Array.isArray(bounds) &&
-                        bounds.length === 2 &&
-                        isValidLatLngPair(bounds[0]) &&
-                        isValidLatLngPair(bounds[1])
-                    if (!valid) {
-                        console.error("Invalid rectangle bounds", shape)
-                        return
+                    if (Array.isArray(bounds)) {
+                        const layer = L.rectangle(bounds, {
+                            color: shape.color || "var(--color-primary)",
+                            weight: 2,
+                            opacity: 1,
+                        })
+                        ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
+                        group.addLayer(layer)
+                        addedCount += 1
                     }
-                    const layer = L.rectangle(bounds, {
-                        color: shape.color || "var(--color-primary)",
-                        weight: 2,
-                        opacity: 1,
-                    })
-                    ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
-                    group.addLayer(layer)
-                    addedCount += 1
                 } else if (shape.type === "marker") {
                     const pos = shape.position
-                    const valid = isValidLatLngPair(pos)
-                    if (!valid) {
-                        console.error("Invalid marker position", shape)
-                        return
+                    if (Array.isArray(pos)) {
+                        const layer = L.marker(pos, {
+                            icon: L.divIcon({
+                                className: "",
+                                iconAnchor: [12, 12],
+                                html: renderToString(<MapPinIcon className="size-6" />),
+                            }),
+                        })
+                        ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
+                        group.addLayer(layer)
+                        addedCount += 1
                     }
-                    const layer = L.marker(pos, {
-                        icon: L.divIcon({
-                            className: "",
-                            iconAnchor: [12, 12],
-                            html: renderToString(<MapPinIcon className="size-6" />),
-                        }),
-                    })
-                    ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
-                    group.addLayer(layer)
-                    addedCount += 1
                 } else if (shape.type === "polyline") {
                     const positions = shape.positions
-                    const valid = Array.isArray(positions) && positions.every(isValidLatLngPair)
-                    if (!valid) {
-                        console.error("Invalid polyline positions", shape)
-                        return
+                    if (Array.isArray(positions)) {
+                        const layer = L.polyline(positions, {
+                            color: shape.color || "var(--color-primary)",
+                            weight: 4,
+                            opacity: 1,
+                        })
+                        ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
+                        group.addLayer(layer)
+                        addedCount += 1
                     }
-                    const layer = L.polyline(positions, {
-                        color: shape.color || "var(--color-primary)",
-                        weight: 4,
-                        opacity: 1,
-                    })
-                    ;(layer as unknown as { __initialId: number | null }).__initialId = shape.id ?? null
-                    group.addLayer(layer)
-                    addedCount += 1
                 }
             } catch (err) {
                 console.error("Error adding initial shape", shape, err)
@@ -1015,7 +985,6 @@ function MapDrawControl({
 
         if (addedCount > 0) {
             initialShapesAddedRef.current = true
-            console.log("[MapDrawControl] changeType=initialized, layers=", group.getLayers().length)
             onLayersChange?.(group, "initialized")
         }
     }, [L, initialShapes, onLayersChange])

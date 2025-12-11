@@ -10,7 +10,6 @@ import {
     MapDrawPolygon,
     MapDrawRectangle,
     MapDrawUndo,
-    MapFitBounds,
     MapLayerGroup,
     MapMarker,
     MapPopup,
@@ -97,23 +96,6 @@ export function AreaMapDisplay({
 
         return [avgLat, avgLng] as LatLngExpression;
     }, [validCentroids, center]);
-
-    // Calculate bounds for fitBounds
-    const calcBounds = useMemo(() => {
-        const coords: [number, number][] = [];
-        validCentroids.forEach((f) => {
-            if (f.centroid_lat && f.centroid_lng) {
-                coords.push([f.centroid_lat, f.centroid_lng]);
-            }
-        });
-        // Also include household coordinates
-        households.forEach((h) => {
-            if (h.latitude && h.longitude) {
-                coords.push([h.latitude, h.longitude]);
-            }
-        });
-        return coords;
-    }, [validCentroids, households]);
 
     // Cleanup manually drawn layers when features update (sync from backend)
     useEffect(() => {
@@ -650,9 +632,7 @@ export function AreaMapDisplay({
         <div className={className}>
             <Map center={mapCenter} zoom={zoom} className="h-full w-full">
                 <MapTileLayer />
-                {calcBounds.length > 1 && (
-                    <MapFitBounds bounds={calcBounds} maxZoom={zoom} />
-                )}
+
                 <MapLayerGroup name="Rumah Layak Huni">
                     {households
                         .filter((h) => h.habitability_status === 'RLH')
