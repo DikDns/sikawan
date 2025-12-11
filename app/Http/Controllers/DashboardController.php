@@ -10,6 +10,7 @@ use App\Models\Infrastructure;
 use App\Models\Wilayah\SubDistrict;
 use App\Models\Wilayah\Village;
 use Illuminate\Support\Facades\DB;
+use App\Models\Household\Member;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -139,105 +140,83 @@ class DashboardController extends Controller
       ];
       $improvedPSUData = $psuData;
 
-      $economicQuery = clone $housesQuery;
+      // Economic Data Calculations
 
+      // 1. Average Income
       // Calculate average income (now stored as actual rupiah values)
-      $avgIncome = (clone $economicQuery)
+      $avgIncome = (clone $housesQuery)
         ->whereNotNull('monthly_income_idr')
         ->where('monthly_income_idr', '>', 0)
         ->avg('monthly_income_idr');
 
-      // Format average income as currency
       $avgIncomeStr = $avgIncome
-        ? 'Rp ' . number_format((int) $avgIncome, 0, ',', '.')
+        ? 'Rp ' . number_format((int) $avgIncome, 0, ',', '.') . '/Bulan' // Added /Bulan
         : '-';
 
-      $totalHouseholdsEco = (int) (clone $economicQuery)->count();
-      $educationAccessCount = (int) (clone $economicQuery)->whereNotNull('education_facility_location')->count();
-      $healthAccessCount = (int) (clone $economicQuery)->whereNotNull('health_facility_used')->count();
-      $educationAccessPct = $totalHouseholdsEco > 0 ? round(($educationAccessCount / $totalHouseholdsEco) * 100, 1) . '%' : '-';
-      $healthAccessPct = $totalHouseholdsEco > 0 ? round(($healthAccessCount / $totalHouseholdsEco) * 100, 1) . '%' : '-';
+      // 2. Unemployment Rate (Tingkat Pengangguran)
+      // Logic: Members with 'tidak-ada' occupation / Total Members * 100
+      // We need to query Members related to the filtered households
+      $householdIds = (clone $housesQuery)->pluck('id');
 
-      // Available years for filter
-      $availableYears = Household::selectRaw('DISTINCT strftime("%Y", created_at) as year')
-        ->whereNotNull('created_at')
-        ->orderBy('year', 'desc')
-        ->pluck('year')
-        ->filter()
-        ->values()
-        ->toArray();
+      $totalMembers = Member::whereIn('household_id', $householdIds)->count();
+
+      $unemployedMembers = Member::whereIn('household_id', $householdIds)
+        ->where(function($q) {
+             $q->where('occupation', 'like', 'tidak-ada%')
+               ->orWhere('occupation', 'like', 'Tidak Ada%')
+               ->orWhere('occupation', 'like', 'belum%') // Catch 'Belum/Tidak Bekerja'
+               ->orWhereNull('occupation');
+        })
+        ->count();
+
+      $unemploymentRate = $totalMembers > 0
+        ? round(($unemployedMembers / $totalMembers) * 100, 1) . '%'
+        : '0%';
+
+      // 3. Poverty Count (Jumlah Penduduk Miskin)
+      // Logic: Income per capita < 550,000
+      // We iterate households to check per capita income
+      // Optimization: Raw SQL might be faster but Collection filter is safer for logic
+      // Using database query for efficiency:
+      // where (monthly_income_idr / member_total) < 550000
+      $poorPopulationCount = (clone $housesQuery)
+        ->where('member_total', '>', 0)
+        ->whereRaw('(monthly_income_idr / member_total) < 550000')
+        ->sum('member_total');
+
+      $poorPopulationStr = number_format($poorPopulationCount, 0, ',', '.') . ' Jiwa';
 
       $economicData = [
         ['indicator' => 'Pendapatan Rata-rata', 'value' => $avgIncomeStr],
-        ['indicator' => 'Akses Pendidikan Dasar', 'value' => $educationAccessPct],
-        ['indicator' => 'Akses Kesehatan', 'value' => $healthAccessPct],
+        ['indicator' => 'Tingkat Pengangguran', 'value' => $unemploymentRate],
+        ['indicator' => 'Jumlah Penduduk Miskin', 'value' => $poorPopulationStr],
       ];
 
-      // Region stats from Area model with year filter
-      $regionYearFilter = count($economicYear) > 0 ? $economicYear : (count($availableYears) > 0 ? [$availableYears[0]] : []);
-
-      $areasWithHouseholdsQuery = Area::query();
-      if ($district) $areasWithHouseholdsQuery->where('district_id', $district);
-      if ($village) $areasWithHouseholdsQuery->where('village_id', $village);
-
-      if ($regionYearFilter) {
-        $areasWithHouseholdsQuery->withCount([
-          'households' => fn($q) => $q->whereIn(DB::raw('strftime("%Y", created_at)'), $regionYearFilter),
-          'households as rlh_count' => fn($q) => $q->whereIn(DB::raw('strftime("%Y", created_at)'), $regionYearFilter)->where('habitability_status', 'RLH'),
-          'households as rtlh_count' => fn($q) => $q->whereIn(DB::raw('strftime("%Y", created_at)'), $regionYearFilter)->where('habitability_status', 'RTLH'),
-        ]);
-      } else {
-        $areasWithHouseholdsQuery->withCount([
-          'households',
-          'households as rlh_count' => fn($q) => $q->where('habitability_status', 'RLH'),
-          'households as rtlh_count' => fn($q) => $q->where('habitability_status', 'RTLH'),
-        ]);
-      }
-
-      $areasWithHouseholds = $areasWithHouseholdsQuery
-        ->has('households')
-        ->orderByDesc('households_count')
-        ->limit(5)
-        ->get();
-
-      $regionStats = [];
-      foreach ($areasWithHouseholds as $area) {
-        $regionStats[] = [
-          'region' => [
-            'name' => $area->name ?? 'Tidak diketahui',
-            'houses' => number_format($area->households_count, 0, ',', '.') . ' Rumah',
-          ],
-          'data' => [
-            ['label' => 'RLH', 'value' => (int) $area->rlh_count, 'color' => '#B2F02C'],
-            ['label' => 'RTLH', 'value' => (int) $area->rtlh_count, 'color' => '#FFAA22'],
-          ],
-        ];
-      }
-
-      // Area summary rows with year filter
+      // Area summary rows with year filter - No logic change needed, just keep it clean
       $areaSummaryQuery = Area::query();
 
       if ($district) $areaSummaryQuery->where('district_id', $district);
       if ($village) $areaSummaryQuery->where('village_id', $village);
 
+      // Simple Household Count
       $areaSummaryQuery->withCount([
         'households' => fn ($q) =>
-        $this->applyFilters($q, $regionYearFilter, $district, $village)
+        $this->applyFilters($q, $economicYear, $district, $village)
       ]);
-
-      if ($regionYearFilter) {
-        $areaSummaryQuery->withCount([
-          'households' => fn($q) => $q->whereIn(DB::raw('strftime("%Y", created_at)'), $regionYearFilter),
-        ]);
-      } else {
-        $areaSummaryQuery->withCount('households');
-      }
 
       $areaSummaryRows = $areaSummaryQuery
         ->orderByDesc('households_count')
         ->limit(10)
         ->get()
         ->map(fn($a) => ['name' => $a->name, 'rumah' => $a->households_count])
+        ->toArray();
+
+      $availableYears = Household::selectRaw('DISTINCT strftime("%Y", created_at) as year')
+        ->whereNotNull('created_at')
+        ->orderBy('year', 'desc')
+        ->pluck('year')
+        ->filter()
+        ->values()
         ->toArray();
 
       return Inertia::render('dashboard', [
@@ -250,9 +229,7 @@ class DashboardController extends Controller
         'economicData' => $economicData,
         'availableYears' => $availableYears,
         'selectedEconomicYear' => $economicYear,
-        'selectedRegionYear' => $regionYearFilter,
         'areaSummaryRows' => $areaSummaryRows,
-        'regionStats' => $regionStats,
         'slumAreaTotalM2' => $slumAreaTotalM2,
         'householdsInSlumArea' => $householdsInSlumArea,
         'rtlhTotal' => $rtlhTotal,

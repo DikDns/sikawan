@@ -35,7 +35,6 @@ export default function Dashboard() {
         availableYears = [],
         selectedEconomicYear,
         areaSummaryRows,
-        regionStats,
         slumAreaTotalM2 = 0,
         householdsInSlumArea = 0,
         rtlhTotal = 0,
