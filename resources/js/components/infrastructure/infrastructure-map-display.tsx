@@ -2,6 +2,7 @@
 // This file uses dynamic Leaflet layer properties that require 'any' type assertions
 import { Badge } from '@/components/ui/badge';
 import {
+    DEFAULT_CENTER,
     Map,
     MapDrawControl,
     MapDrawDelete,
@@ -61,7 +62,7 @@ export function InfrastructureMapDisplay({
     defaultColor = '#4C6EF5',
     className,
     center,
-    zoom = 13,
+    zoom = 15,
     onLayerCreated,
     onLayerDeleted,
     onLayerEdited,
@@ -248,7 +249,7 @@ export function InfrastructureMapDisplay({
         } catch {
             // Parsing error, use default center
         }
-        return [-4.2327, 103.6141] as LatLngExpression;
+        return DEFAULT_CENTER as LatLngExpression;
     }, [center, parsedFeatures, allowedGeometryType]);
 
     const POPUP_CLASSNAME =

@@ -67,8 +67,8 @@ export default function Areas({ areaGroups, stats }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
     const [syncAllOpen, setSyncAllOpen] = useState(false);
-    const [syncAllPolling, setSyncAllPolling] = useState(false);
     const [syncAllLoading, setSyncAllLoading] = useState(false);
+    const [syncStarted, setSyncStarted] = useState(false);
     const [syncAllStatus, setSyncAllStatus] = useState<{
         status: string;
         total: number;
@@ -76,7 +76,15 @@ export default function Areas({ areaGroups, stats }: Props) {
         start_at?: string | null;
     } | null>(null);
 
-    useSyncAllPolling(syncAllPolling, setSyncAllPolling, setSyncAllStatus);
+    // Poll status when dialog is open
+    useSyncDialogPolling(
+        syncAllOpen,
+        setSyncAllOpen,
+        setSyncAllLoading,
+        setSyncAllStatus,
+        syncStarted,
+        setSyncStarted,
+    );
 
     // Action handlers
     const handleView = (id: number) => {
@@ -153,34 +161,7 @@ export default function Areas({ areaGroups, stats }: Props) {
                                 </Button>
                                 <Button
                                     type="button"
-                                    onClick={async () => {
-                                        setSyncAllOpen(true);
-                                        setSyncAllLoading(true);
-                                        try {
-                                            const res = await csrfFetch(
-                                                '/areas/sync-all/status',
-                                                { method: 'GET' },
-                                            );
-                                            const data = await res
-                                                .json()
-                                                .catch(() => ({}));
-                                            setSyncAllStatus({
-                                                status: String(
-                                                    data?.status || 'idle',
-                                                ),
-                                                total: Number(data?.total || 0),
-                                                pending: Number(
-                                                    data?.pending || 0,
-                                                ),
-                                                start_at:
-                                                    data?.start_at || null,
-                                            });
-                                        } catch {
-                                            setSyncAllStatus(null);
-                                        } finally {
-                                            setSyncAllLoading(false);
-                                        }
-                                    }}
+                                    onClick={() => setSyncAllOpen(true)}
                                     variant="secondary"
                                     className="gap-2 sm:w-auto"
                                     aria-label="Sinkronisasi Rumah"
@@ -234,7 +215,8 @@ export default function Areas({ areaGroups, stats }: Props) {
                                         Memeriksa status sinkronisasi...
                                     </span>
                                 </div>
-                            ) : syncAllStatus?.status === 'running' ? (
+                            ) : syncAllStatus?.status === 'running' &&
+                              syncAllStatus.pending > 0 ? (
                                 <Alert>
                                     <Spinner className="h-4 w-4 text-primary" />
                                     <AlertTitle>
@@ -289,11 +271,16 @@ export default function Areas({ areaGroups, stats }: Props) {
                                 variant="ghost"
                                 onClick={() => setSyncAllOpen(false)}
                             >
-                                {syncAllStatus?.status === 'running'
+                                {syncAllStatus?.status === 'running' &&
+                                syncAllStatus.pending > 0
                                     ? 'Tutup'
                                     : 'Batal'}
                             </Button>
-                            {syncAllStatus?.status !== 'running' && (
+                            {/* Only hide button when actively running */}
+                            {!(
+                                syncAllStatus?.status === 'running' &&
+                                syncAllStatus.pending > 0
+                            ) && (
                                 <Button
                                     type="button"
                                     disabled={syncAllLoading}
@@ -312,15 +299,15 @@ export default function Areas({ areaGroups, stats }: Props) {
                                                 );
                                                 return;
                                             }
-                                            const data = await res
-                                                .json()
-                                                .catch(() => ({}));
-                                            toast.success(
-                                                data.message ||
-                                                    'Sinkronisasi semua kawasan dimulai',
-                                            );
-                                            setSyncAllOpen(false);
-                                            setSyncAllPolling(true);
+                                            // Keep dialog open and set status to running
+                                            setSyncStarted(true);
+                                            setSyncAllStatus({
+                                                status: 'running',
+                                                total: 0,
+                                                pending: 1,
+                                                start_at:
+                                                    new Date().toISOString(),
+                                            });
                                         } catch {
                                             toast.error(
                                                 'Terjadi kesalahan jaringan',
@@ -336,38 +323,6 @@ export default function Areas({ areaGroups, stats }: Props) {
                     </DialogContent>
                 </Dialog>
 
-                {syncAllPolling && (
-                    <Alert>
-                        <Spinner className="text-primary" />
-                        <AlertTitle>Sinkronisasi berjalan</AlertTitle>
-                        <AlertDescription>
-                            <div>
-                                {syncAllStatus
-                                    ? `Proses: ${Math.max(0, syncAllStatus.total - syncAllStatus.pending)}/${syncAllStatus.total}`
-                                    : 'Memantau sinkronisasi...'}
-                            </div>
-                            {syncAllStatus && (
-                                <div className="mt-2">
-                                    <Progress
-                                        value={
-                                            syncAllStatus.total > 0
-                                                ? (Math.max(
-                                                      0,
-                                                      syncAllStatus.total -
-                                                          syncAllStatus.pending,
-                                                  ) /
-                                                      syncAllStatus.total /
-                                                      1) *
-                                                  100
-                                                : 0
-                                        }
-                                    />
-                                </div>
-                            )}
-                        </AlertDescription>
-                    </Alert>
-                )}
-
                 {/* Statistics Cards & Table */}
                 <AreaGroupTable
                     groups={filteredAreaGroups}
@@ -380,17 +335,31 @@ export default function Areas({ areaGroups, stats }: Props) {
     );
 }
 
-// Polling status sinkronisasi
-function useSyncAllPolling(
-    polling: boolean,
-    setPolling: (v: boolean) => void,
+// Poll sync status when dialog is open
+function useSyncDialogPolling(
+    dialogOpen: boolean,
+    setDialogOpen: (v: boolean) => void,
+    setLoading: (v: boolean) => void,
     setStatus: (
-        s: { status: string; total: number; pending: number } | null,
+        s: {
+            status: string;
+            total: number;
+            pending: number;
+            start_at?: string | null;
+        } | null,
     ) => void,
+    syncStarted: boolean,
+    setSyncStarted: (v: boolean) => void,
 ) {
     useEffect(() => {
         let timer: ReturnType<typeof setInterval> | undefined;
+        let isFirstLoad = true;
+        let completedCount = 0;
+
         const poll = async () => {
+            if (isFirstLoad) {
+                setLoading(true);
+            }
             try {
                 const res = await csrfFetch('/areas/sync-all/status', {
                     method: 'GET',
@@ -399,21 +368,65 @@ function useSyncAllPolling(
                 const status = String(data?.status || 'idle');
                 const total = Number(data?.total || 0);
                 const pending = Number(data?.pending || 0);
-                setStatus({ status, total, pending });
-                if (status === 'completed' || (total > 0 && pending <= 0)) {
-                    toast.success('Sinkronisasi semua kawasan selesai');
-                    setPolling(false);
+                const start_at = data?.start_at || null;
+
+                setStatus({
+                    status,
+                    total,
+                    pending,
+                    start_at,
+                });
+
+                // If first load and sync is already running, mark as started
+                const isRunning = status === 'running' && pending > 0;
+                if (isFirstLoad && isRunning && !syncStarted) {
+                    setSyncStarted(true);
+                }
+
+                // Only check for completion if sync was started by user
+                if (syncStarted || isRunning) {
+                    const isCompleted =
+                        status === 'completed' || (total > 0 && pending <= 0);
+
+                    if (isCompleted) {
+                        completedCount++;
+                        // After 3 consecutive completed checks, close dialog
+                        if (completedCount >= 3) {
+                            toast.success('Sinkronisasi semua kawasan selesai');
+                            setDialogOpen(false);
+                            setSyncStarted(false);
+                            if (timer) clearInterval(timer);
+                        }
+                    } else {
+                        completedCount = 0; // Reset if not completed
+                    }
                 }
             } catch {
-                // swallow errors, continue polling a few times
+                // swallow errors
+            } finally {
+                if (isFirstLoad) {
+                    setLoading(false);
+                    isFirstLoad = false;
+                }
             }
         };
-        if (polling) {
+
+        if (dialogOpen) {
+            completedCount = 0; // Reset on dialog open
             poll();
-            timer = setInterval(poll, 3000);
+            // Poll every 2 seconds while dialog is open
+            timer = setInterval(poll, 2000);
         }
+
         return () => {
             if (timer) clearInterval(timer);
         };
-    }, [polling, setPolling, setStatus]);
+    }, [
+        dialogOpen,
+        setDialogOpen,
+        setLoading,
+        setStatus,
+        syncStarted,
+        setSyncStarted,
+    ]);
 }

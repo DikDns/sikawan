@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreAreaGroupRequest;
-use App\Http\Requests\UpdateAreaGroupRequest;
 use App\Models\AreaGroup;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Illuminate\Http\RedirectResponse;
 
 class AreaGroupController extends Controller
 {
@@ -21,16 +20,32 @@ class AreaGroupController extends Controller
     /**
      * Store a new area group
      */
-    public function store(StoreAreaGroupRequest $request): RedirectResponse
+    public function store(Request $request)
     {
-        $payload = $request->validated();
+        // Uppercase code before validation for proper unique check
+        $request->merge(['code' => strtoupper($request->code)]);
 
-        // Normalize code to uppercase (server-side safety)
-        if (isset($payload['code'])) {
-            $payload['code'] = strtoupper($payload['code']);
-        }
+        $request->validate([
+            'code' => ['required', 'string', 'max:50', Rule::unique('area_groups', 'code')],
+            'name' => ['required', 'string', 'max:150'],
+            'description' => ['nullable', 'string'],
+            'legend_color_hex' => ['required', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
+            'legend_icon' => ['nullable', 'string', 'max:150'],
+            'geometry_json' => ['nullable', 'array'],
+            'centroid_lat' => ['nullable', 'numeric'],
+            'centroid_lng' => ['nullable', 'numeric'],
+        ]);
 
-        $group = AreaGroup::create($payload);
+        $group = AreaGroup::create([
+            'code' => $request->code,
+            'name' => $request->name,
+            'description' => $request->description,
+            'legend_color_hex' => $request->legend_color_hex,
+            'legend_icon' => $request->legend_icon,
+            'geometry_json' => $request->geometry_json,
+            'centroid_lat' => $request->centroid_lat,
+            'centroid_lng' => $request->centroid_lng,
+        ]);
 
         return redirect()->route('areas')
             ->with('success', 'Kawasan berhasil dibuat (ID: ' . $group->id . ').');
@@ -51,16 +66,33 @@ class AreaGroupController extends Controller
     /**
      * Update an area group
      */
-    public function update(UpdateAreaGroupRequest $request, int $id): RedirectResponse
+    public function update(Request $request, int $id)
     {
+        // Uppercase code before validation for proper unique check
+        $request->merge(['code' => strtoupper($request->code)]);
+
+        $request->validate([
+            'code' => ['required', 'string', 'max:50', Rule::unique('area_groups', 'code')->ignore($id)],
+            'name' => ['required', 'string', 'max:150'],
+            'description' => ['nullable', 'string'],
+            'legend_color_hex' => ['required', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
+            'legend_icon' => ['nullable', 'string', 'max:150'],
+            'geometry_json' => ['nullable', 'array'],
+            'centroid_lat' => ['nullable', 'numeric'],
+            'centroid_lng' => ['nullable', 'numeric'],
+        ]);
+
         $group = AreaGroup::findOrFail($id);
-        $payload = $request->validated();
-
-        if (isset($payload['code'])) {
-            $payload['code'] = strtoupper($payload['code']);
-        }
-
-        $group->update($payload);
+        $group->update([
+            'code' => $request->code,
+            'name' => $request->name,
+            'description' => $request->description,
+            'legend_color_hex' => $request->legend_color_hex,
+            'legend_icon' => $request->legend_icon,
+            'geometry_json' => $request->geometry_json,
+            'centroid_lat' => $request->centroid_lat,
+            'centroid_lng' => $request->centroid_lng,
+        ]);
 
         return redirect()->route('areas')
             ->with('success', 'Kawasan berhasil diperbarui (ID: ' . $group->id . ').');
@@ -69,7 +101,7 @@ class AreaGroupController extends Controller
     /**
      * Delete an area group
      */
-    public function destroy(int $id): RedirectResponse
+    public function destroy(Request $request, int $id)
     {
         $group = AreaGroup::findOrFail($id);
         $group->delete();

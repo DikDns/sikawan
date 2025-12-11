@@ -38,9 +38,10 @@ class InfrastructureGroupController extends Controller
 
   public function store(Request $request)
   {
+    $request->merge(['code' => strtoupper($request->code)]);
     $request->validate([
-      'code' => ['required', 'string', 'max:40', 'unique:infrastructure_groups,code'],
-      'name' => ['required', 'string', 'max:150'],
+      'code' => ['required', 'string', 'unique:infrastructure_groups,code'],
+      'name' => ['required', 'string',],
       'category' => ['required', 'string', 'in:Kesehatan,Pendidikan,Listrik,Air Bersih,Drainase,Sanitasi,Sampah,Jalan,Lainnya'],
       'type' => ['required', 'string', 'in:Marker,Polyline,Polygon'],
       'legend_color_hex' => ['nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
@@ -65,9 +66,11 @@ class InfrastructureGroupController extends Controller
 
   public function update(Request $request, $id)
   {
+    $request->merge(['code' => strtoupper($request->code)]);
+
     $request->validate([
-      'code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9_]+$/', 'unique:infrastructure_groups,code,' . $id],
-      'name' => ['required', 'string', 'max:150'],
+      'code' => ['required', 'string', 'unique:infrastructure_groups,code,' . $id],
+      'name' => ['required', 'string',],
       'category' => ['required', 'string', 'in:Kesehatan,Pendidikan,Listrik,Air Bersih,Drainase,Sanitasi,Sampah,Jalan,Lainnya'],
       'type' => ['required', 'string', 'in:Marker,Polyline,Polygon'],
       'legend_color_hex' => ['nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
@@ -77,7 +80,7 @@ class InfrastructureGroupController extends Controller
 
     $group = InfrastructureGroup::findOrFail($id);
     $group->update([
-      'code' => $request->code,
+      'code' =>     $request->code,
       'name' => $request->name,
       'category' => $request->category,
       'type' => $request->type,
