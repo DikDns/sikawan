@@ -1,12 +1,9 @@
 import { AnalysisChart } from '@/components/dashboard/analysis-chart';
 import { AreaSummaryTable } from '@/components/dashboard/area-summary-table';
 import { BottomStats } from '@/components/dashboard/bottom-stats';
-import { ChartSection } from '@/components/dashboard/chart-section';
 import { EconomicDataTable } from '@/components/dashboard/economic-data-table';
 import { DashboardHeader } from '@/components/dashboard/header';
-import { Header2 } from '@/components/dashboard/header-2';
 import { PSUSection } from '@/components/dashboard/psu-section';
-import { RegionStatistics } from '@/components/dashboard/region-statistics';
 import { StatCards } from '@/components/dashboard/stat-cards';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -42,8 +39,6 @@ export default function Dashboard() {
         slumAreaTotalM2 = 0,
         householdsInSlumArea = 0,
         rtlhTotal = 0,
-        districts = [],
-        villages = [],
         selectedDistrict,
         selectedVillage,
     } = usePage<DashboardProps>().props;
@@ -55,60 +50,59 @@ export default function Dashboard() {
                 <main className="min-h-screen space-y-6 bg-background">
                     <DashboardHeader
                         years={availableYears}
-                        districts={districts}
-                        villages={villages}
                         selectedYear={selectedEconomicYear}
                         selectedDistrict={selectedDistrict}
                         selectedVillage={selectedVillage}
                     />
-                    <StatCards data={statCardsData.slice(0, 3)} columns={3} />
-                    <StatCards data={statCardsData.slice(3, 5)} columns={2} />
+
+                    {/* Top Section: All 5 Stats in one row */}
+                    <StatCards data={statCardsData} columns={5} />
 
                     {/* Slum Area Statistics */}
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <Card>
+                        <Card className="border-red-100 bg-red-50 dark:border-red-900 dark:bg-red-950/20">
                             <CardContent className="p-6">
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-sm font-medium text-red-600 dark:text-red-400">
                                             Total Luasan Kawasan Kumuh
                                         </p>
-                                        <p className="text-2xl font-bold text-foreground">
+                                        <p className="text-3xl font-bold text-red-700 dark:text-red-300">
                                             {formatAreaSize(slumAreaTotalM2)}
                                         </p>
                                     </div>
-                                    <div className="rounded-lg bg-orange-100 p-3 dark:bg-orange-900">
-                                        <MapPin className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                                    <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900/50">
+                                        <MapPin className="h-6 w-6 text-red-600 dark:text-red-400" />
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card>
+                        <Card className="border-orange-100 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/20">
                             <CardContent className="p-6">
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">
-                                            Pemukiman dalam Kawasan Kumuh
+                                        <p className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                                            Rumah Terdampak Kawasan Kumuh
                                         </p>
-                                        <p className="text-2xl font-bold text-foreground">
+                                        <p className="text-3xl font-bold text-orange-700 dark:text-orange-300">
                                             {householdsInSlumArea.toLocaleString(
                                                 'id-ID',
-                                            )}
+                                            )}{' '}
+                                            unit
                                         </p>
                                     </div>
-                                    <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900">
-                                        <Home className="h-6 w-6 text-red-600 dark:text-red-400" />
+                                    <div className="rounded-lg bg-orange-100 p-3 dark:bg-orange-900/50">
+                                        <Home className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
 
-                    <ChartSection
-                        rtlhData={chartSectionData?.rtlh}
-                        rtlhTotal={rtlhTotal}
-                    />
+                    {/* Analysis Chart */}
                     <AnalysisChart data={analysisData} />
+
+                    {/* Demographics & Economic Data */}
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <BottomStats data={bottomStatsData} />
                         <EconomicDataTable
@@ -120,15 +114,15 @@ export default function Dashboard() {
 
                     <Separator />
 
-                    <Header2 />
-                    <RegionStatistics items={regionStats} />
-
-                    <Separator />
-
+                    {/* PSU Section */}
                     <PSUSection
                         psuData={psuData}
                         improvedPSUData={improvedPSUData}
                     />
+
+                    <Separator />
+
+                    {/* Area Summary Table - Full Width */}
                     <AreaSummaryTable rows={areaSummaryRows} />
                 </main>
             </div>

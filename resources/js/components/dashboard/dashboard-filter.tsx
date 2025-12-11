@@ -1,143 +1,218 @@
-import { router } from '@inertiajs/react';
-import { useState } from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter, X } from 'lucide-react';
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Card } from '@/components/ui/card';
 import { MultiSelect } from '@/components/ui/multi-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { useWilayah } from '@/hooks/use-wilayah';
+import { router } from '@inertiajs/react';
+import { Filter, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-export function DashboardFilter({
-    years = [],
-    districts = [],
-    villages = [],
-    selectedEconomicYear,
-    selectedDistrict,
-    selectedVillage,
-}: {
+const MUARA_ENIM_REGENCY_ID = '1606';
+
+interface DashboardFilterProps {
     years: string[];
-    districts: { id: string; name: string }[];
-    villages: { id: string; name: string }[];
     selectedEconomicYear?: string | string[];
     selectedDistrict?: string;
     selectedVillage?: string;
-}) {
-    const [filters, setFilters] = useState({
-        year: Array.isArray(selectedEconomicYear)
-            ? selectedEconomicYear.map(String)
-            : (selectedEconomicYear ? [String(selectedEconomicYear)] : []),
-        district: selectedDistrict ?? '',
-        village: selectedVillage ?? '',
-    });
+}
 
-    const triggerFilter = (years: string[], district: string, village: string) => {
+export function DashboardFilter({
+    years = [],
+    selectedEconomicYear,
+    selectedDistrict,
+    selectedVillage,
+}: DashboardFilterProps) {
+    // Local state for filters to allow UI updates before triggering router
+    const [year, setYear] = useState<string[]>(
+        Array.isArray(selectedEconomicYear)
+            ? selectedEconomicYear.map(String)
+            : selectedEconomicYear
+              ? [String(selectedEconomicYear)]
+              : [],
+    );
+    const [districtId, setDistrictId] = useState<string>(
+        selectedDistrict ?? '',
+    );
+    const [villageId, setVillageId] = useState<string>(selectedVillage ?? '');
+
+    const { subDistricts, villages, loadSubDistricts, loadVillages } =
+        useWilayah();
+
+    // 1. Load Sub-Districts on Mount
+    useEffect(() => {
+        loadSubDistricts(MUARA_ENIM_REGENCY_ID);
+    }, [loadSubDistricts]);
+
+    // 2. Load Villages when District changes (and clear village if district cleared)
+    useEffect(() => {
+        if (districtId && districtId !== 'all') {
+            loadVillages(districtId);
+        } else {
+            // If district is cleared or 'all', we technically don't have villages for 'all'
+            // unless we fetch ALL villages (not recommended).
+            // Logic: reset village selection if logic requires proper dependency
+        }
+    }, [districtId, loadVillages]);
+
+    // Trigger Filter Function
+    const applyFilters = (
+        newYear: string[],
+        newDistrict: string,
+        newVillage: string,
+    ) => {
         const params: Record<string, string | string[]> = {};
 
-        if (years.length > 0) {
-            params['economic_year'] = years;
+        if (newYear.length > 0) {
+            params['economic_year'] = newYear;
         }
 
-        if (district) {
-            params.district = district;
+        if (newDistrict && newDistrict !== 'all') {
+            params.district = newDistrict;
         }
 
-        if (village) {
-            params.village = village;
+        if (newVillage && newVillage !== 'all') {
+            params.village = newVillage;
         }
 
         router.get('/dashboard', params, {
             preserveState: true,
             replace: true,
-            only: ['statCardsData', 'analysisData', 'chartSectionData', 'psuData', 'improvedPSUData', 'bottomStatsData', 'economicData', 'regionStats', 'areaSummaryRows', 'slumAreaTotalM2', 'householdsInSlumArea', 'rtlhTotal']
+            preserveScroll: true,
+            only: [
+                'statCardsData',
+                'analysisData',
+                'chartSectionData',
+                'psuData',
+                'improvedPSUData',
+                'bottomStatsData',
+                'economicData',
+                'regionStats',
+                'areaSummaryRows',
+                'slumAreaTotalM2',
+                'householdsInSlumArea',
+                'rtlhTotal',
+                'selectedEconomicYear',
+                'selectedDistrict',
+                'selectedVillage',
+            ],
         });
     };
 
+    // Handlers
     const handleYearChange = (newYears: string[]) => {
-        setFilters(prev => ({ ...prev, year: newYears }));
-        triggerFilter(newYears, filters.district, filters.village);
+        setYear(newYears);
+        applyFilters(newYears, districtId, villageId);
     };
 
-    const handleDistrictChange = (newDistrict: string) => {
-        setFilters(prev => ({ ...prev, district: newDistrict }));
-        triggerFilter(filters.year, newDistrict, filters.village);
+    const handleDistrictChange = (value: string) => {
+        const newVal = value === 'all' ? '' : value;
+        setDistrictId(newVal);
+        setVillageId(''); // Reset village when district changes
+        applyFilters(year, newVal, '');
     };
 
-    const handleVillageChange = (newVillage: string) => {
-        setFilters(prev => ({ ...prev, village: newVillage }));
-        triggerFilter(filters.year, filters.district, newVillage);
+    const handleVillageChange = (value: string) => {
+        const newVal = value === 'all' ? '' : value;
+        setVillageId(newVal);
+        applyFilters(year, districtId, newVal);
     };
 
     const handleReset = () => {
-        setFilters({
-            year: [],
-            district: '',
-            village: '',
-        });
-        router.get('/dashboard', {}, {
-            preserveState: true,
-            replace: true
-        });
+        setYear([]);
+        setDistrictId('');
+        setVillageId('');
+        router.get(
+            '/dashboard',
+            {},
+            {
+                preserveState: true,
+                replace: true,
+                preserveScroll: true,
+            },
+        );
     };
 
-    const hasActiveFilters = filters.year.length > 0 || filters.district || filters.village;
+    const hasActiveFilters = year.length > 0 || !!districtId || !!villageId;
 
     return (
         <Card className="w-full">
             <div className="flex flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Filter className="w-5 h-5 text-muted-foreground" />
-                        <span className="font-medium text-sm">Filter by</span>
+                        <Filter className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                            Filter Dashboard
+                        </span>
                     </div>
                     {hasActiveFilters && (
                         <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            className="h-8 text-red-500 hover:bg-red-50 hover:text-red-600"
                             onClick={handleReset}
                         >
-                            <X className="w-4 h-4 mr-1" />
-                            Reset
+                            <X className="mr-1 h-4 w-4" />
+                            Reset Filter
                         </Button>
                     )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="w-full">
                         <MultiSelect
                             options={years.map((y) => ({ value: y, label: y }))}
-                            value={filters.year}
+                            value={year}
                             onChange={handleYearChange}
                             placeholder="Pilih Tahun"
                             searchPlaceholder="Cari tahun..."
                         />
                     </div>
                     <div className="w-full">
-                        <SearchableSelect
-                            options={districts.map((d) => ({
-                                value: d.id,
-                                label: d.name
-                            }))}
-                            value={filters.district}
+                        <Select
+                            value={districtId || 'all'}
                             onValueChange={handleDistrictChange}
-                            placeholder="Pilih Kecamatan"
-                            searchPlaceholder="Cari kecamatan..."
-                            emptyMessage="Kecamatan tidak ditemukan"
-                            clearable={true}
-                        />
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Semua Kecamatan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    Semua Kecamatan
+                                </SelectItem>
+                                {subDistricts.map((d) => (
+                                    <SelectItem key={d.value} value={d.value}>
+                                        {d.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <div className="w-full sm:col-span-2 lg:col-span-1">
-                        <SearchableSelect
-                            options={villages.map((v) => ({
-                                value: v.id,
-                                label: v.name
-                            }))}
-                            value={filters.village}
+                    <div className="w-full">
+                        <Select
+                            value={villageId || 'all'}
                             onValueChange={handleVillageChange}
-                            placeholder="Pilih Kelurahan"
-                            searchPlaceholder="Cari kelurahan..."
-                            emptyMessage="Kelurahan tidak ditemukan"
-                            clearable={true}
-                        />
+                            disabled={!districtId || districtId === 'all'}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Semua Kelurahan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    Semua Kelurahan
+                                </SelectItem>
+                                {villages.map((v) => (
+                                    <SelectItem key={v.value} value={v.value}>
+                                        {v.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
             </div>

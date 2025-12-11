@@ -240,9 +240,6 @@ class DashboardController extends Controller
         ->map(fn($a) => ['name' => $a->name, 'rumah' => $a->households_count])
         ->toArray();
 
-      $districts = SubDistrict::select('id', 'name')->get();
-      $villages = Village::select('id', 'name')->get();
-
       return Inertia::render('dashboard', [
         'statCardsData' => $statCardsData,
         'analysisData' => $analysisData,
@@ -259,8 +256,6 @@ class DashboardController extends Controller
         'slumAreaTotalM2' => $slumAreaTotalM2,
         'householdsInSlumArea' => $householdsInSlumArea,
         'rtlhTotal' => $rtlhTotal,
-        'districts' => $districts,
-        'villages' => $villages,
         'selectedDistrict' => $district,
         'selectedVillage' => $village,
       ]);
