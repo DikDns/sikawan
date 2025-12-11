@@ -15,9 +15,20 @@ php artisan storage:link --force
 if [ ! -f /var/www/html/database/database.sqlite ]; then
     echo "Creating SQLite database..."
     touch /var/www/html/database/database.sqlite
-    chown www-data:www-data /var/www/html/database/database.sqlite
-    chmod 664 /var/www/html/database/database.sqlite
 fi
+
+# Fix permissions for database directory to allow WAL creation
+chown -R www-data:www-data /var/www/html/database
+chmod -R 775 /var/www/html/database
+
+# Enable WAL mode for better concurrency
+sqlite3 /var/www/html/database/database.sqlite "PRAGMA journal_mode=WAL;"
+sqlite3 /var/www/html/database/database.sqlite "PRAGMA synchronous=NORMAL;"
+sqlite3 /var/www/html/database/database.sqlite "PRAGMA busy_timeout=5000;"
+
+# Fix permissions recursively for storage (again, to be safe)
+chown -R www-data:www-data /var/www/html/storage
+chmod -R 775 /var/www/html/storage
 
 # Clear and cache config
 php artisan config:clear

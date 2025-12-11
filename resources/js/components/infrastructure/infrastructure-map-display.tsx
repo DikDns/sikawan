@@ -10,6 +10,7 @@ import {
     MapDrawMarker,
     MapDrawPolygon,
     MapDrawPolyline,
+    MapFitBounds,
     MapTileLayer,
     useLeaflet,
 } from '@/components/ui/map';

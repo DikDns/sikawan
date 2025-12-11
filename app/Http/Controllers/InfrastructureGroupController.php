@@ -10,7 +10,8 @@ class InfrastructureGroupController extends Controller
 {
   public function index(Request $request)
   {
-    $groups = InfrastructureGroup::orderBy('name')
+    $groups = InfrastructureGroup::withCount('infrastructures')
+      ->orderBy('name')
       ->get()
       ->map(function ($group) {
         return [
@@ -22,7 +23,7 @@ class InfrastructureGroupController extends Controller
           'legend_color_hex' => $group->legend_color_hex,
           'legend_icon' => $group->legend_icon,
           'description' => $group->description,
-          'infrastructure_count' => $group->infrastructures()->count(),
+          'infrastructure_count' => $group->infrastructures_count,
         ];
       });
 
