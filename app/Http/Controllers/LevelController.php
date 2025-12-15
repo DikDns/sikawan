@@ -17,6 +17,8 @@ class LevelController extends Controller
             'infrastructure.show' => 'Lihat Infrastruktur',
             'households.index' => 'Halaman Data Rumah',
             'households.create' => 'Buat Data Rumah',
+            'households.approval' => 'Validasi Pembuatan Data Rumah',
+            'households.rejected' => 'Update Data Rumah Ditolak',
             'households.draft.get' => 'Ambil Data Draft Rumah',
             'households.show' => 'Lihat Data Rumah',
             'households.edit' => 'Edit Data Rumah',

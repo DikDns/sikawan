@@ -114,7 +114,8 @@ class HouseholdController extends Controller
     $areaId = $request->query('area_id');
 
     $query = Household::with(['score'])
-      ->where('is_draft', false);
+      ->where('is_draft', false)
+      ->where('approval_status', 'VERIFIED');
 
     if ($habitabilityStatus) {
       $query->where('habitability_status', $habitabilityStatus);
@@ -177,9 +178,19 @@ class HouseholdController extends Controller
       ->get(['id', 'name'])
       ->map(fn($area) => ['value' => (string) $area->id, 'label' => $area->name]);
 
+    $approvalCount = Household::where('is_draft', false)
+      ->where('approval_status', 'NOT_VERIFIED')
+      ->count();
+
+    $rejectedCount = Household::where('is_draft', false)
+      ->where('approval_status', 'REJECTED')
+      ->count();
+
     return Inertia::render('households', [
       'households' => $households,
       'stats' => $stats,
+      'approvalCount' => $approvalCount,
+      'rejectedCount' => $rejectedCount,
       'filters' => $request->only(['habitability_status', 'province_id', 'regency_id', 'district_id', 'village_id', 'area_id']),
       'areas' => $areas,
     ]);
@@ -1247,5 +1258,101 @@ class HouseholdController extends Controller
       'valid' => true,
       'householdId' => $household->id,
     ]);
+  }
+
+  public function approval() {
+    $households = Household::with(['score'])
+      ->where('is_draft', false)
+      ->where('approval_status', 'NOT_VERIFIED')
+      ->orderBy('created_at', 'desc')
+      ->get()
+      ->map(function ($household) {
+        return [
+          'id' => $household->id,
+          'head_name' => $household->head_name,
+          'nik' => $household->nik,
+          'address_text' => $household->address_text,
+          'province_name' => $household->province_name,
+          'regency_name' => $household->regency_name,
+          'district_name' => $household->district_name,
+          'village_name' => $household->village_name,
+          'rt_rw' => $household->rt_rw,
+          'habitability_status' => $household->habitability_status,
+          'ownership_status_building' => $household->ownership_status_building,
+          'approval_status' => $household->approval_status,
+          'latitude' => $household->latitude,
+          'longitude' => $household->longitude,
+        ];
+      });
+
+    return Inertia::render('households/approval-households', [
+      'households' => $households,
+    ]);
+  }
+
+  public function approve($householdId) {
+    $household = Household::where('id', $householdId)
+      ->where('approval_status', 'NOT_VERIFIED')
+      ->firstOrFail();
+
+    $household->update([
+      'approval_status' => 'VERIFIED',
+    ]);
+
+    return back()->with('success', 'Data Rumah berhasil disetujui');
+  }
+
+  public function reject($householdId) {
+    $household = Household::where('id', $householdId)
+      ->where('approval_status', 'NOT_VERIFIED')
+      ->firstOrFail();
+
+    $household->update([
+      'approval_status' => 'REJECTED',
+    ]);
+
+    return back()->with('success', 'Data Rumah berhasil ditolak');
+  }
+
+  public function rejected() {
+    $households = Household::with(['score'])
+      ->where('is_draft', false)
+      ->where('approval_status', 'REJECTED')
+      ->orderBy('created_at', 'desc')
+      ->get()
+      ->map(function ($household) {
+        return [
+          'id' => $household->id,
+          'head_name' => $household->head_name,
+          'nik' => $household->nik,
+          'address_text' => $household->address_text,
+          'province_name' => $household->province_name,
+          'regency_name' => $household->regency_name,
+          'district_name' => $household->district_name,
+          'village_name' => $household->village_name,
+          'rt_rw' => $household->rt_rw,
+          'habitability_status' => $household->habitability_status,
+          'ownership_status_building' => $household->ownership_status_building,
+          'approval_status' => $household->approval_status,
+          'latitude' => $household->latitude,
+          'longitude' => $household->longitude,
+        ];
+      });
+
+    return Inertia::render('households/rejected-households', [
+      'households' => $households,
+    ]);
+  }
+
+  public function resubmit($householdId) {
+    $household = Household::where('id', $householdId)
+      ->where('approval_status', 'REJECTED')
+      ->firstOrFail();
+
+    $household->update([
+      'approval_status' => 'NOT_VERIFIED',
+    ]);
+
+    return back()->with('success', 'Data Rumah berhasil dikirim ulang');
   }
 }

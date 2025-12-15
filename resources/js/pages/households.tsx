@@ -23,6 +23,8 @@ interface AreaOption {
 interface Props {
     households: HouseholdListItem[];
     stats: HouseholdStats;
+    approvalCount: number;
+    rejectedCount: number;
     areas?: AreaOption[];
     filters?: {
         habitability_status?: string;
@@ -37,6 +39,8 @@ interface Props {
 export default function Households({
     households,
     stats,
+    approvalCount,
+    rejectedCount,
     filters,
     areas,
 }: Props) {
@@ -46,6 +50,8 @@ export default function Households({
             <HouseholdsList
                 households={households}
                 stats={stats}
+                approvalCount={approvalCount}
+                rejectedCount={rejectedCount}
                 filters={filters}
                 areas={areas}
             />

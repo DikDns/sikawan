@@ -42,6 +42,7 @@ return new class extends Migration
             $table->decimal('latitude', 10, 6)->nullable();
             $table->decimal('longitude', 10, 6)->nullable();
             $table->string('photo_folder', 255)->nullable();
+            $table->string('approval_status', 12)->nullable()->default('NOT_VERIFIED'); // VERIFIED|NOT_VERIFIED|REJECTED
 
             // Penguasaan Bangunan & Lahan (Tab Umum)
             $table->string('ownership_status_building', 10)->nullable(); // OWN|RENT|OTHER
