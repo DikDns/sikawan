@@ -70,16 +70,29 @@ class ExcelImportService
 
     /**
      * Parse and return structured data from Excel for verification (no DB writes).
+     *
+     * @param  string  $filepath  Path to the Excel file
+     * @param  string|null  $readerType  Explicit reader type (Xlsx, Xls) for temp files without extensions
      */
-    public function parseForVerification(string $filepath): array
+    public function parseForVerification(string $filepath, ?string $readerType = null): array
     {
+        // Auto-detect reader type if not provided
+        if (! $readerType) {
+            $extension = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+            $readerType = match ($extension) {
+                'xlsx' => \Maatwebsite\Excel\Excel::XLSX,
+                'xls' => \Maatwebsite\Excel\Excel::XLS,
+                default => \Maatwebsite\Excel\Excel::XLSX, // Default to XLSX
+            };
+        }
+
         $sheets = Excel::toArray(new class implements \Maatwebsite\Excel\Concerns\ToArray
         {
             public function array(array $array)
             {
                 return $array;
             }
-        }, $filepath);
+        }, $filepath, null, $readerType);
 
         if (! isset($sheets[self::SHEET_A1])) {
             throw new \Exception('Sheet A.1 (Index '.self::SHEET_A1.') not found.');
@@ -161,10 +174,13 @@ class ExcelImportService
 
     /**
      * Import households from Excel file and save to database as drafts.
+     *
+     * @param  string  $filepath  Path to the Excel file
+     * @param  string|null  $readerType  Explicit reader type (Xlsx, Xls) for temp files without extensions
      */
-    public function importToDatabase(string $filepath): array
+    public function importToDatabase(string $filepath, ?string $readerType = null): array
     {
-        $parsed = $this->parseForVerification($filepath);
+        $parsed = $this->parseForVerification($filepath, $readerType);
 
         // Generate a unique batch ID for this import session
         $importBatchId = Str::uuid()->toString();

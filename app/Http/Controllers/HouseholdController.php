@@ -211,8 +211,8 @@ class HouseholdController extends Controller
         ])->findOrFail($id);
 
         // Check if user has access to this household
-        // Admin can see all, regular users only see their own
-        if ($user->role !== 'admin' && $household->created_by !== $user->id) {
+        // Admin/superadmin can see all, regular users only see their own
+        if (! $user->hasRole(['admin', 'superadmin']) && $household->created_by !== $user->id) {
             abort(403, 'Unauthorized access to this household');
         }
 
@@ -790,8 +790,8 @@ class HouseholdController extends Controller
             ->findOrFail($id);
 
         // Check if user has access to edit this household
-        // Admin can edit all, regular users only edit their own
-        if (($user->role !== 'admin' && $user->role !== 'superadmin') && $household->created_by !== $user->id) {
+        // Admin/superadmin can edit all, regular users only edit their own
+        if (! $user->hasRole(['admin', 'superadmin']) && $household->created_by !== $user->id) {
             abort(403, 'Unauthorized access to edit this household');
         }
 
@@ -907,8 +907,8 @@ class HouseholdController extends Controller
         $household = Household::findOrFail($id);
 
         // Check if user has access to update this household
-        // Admin can update all, regular users only update their own
-        if (($user->role !== 'admin' && $user->role !== 'superadmin') && $household->created_by !== $user->id) {
+        // Admin/superadmin can update all, regular users only update their own
+        if (! $user->hasRole(['admin', 'superadmin']) && $household->created_by !== $user->id) {
             Log::warning('Household Update - Unauthorized', ['household_id' => $id, 'user_id' => $user->id]);
             abort(403, 'Unauthorized access to update this household');
         }
@@ -1157,8 +1157,8 @@ class HouseholdController extends Controller
         $household = Household::findOrFail($id);
 
         // Check if user has access to delete this household
-        // Admin can delete all, regular users only delete their own
-        if (($user->role !== 'admin' && $user->role !== 'superadmin') && $household->created_by !== $user->id) {
+        // Admin/superadmin can delete all, regular users only delete their own
+        if (! $user->hasRole(['admin', 'superadmin']) && $household->created_by !== $user->id) {
             abort(403, 'Unauthorized access to delete this household');
         }
 
@@ -1299,7 +1299,16 @@ class HouseholdController extends Controller
         try {
             $file = $request->file('file');
 
-            $summary = $importService->importToDatabase($file->getPathname());
+            // Determine reader type from original file extension
+            // This is needed because temp files may not have extension
+            $extension = strtolower($file->getClientOriginalExtension());
+            $readerType = match ($extension) {
+                'xlsx' => \Maatwebsite\Excel\Excel::XLSX,
+                'xls' => \Maatwebsite\Excel\Excel::XLS,
+                default => \Maatwebsite\Excel\Excel::XLSX,
+            };
+
+            $summary = $importService->importToDatabase($file->getPathname(), $readerType);
 
             return redirect()->route('households.preview')->with('success',
                 "Berhasil mengimpor {$summary['imported']} rumah tangga. {$summary['skipped']} dilewati."
@@ -1321,8 +1330,8 @@ class HouseholdController extends Controller
         $query = Household::with(['technicalData', 'members'])
             ->where('is_draft', true);
 
-        // Admin sees all, regular users see their own
-        if ($user->role !== 'admin' && $user->role !== 'superadmin') {
+        // Admin/superadmin sees all, regular users see their own
+        if (! $user->hasRole(['admin', 'superadmin'])) {
             $query->where('created_by', $user->id);
         }
 
@@ -1362,11 +1371,6 @@ class HouseholdController extends Controller
         $user = $request->user();
 
         $query = Household::where('is_draft', true);
-
-        // Admin publishes all, regular users publish their own
-        if ($user->role !== 'admin' && $user->role !== 'superadmin') {
-            $query->where('created_by', $user->id);
-        }
 
         $households = $query->get();
         $count = $households->count();
