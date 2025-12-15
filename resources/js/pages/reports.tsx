@@ -103,12 +103,17 @@ export default function Reports({
         id: number;
         habitability_status?: string | null;
         created_at?: string | null;
+        male_count?: number;
+        female_count?: number;
+        member_total?: number;
     }[];
     infrastructures: {
         id: number;
         name?: string | null;
         category?: string | null;
         created_at?: string | null;
+        infrastructure_count?: number;
+        type?: string;
     }[];
 }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -166,11 +171,12 @@ export default function Reports({
 
     const filteredHouses = useMemo(() => {
         if (!formDates.start && !formDates.end) return houses;
-        return houses.filter(h => {
+        return houses.filter((h) => {
             const created = h.created_at ? dayjs(h.created_at) : null;
             const start = formDates.start ? dayjs(formDates.start) : null;
             const end = formDates.end ? dayjs(formDates.end) : null;
-            if (start && created && created.isBefore(start, 'day')) return false;
+            if (start && created && created.isBefore(start, 'day'))
+                return false;
             if (end && created && created.isAfter(end, 'day')) return false;
             return true;
         });
@@ -178,11 +184,12 @@ export default function Reports({
 
     const filteredInfras = useMemo(() => {
         if (!formDates.start && !formDates.end) return infrastructures;
-        return infrastructures.filter(i => {
+        return infrastructures.filter((i) => {
             const created = i.created_at ? dayjs(i.created_at) : null;
             const start = formDates.start ? dayjs(formDates.start) : null;
             const end = formDates.end ? dayjs(formDates.end) : null;
-            if (start && created && created.isBefore(start, 'day')) return false;
+            if (start && created && created.isBefore(start, 'day'))
+                return false;
             if (end && created && created.isAfter(end, 'day')) return false;
             return true;
         });
@@ -773,7 +780,10 @@ export default function Reports({
                 </Card>
                 {/* charts */}
                 <div id="chart-status">
-                    <HouseholdStatusChart ref={refStatus} houses={filteredHouses} />
+                    <HouseholdStatusChart
+                        ref={refStatus}
+                        houses={filteredHouses}
+                    />
                 </div>
                 <div id="chart-line">
                     <HouseholdLineChart ref={refLine} houses={filteredHouses} />

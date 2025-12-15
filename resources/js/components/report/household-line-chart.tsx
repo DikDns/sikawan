@@ -22,8 +22,8 @@ dayjs.extend(isSameOrBefore);
 
 interface Household {
     id: number;
-    created_at: string;
-    habitability_status: string | null;
+    created_at?: string | null;
+    habitability_status?: string | null;
 }
 
 const HouseholdLineChart = forwardRef<
@@ -58,6 +58,7 @@ const HouseholdLineChart = forwardRef<
         range.forEach((d) => (grouped[d] = 0));
 
         houses.forEach((h) => {
+            if (!h.created_at) return;
             const d = dayjs(h.created_at);
             if (!d.isValid()) return;
 

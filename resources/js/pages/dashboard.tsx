@@ -102,11 +102,7 @@ export default function Dashboard() {
                     {/* Demographics & Economic Data */}
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <BottomStats data={bottomStatsData} />
-                        <EconomicDataTable
-                            data={economicData}
-                            availableYears={availableYears}
-                            selectedYear={selectedEconomicYear}
-                        />
+                        <EconomicDataTable data={economicData} />
                     </div>
 
                     <Separator />
