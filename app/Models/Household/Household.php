@@ -31,6 +31,7 @@ class Household extends Model
         'address_text',
         'latitude',
         'longitude',
+        'approval_status',
         'ownership_status_building',
         'ownership_status_land',
         'building_legal_status',

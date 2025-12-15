@@ -40,6 +40,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
   // Households Routes
   Route::get('households', [App\Http\Controllers\HouseholdController::class, 'index'])->name('households.index');
   Route::get('households/create', [App\Http\Controllers\HouseholdController::class, 'create'])->name('households.create');
+  Route::get('households/approval', [App\Http\Controllers\HouseholdController::class, 'approval'])->name('households.approval');
+  Route::get('households/rejected', [App\Http\Controllers\HouseholdController::class, 'rejected'])->name('households.rejected');
 
   // Draft Routes (must be before {id} route to avoid route conflict)
   Route::post('households/draft', [App\Http\Controllers\HouseholdController::class, 'saveDraft'])->name('households.draft.save');
@@ -59,6 +61,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::put('households/{householdId}/assistances/{assistanceId}', [App\Http\Controllers\AssistanceController::class, 'update'])->name('assistances.update');
   Route::patch('households/{householdId}/assistances/{assistanceId}/status', [App\Http\Controllers\AssistanceController::class, 'updateStatus'])->name('assistances.updateStatus');
   Route::delete('households/{householdId}/assistances/{assistanceId}', [App\Http\Controllers\AssistanceController::class, 'destroy'])->name('assistances.destroy');
+
+  // Approval Routes
+  Route::post('households/approval/approve/{householdId}', [App\Http\Controllers\HouseholdController::class, 'approve'])->name('households.approval.approve');
+  Route::post('households/approval/reject/{householdId}', [App\Http\Controllers\HouseholdController::class, 'reject'])->name('households.approval.reject');
+  Route::post('households/approval/resubmit/{householdId}', [App\Http\Controllers\HouseholdController::class, 'resubmit'])->name('household.approval.resubmit');
 
   // AreaGroup CRUD Routes (Create/Update/Delete for AreaGroup)
   Route::get('areas/create', [App\Http\Controllers\AreaGroupController::class, 'create'])->name('areas.create');

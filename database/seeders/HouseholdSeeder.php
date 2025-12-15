@@ -238,6 +238,7 @@ class HouseholdSeeder extends Seeder
                     'address_text' => $streets[array_rand($streets)] . ' No. ' . rand(1, 200) . ', RT ' . sprintf('%03d', rand(1, 15)) . '/RW ' . sprintf('%03d', rand(1, 10)) . ', ' . $location['village_name'] . ', ' . $location['district_name'],
                     'latitude' => $location['lat'] + (rand(-500, 500) / 10000),
                     'longitude' => $location['lng'] + (rand(-500, 500) / 10000),
+                    'approval_status' => 'VERIFIED',
                     'ownership_status_building' => ['OWN', 'RENT', 'OTHER'][rand(0, 2)],
                     'ownership_status_land' => ['OWN', 'RENT', 'OTHER'][rand(0, 2)],
                     'building_legal_status' => ['IMB', 'NONE'][rand(0, 1)],

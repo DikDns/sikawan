@@ -14,6 +14,8 @@ interface AreaOption {
 interface Props {
     households: HouseholdListItem[];
     stats: HouseholdStats;
+    approvalCount: number;
+    rejectedCount: number;
     areas?: AreaOption[];
     filters?: {
         habitability_status?: string;
@@ -28,6 +30,8 @@ interface Props {
 export default function HouseholdsList({
     households,
     stats,
+    approvalCount,
+    rejectedCount,
     filters,
     areas,
 }: Props) {
@@ -117,7 +121,10 @@ export default function HouseholdsList({
 
     return (
         <div className="flex h-full flex-1 flex-col gap-6 bg-background p-6">
-            <HouseholdsHeader />
+            <HouseholdsHeader
+                approvalCount={approvalCount}
+                rejectedCount={rejectedCount}
+            />
             <HouseholdsStats stats={stats} />
             <HouseholdsSearch
                 searchQuery={searchQuery}
