@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { formatDate } from '@/utils/date-formatters';
 import { useCan } from '@/utils/permissions';
 import type { PageProps as InertiaPageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/react';
@@ -366,9 +367,9 @@ export default function Users() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="text-sm">
-                                                    {new Date(
+                                                    {formatDate(
                                                         user.created_at,
-                                                    ).toLocaleDateString()}
+                                                    )}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -492,7 +493,9 @@ export default function Users() {
                                             can('users.edit') ||
                                             can('users.destroy') ? (
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
@@ -512,7 +515,9 @@ export default function Users() {
                                                         {can('users.show') && (
                                                             <DropdownMenuItem
                                                                 onClick={() =>
-                                                                    handleView(user.id)
+                                                                    handleView(
+                                                                        user.id,
+                                                                    )
                                                                 }
                                                                 className="cursor-pointer"
                                                             >
@@ -523,7 +528,9 @@ export default function Users() {
                                                         {can('users.edit') && (
                                                             <DropdownMenuItem
                                                                 onClick={() =>
-                                                                    handleEdit(user.id)
+                                                                    handleEdit(
+                                                                        user.id,
+                                                                    )
                                                                 }
                                                                 className="cursor-pointer"
                                                             >
@@ -532,7 +539,9 @@ export default function Users() {
                                                             </DropdownMenuItem>
                                                         )}
                                                         <DropdownMenuSeparator />
-                                                        {can('users.destroy') && (
+                                                        {can(
+                                                            'users.destroy',
+                                                        ) && (
                                                             <DropdownMenuItem
                                                                 onClick={() =>
                                                                     handleDelete(
@@ -548,11 +557,10 @@ export default function Users() {
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             ) : (
-                                                    <span className="text-sm text-muted-foreground">
-                                                        -
-                                                    </span>
-                                                )
-                                            }
+                                                <span className="text-sm text-muted-foreground">
+                                                    -
+                                                </span>
+                                            )}
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
@@ -577,9 +585,7 @@ export default function Users() {
                                                     'Tidak ada role'}
                                             </Badge>
                                             <Badge variant="outline">
-                                                {new Date(
-                                                    user.created_at,
-                                                ).toLocaleDateString()}
+                                                {formatDate(user.created_at)}
                                             </Badge>
                                         </div>
                                     </CardContent>

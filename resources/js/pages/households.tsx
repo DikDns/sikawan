@@ -20,17 +20,34 @@ interface AreaOption {
     label: string;
 }
 
+// Laravel Pagination structure
+interface PaginatedHouseholds {
+    data: HouseholdListItem[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
+}
+
 interface Props {
-    households: HouseholdListItem[];
+    households: PaginatedHouseholds;
     stats: HouseholdStats;
     areas?: AreaOption[];
     filters?: {
         habitability_status?: string;
-        province_id?: string;
-        regency_id?: string;
         district_id?: string;
         village_id?: string;
         area_id?: string;
+        search?: string;
+        sort_by?: string;
+        sort_order?: string;
     };
 }
 
@@ -44,7 +61,15 @@ export default function Households({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Data Rumah" />
             <HouseholdsList
-                households={households}
+                households={households.data}
+                pagination={{
+                    currentPage: households.current_page,
+                    lastPage: households.last_page,
+                    perPage: households.per_page,
+                    total: households.total,
+                    from: households.from,
+                    to: households.to,
+                }}
                 stats={stats}
                 filters={filters}
                 areas={areas}

@@ -194,23 +194,20 @@ class DashboardController extends Controller
         : '-';
 
       // 2. Unemployment Rate (Tingkat Pengangguran)
-      // Logic: Members with 'tidak-ada' occupation / Total Members * 100
-      // We need to query Members related to the filtered households
-      $householdIds = (clone $housesQuery)->pluck('id');
-
-      $totalMembers = Member::whereIn('household_id', $householdIds)->count();
-
-      $unemployedMembers = Member::whereIn('household_id', $householdIds)
+      // Logic: Household heads (main_occupation) who are unemployed / Total Households * 100
+      // Changed from Member-based to Household-based per request
+      $unemployedHouseholds = (clone $housesQuery)
         ->where(function($q) {
-             $q->where('occupation', 'like', 'tidak-ada%')
-               ->orWhere('occupation', 'like', 'Tidak Ada%')
-               ->orWhere('occupation', 'like', 'belum%') // Catch 'Belum/Tidak Bekerja'
-               ->orWhereNull('occupation');
+             $q->where('main_occupation', 'like', 'tidak-ada%')
+               ->orWhere('main_occupation', 'like', 'Tidak Ada%')
+               ->orWhere('main_occupation', 'like', 'belum%') // Catch 'Belum/Tidak Bekerja'
+               ->orWhereNull('main_occupation')
+               ->orWhere('main_occupation', '');
         })
         ->count();
 
-      $unemploymentRate = $totalMembers > 0
-        ? round(($unemployedMembers / $totalMembers) * 100, 1) . '%'
+      $unemploymentRate = $housesTotal > 0
+        ? round(($unemployedHouseholds / $housesTotal) * 100, 1) . '%'
         : '0%';
 
       // 3. Poverty Count (Jumlah Penduduk Miskin)

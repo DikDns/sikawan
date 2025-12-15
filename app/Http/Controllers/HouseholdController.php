@@ -106,26 +106,42 @@ class HouseholdController extends Controller
   public function index(Request $request)
   {
     $user = $request->user();
+
+    // Filter parameters
     $habitabilityStatus = $request->query('habitability_status');
-    $provinceId = $request->query('province_id');
-    $regencyId = $request->query('regency_id');
     $districtId = $request->query('district_id');
     $villageId = $request->query('village_id');
     $areaId = $request->query('area_id');
 
+    // Search parameter
+    $search = $request->query('search');
+
+    // Sorting parameters
+    $sortBy = $request->query('sort_by', 'id');
+    $sortOrder = $request->query('sort_order', 'desc');
+
+    // Validate sort column to prevent SQL injection
+    $allowedSortColumns = ['id', 'head_name', 'nik', 'address_text', 'village_name', 'habitability_status', 'ownership_status_building'];
+    if (!in_array($sortBy, $allowedSortColumns)) {
+      $sortBy = 'id';
+    }
+    $sortOrder = strtolower($sortOrder) === 'asc' ? 'asc' : 'desc';
+
     $query = Household::with(['score'])
       ->where('is_draft', false);
 
+    // Apply search filter
+    if ($search) {
+      $query->where(function ($q) use ($search) {
+        $q->where('head_name', 'like', "%{$search}%")
+          ->orWhere('address_text', 'like', "%{$search}%")
+          ->orWhere('nik', 'like', "%{$search}%");
+      });
+    }
+
+    // Apply filters
     if ($habitabilityStatus) {
       $query->where('habitability_status', $habitabilityStatus);
-    }
-
-    if ($provinceId) {
-      $query->where('province_id', $provinceId);
-    }
-
-    if ($regencyId) {
-      $query->where('regency_id', $regencyId);
     }
 
     if ($districtId) {
@@ -140,9 +156,10 @@ class HouseholdController extends Controller
       $query->where('area_id', $areaId);
     }
 
-    $households = $query->orderBy('created_at', 'desc')
-      ->get()
-      ->map(function ($household) {
+    // Apply sorting and pagination
+    $paginator = $query->orderBy($sortBy, $sortOrder)
+      ->paginate(15)
+      ->through(function ($household) {
         return [
           'id' => $household->id,
           'head_name' => $household->head_name,
@@ -163,7 +180,8 @@ class HouseholdController extends Controller
           'latitude' => $household->latitude,
           'longitude' => $household->longitude,
         ];
-      });
+      })
+      ->withQueryString();
 
     $statsQuery = Household::where('is_draft', false);
     $stats = [
@@ -178,9 +196,9 @@ class HouseholdController extends Controller
       ->map(fn($area) => ['value' => (string) $area->id, 'label' => $area->name]);
 
     return Inertia::render('households', [
-      'households' => $households,
+      'households' => $paginator,
       'stats' => $stats,
-      'filters' => $request->only(['habitability_status', 'province_id', 'regency_id', 'district_id', 'village_id', 'area_id']),
+      'filters' => $request->only(['habitability_status', 'district_id', 'village_id', 'area_id', 'search', 'sort_by', 'sort_order']),
       'areas' => $areas,
     ]);
   }
@@ -359,9 +377,10 @@ class HouseholdController extends Controller
       ]);
     }
 
-    // Load last draft if exists (only for current user)
+    // Load last MANUAL draft if exists (only for current user, not imported)
     $lastDraft = Household::where('is_draft', true)
       ->where('created_by', $user->id)
+      ->whereNull('import_batch_id') // Only manual drafts, not imported
       ->with(['photos', 'technicalData'])
       ->orderBy('updated_at', 'desc')
       ->first();
@@ -695,9 +714,10 @@ class HouseholdController extends Controller
   {
     $user = $request->user();
 
-    // Only get draft for current user
+    // Only get MANUAL draft for current user (not imported)
     $lastDraft = Household::where('is_draft', true)
       ->where('created_by', $user->id)
+      ->whereNull('import_batch_id') // Only manual drafts, not imported
       ->with(['photos', 'technicalData'])
       ->orderBy('updated_at', 'desc')
       ->first();
@@ -1149,6 +1169,13 @@ class HouseholdController extends Controller
 
     $household->delete();
 
+    // Check returnTo parameter and redirect accordingly
+    $returnTo = $request->query('returnTo');
+    if ($returnTo === 'preview') {
+      return redirect()->route('households.preview')
+        ->with('success', 'Data rumah berhasil dihapus');
+    }
+
     return redirect()->route('households.index')
       ->with('success', 'Data rumah berhasil dihapus');
   }
@@ -1247,5 +1274,138 @@ class HouseholdController extends Controller
       'valid' => true,
       'householdId' => $household->id,
     ]);
+  }
+
+  /**
+   * Show the import page with file upload form
+   */
+  public function importPage(Request $request)
+  {
+    $areas = \App\Models\Area::orderBy('name')
+      ->get(['id', 'name'])
+      ->map(fn($area) => ['value' => (string) $area->id, 'label' => $area->name]);
+
+    return Inertia::render('households/import', [
+      'areas' => $areas,
+    ]);
+  }
+
+  /**
+   * Process file upload and create draft households from Excel
+   */
+  public function importStore(Request $request)
+  {
+    $request->validate([
+      'file' => 'required|file|mimes:xlsx,xls',
+    ]);
+
+    $importService = app(\App\Services\ExcelImportService::class);
+
+    try {
+      $file = $request->file('file');
+
+      $summary = $importService->importToDatabase($file->getPathname());
+
+      return redirect()->route('households.preview')->with('success',
+        "Berhasil mengimpor {$summary['imported']} rumah tangga. {$summary['skipped']} dilewati."
+      );
+    } catch (\Exception $e) {
+      Log::error('Import Error: ' . $e->getMessage());
+      return back()->withErrors(['file' => 'Gagal mengimpor: ' . $e->getMessage()]);
+    }
+  }
+
+  /**
+   * Show preview of imported (draft) households
+   */
+  public function previewIndex(Request $request)
+  {
+    $user = $request->user();
+
+    $query = Household::with(['technicalData', 'members'])
+      ->where('is_draft', true);
+
+    // Admin sees all, regular users see their own
+    if ($user->role !== 'admin' && $user->role !== 'superadmin') {
+      $query->where('created_by', $user->id);
+    }
+
+    $households = $query->orderBy('created_at', 'desc')
+      ->get()
+      ->map(function ($household) {
+        return [
+          'id' => $household->id,
+          'head_name' => $household->head_name,
+          'nik' => $household->nik,
+          'province_name' => $household->province_name,
+          'regency_name' => $household->regency_name,
+          'district_name' => $household->district_name,
+          'village_name' => $household->village_name,
+          'status_mbr' => $household->status_mbr,
+          'member_total' => $household->member_total ?? 0,
+          'ownership_status_building' => $household->ownership_status_building,
+          'created_at' => $household->created_at->format('d M Y H:i'),
+        ];
+      });
+
+    $stats = [
+      'total' => $households->count(),
+    ];
+
+    return Inertia::render('households/preview', [
+      'households' => $households,
+      'stats' => $stats,
+    ]);
+  }
+
+  /**
+   * Publish all draft households (set is_draft to false)
+   */
+  public function publishAll(Request $request)
+  {
+    $user = $request->user();
+
+    $query = Household::where('is_draft', true);
+
+    // Admin publishes all, regular users publish their own
+    if ($user->role !== 'admin' && $user->role !== 'superadmin') {
+      $query->where('created_by', $user->id);
+    }
+
+    $households = $query->get();
+    $count = $households->count();
+
+    if ($count === 0) {
+      return redirect()->route('households.preview')->with('error', 'Tidak ada data draft untuk dipublikasi.');
+    }
+
+    DB::beginTransaction();
+
+    try {
+      $calculator = new HouseholdScoreCalculator();
+
+      foreach ($households as $household) {
+        // Calculate and save scores
+        // This will update habitability_status and eligibility_score_total
+        // and creates/updates HouseholdScore record
+        $calculator->calculateAndSave($household);
+
+        // Set as published
+        $household->update(['is_draft' => false]);
+      }
+
+      DB::commit();
+
+      return redirect()->route('households.index')->with('success',
+        "Berhasil mempublikasi $count rumah tangga."
+      );
+    } catch (\Exception $e) {
+      DB::rollBack();
+      Log::error('Publish All Error: ' . $e->getMessage());
+
+      return redirect()->route('households.preview')->with('error',
+        "Gagal mempublikasi data: " . $e->getMessage()
+      );
+    }
   }
 }

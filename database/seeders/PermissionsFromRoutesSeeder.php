@@ -46,6 +46,22 @@ class PermissionsFromRoutesSeeder extends Seeder
                 'api.wilayah.sub-districts',
                 'api.wilayah.villages',
                 'logs',
+                'households.preview.publish',
+                'households.preview',
+                'households.import.store',
+                'households.import',
+                'households.validateDraft',
+                'households.draft.get',
+                'households.draft.save',
+                'households.preview.publish',
+                'households.preview',
+                'households.import.store',
+                'households.import',
+                'reports.excel-preview',
+                'reports.pdf-store',
+                'reports.pdf-preview',
+                'reports.preview',
+                'infrastructure.assistances.index'
             ];
             if (in_array($routeName, $exclude)) continue;
             Permission::firstOrCreate(['name' => $routeName]);

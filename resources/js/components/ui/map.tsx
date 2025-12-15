@@ -874,7 +874,11 @@ function MapDrawControl({
     const initialShapesAddedRef = useRef<boolean>(false)
 
     const handleDrawCreated = useCallback((event: DrawEvents.Created) => {
-        if (!featureGroupRef.current) return
+        console.log("[MapDrawControl] handleDrawCreated called!", event)
+        if (!featureGroupRef.current) {
+            console.log("[MapDrawControl] featureGroupRef.current is null!")
+            return
+        }
         const { layer } = event
         featureGroupRef.current.addLayer(layer)
         console.log("[MapDrawControl] changeType=created, layers=", featureGroupRef.current.getLayers().length)

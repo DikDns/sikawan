@@ -9,10 +9,11 @@ import {
 } from '@/components/ui/select';
 import { useWilayah } from '@/hooks/use-wilayah';
 import { Search } from 'lucide-react';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 
 // Muara Enim regency ID (locked)
-const MUARA_ENIM_REGENCY_ID = '1606';
+const MUARA_ENIM_REGENCY_ID = '1603';
 
 interface AreaOption {
     value: string;
@@ -28,6 +29,9 @@ interface Props {
         district_id?: string;
         village_id?: string;
         area_id?: string;
+        search?: string;
+        sort_by?: string;
+        sort_order?: string;
     };
     onFilterChange?: (newValues: Record<string, string | null>) => void;
 }
@@ -39,14 +43,38 @@ export default function HouseholdsSearch({
     onFilterChange,
     areas,
 }: Props) {
+    const [localSearch, setLocalSearch] = useState(searchQuery);
     const { subDistricts, villages, loadSubDistricts, loadVillages } =
         useWilayah();
+
+    // Debounced search to reduce server requests
+    const debouncedSearch = useDebouncedCallback(
+        useCallback(
+            (value: string) => {
+                onSearchChange(value);
+            },
+            [onSearchChange],
+        ),
+        500,
+    );
+
+    // Update local search and trigger debounced search
+    const handleSearchInput = (value: string) => {
+        setLocalSearch(value);
+        debouncedSearch(value);
+    };
+
+    // Sync local search with prop (e.g., when navigating back)
+    useEffect(() => {
+        setLocalSearch(searchQuery);
+    }, [searchQuery]);
 
     // Load sub-districts for Muara Enim on mount
     useEffect(() => {
         loadSubDistricts(MUARA_ENIM_REGENCY_ID);
     }, [loadSubDistricts]);
 
+    // Load villages when district changes
     useEffect(() => {
         if (filters?.district_id) {
             loadVillages(filters.district_id);
@@ -64,9 +92,9 @@ export default function HouseholdsSearch({
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             type="text"
-                            placeholder="Cari nama, alamat, atau ID rumah..."
-                            value={searchQuery}
-                            onChange={(e) => onSearchChange(e.target.value)}
+                            placeholder="Cari nama, alamat, atau NIK"
+                            value={localSearch}
+                            onChange={(e) => handleSearchInput(e.target.value)}
                             className="border-border pl-10"
                         />
                     </div>
@@ -99,11 +127,11 @@ export default function HouseholdsSearch({
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <Select
-                        value={filters?.district_id ? filters.district_id : ''}
+                        value={filters?.district_id || 'all'}
                         onValueChange={(value) =>
                             onFilterChange?.({
                                 district_id: value === 'all' ? null : value,
-                                village_id: null,
+                                village_id: null, // Reset village when district changes
                             })
                         }
                     >
@@ -121,7 +149,7 @@ export default function HouseholdsSearch({
                     </Select>
 
                     <Select
-                        value={filters?.village_id ? filters.village_id : ''}
+                        value={filters?.village_id || 'all'}
                         disabled={!filters?.district_id}
                         onValueChange={(value) =>
                             onFilterChange?.({
@@ -145,7 +173,7 @@ export default function HouseholdsSearch({
                     </Select>
 
                     <Select
-                        value={filters?.area_id ? filters.area_id : ''}
+                        value={filters?.area_id || 'all'}
                         onValueChange={(value) =>
                             onFilterChange?.({
                                 area_id: value === 'all' ? null : value,

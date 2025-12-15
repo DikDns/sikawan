@@ -41,6 +41,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::get('households', [App\Http\Controllers\HouseholdController::class, 'index'])->name('households.index');
   Route::get('households/create', [App\Http\Controllers\HouseholdController::class, 'create'])->name('households.create');
 
+  // Import Routes (must be before {id} route to avoid route conflict)
+  Route::get('households/import', [App\Http\Controllers\HouseholdController::class, 'importPage'])->name('households.import');
+  Route::post('households/import', [App\Http\Controllers\HouseholdController::class, 'importStore'])->name('households.import.store');
+  Route::get('households/preview', [App\Http\Controllers\HouseholdController::class, 'previewIndex'])->name('households.preview');
+  Route::post('households/preview/publish', [App\Http\Controllers\HouseholdController::class, 'publishAll'])->name('households.preview.publish');
+
   // Draft Routes (must be before {id} route to avoid route conflict)
   Route::post('households/draft', [App\Http\Controllers\HouseholdController::class, 'saveDraft'])->name('households.draft.save');
   Route::get('households/draft', [App\Http\Controllers\HouseholdController::class, 'getDraft'])->name('households.draft.get');

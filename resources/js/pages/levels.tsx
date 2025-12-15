@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
+import { formatDate } from '@/utils/date-formatters';
 import { useCan } from '@/utils/permissions';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Edit, Eye, MoreVertical, Plus, Search, Trash2 } from 'lucide-react';
@@ -229,11 +230,7 @@ export default function Roles({ roles }: { roles: Role[] }) {
                                                 </span>
                                                 <span className="text-xs text-gray-500">
                                                     Dibuat:{' '}
-                                                    {new Date(
-                                                        rl.created_at,
-                                                    ).toLocaleDateString(
-                                                        'id-ID',
-                                                    )}
+                                                    {formatDate(rl.created_at)}
                                                 </span>
                                             </div>
                                         </TableCell>

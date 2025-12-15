@@ -52,8 +52,8 @@ if [ ! -f /var/www/html/storage/.seeded ]; then
     # Create superadmin user via tinker
     php artisan tinker --execute="
         \$user = \\App\\Models\\User::firstOrCreate(
-            ['email' => 'superadmin@sikawan.com'],
-            ['name' => 'Super Admin', 'password' => bcrypt('password'), 'email_verified_at' => now()]
+            ['email' => 'superadmin@sihuma.muaraenim.site'],
+            ['name' => 'Super Admin', 'password' => bcrypt('Password123!'), 'email_verified_at' => now()]
         );
         \$user->assignRole('superadmin');
         echo 'Superadmin user created/verified.';

@@ -49,17 +49,13 @@ export const INCOME_OPTIONS = [
     { value: '>5jt', label: '> 5 Juta' },
 ] as const;
 
-export const HOUSEHOLD_STATUS_OPTIONS = [
-    { value: 'kepala-keluarga', label: 'Kepala Keluarga' },
-    { value: 'istri', label: 'Istri' },
-    { value: 'anak', label: 'Anak' },
-] as const;
-
 export const HEALTH_FACILITY_USED_OPTIONS = [
-    { value: 'Puskesmas', label: 'Puskesmas' },
     { value: 'Rumah Sakit', label: 'Rumah Sakit' },
-    { value: 'Klinik', label: 'Klinik' },
     { value: 'Praktik Dokter', label: 'Praktik Dokter' },
+    { value: 'Puskesmas', label: 'Puskesmas' },
+    { value: 'Dukun/Tradisional', label: 'Dukun/Tradisional' },
+    { value: 'Bidan/Mantri', label: 'Bidan/Mantri' },
+    { value: 'Tidak Pernah', label: 'Tidak Pernah' },
 ] as const;
 
 export const FACILITY_LOCATION_OPTIONS = [
@@ -70,5 +66,29 @@ export const FACILITY_LOCATION_OPTIONS = [
     {
         value: 'Luar Kelurahan/Kecamatan',
         label: 'Luar Kelurahan/Kecamatan',
+    },
+] as const;
+
+// Extended options for education facility location (from spreadsheet A.6.2)
+export const EDUCATION_FACILITY_LOCATION_OPTIONS = [
+    {
+        value: 'Dalam Kelurahan/Kecamatan',
+        label: 'Dalam Kelurahan/Kecamatan yang Sama',
+    },
+    {
+        value: 'Luar Kecamatan',
+        label: 'Luar Kecamatan',
+    },
+    {
+        value: 'Di Kota Lain',
+        label: 'Di Kota Lain',
+    },
+    {
+        value: 'Tidak Sekolah',
+        label: 'Tidak Sekolah',
+    },
+    {
+        value: 'Tidak Ada Anggota Usia Wajib Belajar',
+        label: 'Tidak Ada Anggota Usia Wajib Belajar',
     },
 ] as const;

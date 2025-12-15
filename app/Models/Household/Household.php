@@ -53,6 +53,7 @@ class Household extends Model
         'eligibility_computed_at',
         'area_id',
         'is_draft',
+        'import_batch_id',
     ];
 
     protected $casts = [

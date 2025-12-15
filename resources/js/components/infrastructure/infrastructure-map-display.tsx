@@ -386,10 +386,22 @@ export function InfrastructureMapDisplay({
             if (changeType === 'created') {
                 const sourceGroup: L.LayerGroup = (changedLayers ||
                     layers) as L.LayerGroup;
+                console.log(
+                    '[InfraMapDisplay] created - sourceGroup layers:',
+                    sourceGroup.getLayers().length,
+                );
                 sourceGroup.eachLayer((layer: L.Layer) => {
                     const isKnown = Object.values(
                         featureLayersRef.current,
                     ).some((existingLayer) => existingLayer === layer);
+                    console.log(
+                        '[InfraMapDisplay] layer:',
+                        layer,
+                        'isKnown:',
+                        isKnown,
+                        'allowedGeometryType:',
+                        allowedGeometryType,
+                    );
                     if (isKnown) return;
 
                     let geometry: unknown = null;
@@ -410,9 +422,18 @@ export function InfrastructureMapDisplay({
                         !(layer instanceof L.Polygon) &&
                         allowedGeometryType === 'LineString'
                     ) {
-                        const latlngs = (
-                            layer as L.Polyline
-                        ).getLatLngs() as L.LatLng[];
+                        // getLatLngs() can return LatLng[] or LatLng[][] for multi-polylines
+                        const rawLatLngs = (layer as L.Polyline).getLatLngs();
+                        // Check if first element is a LatLng object (has .lat) or an array
+                        const firstEl = rawLatLngs[0] as unknown;
+                        const isFlat =
+                            rawLatLngs.length > 0 &&
+                            firstEl !== null &&
+                            typeof firstEl === 'object' &&
+                            'lat' in (firstEl as object);
+                        const latlngs: L.LatLng[] = isFlat
+                            ? (rawLatLngs as L.LatLng[])
+                            : (rawLatLngs as L.LatLng[][]).flat();
                         geometry = {
                             type: 'LineString',
                             coordinates: latlngs.map((ll) => [ll.lng, ll.lat]),
@@ -432,6 +453,12 @@ export function InfrastructureMapDisplay({
                         };
                     }
 
+                    console.log(
+                        '[InfraMapDisplay] geometry result:',
+                        geometry,
+                        'gtype:',
+                        gtype,
+                    );
                     if (geometry && onLayerCreated) {
                         let tempId = (layer as any).__clientTempId as
                             | number
@@ -480,9 +507,18 @@ export function InfrastructureMapDisplay({
                         !(layer instanceof L.Polygon) &&
                         allowedGeometryType === 'LineString'
                     ) {
-                        const latlngs = (
-                            layer as any
-                        ).getLatLngs() as L.LatLng[];
+                        // getLatLngs() can return LatLng[] or LatLng[][] for multi-polylines
+                        const rawLatLngs = (layer as L.Polyline).getLatLngs();
+                        // Check if first element is a LatLng object (has .lat) or an array
+                        const firstEl = rawLatLngs[0] as unknown;
+                        const isFlat =
+                            rawLatLngs.length > 0 &&
+                            firstEl !== null &&
+                            typeof firstEl === 'object' &&
+                            'lat' in (firstEl as object);
+                        const latlngs: L.LatLng[] = isFlat
+                            ? (rawLatLngs as L.LatLng[])
+                            : (rawLatLngs as L.LatLng[][]).flat();
                         geometry = {
                             type: 'LineString',
                             coordinates: latlngs.map((ll) => [ll.lng, ll.lat]),

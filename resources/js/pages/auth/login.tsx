@@ -34,13 +34,10 @@ export default function Login({ status }: LoginProps) {
                             {/* Logo */}
                             <Link href="/" className="flex items-center gap-3">
                                 <img
-                                    src="/images/sikawan-logo.png"
-                                    alt="SI-KAWAN Logo"
+                                    src="../images/sihuma-logo.png"
+                                    alt="SIHUMA Logo"
                                     className="h-12 w-auto"
                                 />
-                                <span className="text-xl font-bold tracking-wide text-white">
-                                    SI-KAWAN
-                                </span>
                             </Link>
 
                             {/* Back to Website Button */}
@@ -61,13 +58,10 @@ export default function Login({ status }: LoginProps) {
                     <div className="mb-8 flex items-center justify-between lg:hidden">
                         <Link href="/" className="flex items-center gap-3">
                             <img
-                                src="/images/sikawan-logo.png"
-                                alt="SI-KAWAN Logo"
+                                src="../images/sihuma-logo.png"
+                                alt="SIHUMA Logo"
                                 className="h-10 w-auto"
                             />
-                            <span className="text-lg font-bold tracking-wide text-white">
-                                SI-KAWAN
-                            </span>
                         </Link>
                         <Link
                             href="/"

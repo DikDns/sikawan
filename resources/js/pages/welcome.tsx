@@ -1,3 +1,4 @@
+import PublicNavbar from '@/components/public-navbar';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +11,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { login } from '@/routes';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
@@ -53,38 +53,7 @@ export default function Welcome() {
             </Head>
             {/* <Toaster richColors position="top-right" /> */}
             <div className="min-h-screen bg-background">
-                {/* Header */}
-                <header className="fixed z-50 w-full">
-                    <div className="bg-secondary/75 text-secondary-foreground backdrop-blur-sm">
-                        <Container>
-                            <div className="flex h-16 items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <img
-                                        src="/images/sikawan-logo.png"
-                                        alt="SIHUMA"
-                                        className="h-8 w-8"
-                                    />
-                                    <span className="text-lg font-semibold text-primary">
-                                        SIHUMA
-                                    </span>
-                                </div>
-                                <nav className="flex items-center gap-2">
-                                    <Button variant="ghost" asChild>
-                                        <Link href="/">Home</Link>
-                                    </Button>
-                                    <Button variant="ghost" asChild>
-                                        <Link href="/peta-sebaran">
-                                            Peta Sebaran
-                                        </Link>
-                                    </Button>
-                                    <Button asChild>
-                                        <Link href={login()}>Login</Link>
-                                    </Button>
-                                </nav>
-                            </div>
-                        </Container>
-                    </div>
-                </header>
+                <PublicNavbar />
 
                 {/* Hero Section */}
                 <section className="pt-16">
@@ -94,13 +63,10 @@ export default function Welcome() {
                             <div className="order-2 col-span-1 flex flex-col justify-center rounded-2xl bg-[#552C91] p-10 shadow-lg lg:order-1 lg:col-span-2">
                                 <div className="mb-6 flex items-center gap-2">
                                     <img
-                                        src="/images/sikawan-logo.png"
+                                        src="/images/sihuma-logo.png"
                                         alt="SIHUMA"
-                                        className="h-8 w-8"
+                                        className="h-10 w-auto object-contain"
                                     />
-                                    <span className="text-lg font-extrabold tracking-wide text-lime-300">
-                                        SIHUMA
-                                    </span>
                                 </div>
                                 <h1 className="mb-4 text-3xl font-bold text-white lg:text-4xl">
                                     Membangun{' '}

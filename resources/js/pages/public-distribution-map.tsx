@@ -1,5 +1,4 @@
-import { Button } from '@/components/ui/button';
-import { Container } from '@/components/ui/container';
+import PublicNavbar from '@/components/public-navbar';
 import {
     DEFAULT_CENTER,
     Map,
@@ -15,8 +14,7 @@ import {
     MapTileLayer,
     MapZoomControl,
 } from '@/components/ui/map';
-import { home, login } from '@/routes';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     Building2,
     Droplet,
@@ -270,31 +268,7 @@ export default function PublicDistributionMap() {
     return (
         <div className="flex h-screen flex-col">
             <Head title="Peta Sebaran" />
-            {/* Fixed Header */}
-            <header className="fixed top-0 z-50 w-full bg-secondary/95 text-secondary-foreground backdrop-blur-sm">
-                <Container>
-                    <div className="flex h-16 items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <img
-                                src="/images/sikawan-logo.png"
-                                alt="SIHUMA"
-                                className="h-8 w-8"
-                            />
-                            <span className="text-lg font-semibold text-primary">
-                                SIHUMA
-                            </span>
-                        </div>
-                        <nav className="flex items-center gap-2">
-                            <Button variant="ghost" asChild>
-                                <Link href={home()}>Home</Link>
-                            </Button>
-                            <Button asChild>
-                                <Link href={login()}>Login</Link>
-                            </Button>
-                        </nav>
-                    </div>
-                </Container>
-            </header>
+            <PublicNavbar showPetaSebaran={false} />
 
             {/* Map Container - fills remaining height after header */}
             <div className="flex-1 pt-16">
@@ -413,114 +387,118 @@ export default function PublicDistributionMap() {
                                 ))}
                         </MapLayerGroup>
 
-                        {areaGroups.map((group) => (
-                            <MapLayerGroup
-                                key={`group-${group.id}`}
-                                name={`Kawasan: ${group.name}`}
-                            >
-                                {group.areas.map((area) => {
-                                    let raw = area.geometry_json;
-                                    if (typeof raw === 'string') {
-                                        try {
-                                            raw = JSON.parse(raw);
-                                        } catch {
-                                            raw = null;
+                        {areaGroups.map((group) => {
+                            const groupLayerName = `Kawasan: ${group.name}`;
+                            return (
+                                <MapLayerGroup
+                                    key={`group-${group.id}`}
+                                    name={groupLayerName}
+                                >
+                                    {group.areas.map((area) => {
+                                        const raw: unknown =
+                                            typeof area.geometry_json ===
+                                            'string'
+                                                ? JSON.parse(
+                                                      area.geometry_json as string,
+                                                  )
+                                                : area.geometry_json;
+                                        const color =
+                                            area.color ||
+                                            group.legend_color_hex ||
+                                            DEFAULT_COLOR;
+                                        const poly = parsePolygon(raw);
+                                        const rect = !poly
+                                            ? parseRectangle(raw)
+                                            : null;
+                                        if (poly) {
+                                            return (
+                                                <MapPolygon
+                                                    key={`area-poly-${area.id}`}
+                                                    positions={poly}
+                                                    pathOptions={{
+                                                        color,
+                                                        fillColor: color,
+                                                        weight: 2,
+                                                        opacity: 0.9,
+                                                        fillOpacity: 0.2,
+                                                    }}
+                                                    className={`cursor-pointer fill-[${color}] stroke-[${color}] stroke-2 transition-all duration-300 hover:opacity-80`}
+                                                >
+                                                    <MapPopup>
+                                                        <div
+                                                            className="space-y-2"
+                                                            aria-label="Informasi area"
+                                                        >
+                                                            <div className="font-medium">
+                                                                {area.name}
+                                                            </div>
+                                                            <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                                {area.description ||
+                                                                    '-'}
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                <div>
+                                                                    Provinsi:{' '}
+                                                                    {area.province_name ||
+                                                                        '-'}
+                                                                </div>
+                                                                <div>
+                                                                    Kab/Kota:{' '}
+                                                                    {area.regency_name ||
+                                                                        '-'}
+                                                                </div>
+                                                                <div>
+                                                                    Kecamatan:{' '}
+                                                                    {area.district_name ||
+                                                                        '-'}
+                                                                </div>
+                                                                <div>
+                                                                    Desa:{' '}
+                                                                    {area.village_name ||
+                                                                        '-'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </MapPopup>
+                                                </MapPolygon>
+                                            );
                                         }
-                                    }
-                                    const color =
-                                        area.color ||
-                                        group.legend_color_hex ||
-                                        DEFAULT_COLOR;
-                                    const poly = parsePolygon(raw);
-                                    const rect = !poly
-                                        ? parseRectangle(raw)
-                                        : null;
-                                    if (poly) {
-                                        return (
-                                            <MapPolygon
-                                                key={`area-poly-${area.id}`}
-                                                positions={poly}
-                                                pathOptions={{
-                                                    color,
-                                                    fillColor: color,
-                                                    weight: 2,
-                                                    opacity: 0.9,
-                                                    fillOpacity: 0.2,
-                                                }}
-                                            >
-                                                <MapPopup>
-                                                    <div
-                                                        className="space-y-2"
-                                                        aria-label="Informasi area"
-                                                    >
-                                                        <div className="font-medium">
-                                                            {area.name}
-                                                        </div>
-                                                        <div className="text-xs whitespace-pre-line text-muted-foreground">
-                                                            {area.description ||
-                                                                '-'}
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                                            <div>
-                                                                Provinsi:{' '}
-                                                                {area.province_name ||
-                                                                    '-'}
+                                        if (rect) {
+                                            return (
+                                                <MapRectangle
+                                                    key={`area-rect-${area.id}`}
+                                                    bounds={rect}
+                                                    pathOptions={{
+                                                        color,
+                                                        fillColor: color,
+                                                        weight: 2,
+                                                        opacity: 0.9,
+                                                        fillOpacity: 0.2,
+                                                    }}
+                                                    className={`cursor-pointer transition-all fill-[${color}] stroke-[${color}] stroke-2 duration-300 hover:opacity-80`}
+                                                >
+                                                    <MapPopup>
+                                                        <div
+                                                            className="space-y-2"
+                                                            aria-label="Informasi area"
+                                                        >
+                                                            <div className="font-medium">
+                                                                {area.name}
                                                             </div>
-                                                            <div>
-                                                                Kab/Kota:{' '}
-                                                                {area.regency_name ||
-                                                                    '-'}
-                                                            </div>
-                                                            <div>
-                                                                Kecamatan:{' '}
-                                                                {area.district_name ||
-                                                                    '-'}
-                                                            </div>
-                                                            <div>
-                                                                Desa:{' '}
-                                                                {area.village_name ||
+                                                            <div className="text-xs whitespace-pre-line text-muted-foreground">
+                                                                {area.description ||
                                                                     '-'}
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </MapPopup>
-                                            </MapPolygon>
-                                        );
-                                    }
-                                    if (rect) {
-                                        return (
-                                            <MapRectangle
-                                                key={`area-rect-${area.id}`}
-                                                bounds={rect}
-                                                pathOptions={{
-                                                    color,
-                                                    fillColor: color,
-                                                    weight: 2,
-                                                    opacity: 0.9,
-                                                    fillOpacity: 0.2,
-                                                }}
-                                            >
-                                                <MapPopup>
-                                                    <div
-                                                        className="space-y-2"
-                                                        aria-label="Informasi area"
-                                                    >
-                                                        <div className="font-medium">
-                                                            {area.name}
-                                                        </div>
-                                                        <div className="text-xs whitespace-pre-line text-muted-foreground">
-                                                            {area.description ||
-                                                                '-'}
-                                                        </div>
-                                                    </div>
-                                                </MapPopup>
-                                            </MapRectangle>
-                                        );
-                                    }
-                                    return null;
-                                })}
-                            </MapLayerGroup>
-                        ))}
+                                                    </MapPopup>
+                                                </MapRectangle>
+                                            );
+                                        }
+                                        return null;
+                                    })}
+                                </MapLayerGroup>
+                            );
+                        })}
 
                         {infrastructureGroups.map((group) => (
                             <MapLayerGroup
@@ -528,7 +506,7 @@ export default function PublicDistributionMap() {
                                 name={`PSU: ${group.name}`}
                             >
                                 {group.items.map((item) => {
-                                    let raw = item.geometry_json;
+                                    let raw: unknown = item.geometry_json;
                                     if (typeof raw === 'string') {
                                         try {
                                             raw = JSON.parse(raw);
@@ -540,23 +518,18 @@ export default function PublicDistributionMap() {
                                         item.color ||
                                         group.legend_color_hex ||
                                         DEFAULT_COLOR;
-                                    const point = parsePoint(raw);
-                                    const line = !point
-                                        ? parseLineString(raw)
-                                        : null;
-                                    const poly =
-                                        !point && !line
-                                            ? parsePolygon(raw)
-                                            : null;
-                                    if (point) {
+
+                                    if (item.geometry_type === 'Point') {
+                                        const pos = parsePoint(raw);
+                                        if (!pos) return null;
                                         return (
                                             <MapMarker
                                                 key={`psu-point-${item.id}`}
-                                                position={point}
+                                                position={pos}
                                                 icon={PSUMarkerIcon(group)}
-                                                iconAnchor={[14, 14]}
-                                                popupAnchor={[0, -14]}
-                                                aria-label={`PSU: ${item.name || 'Titik'}`}
+                                                iconAnchor={[12, 12]}
+                                                popupAnchor={[0, -12]}
+                                                aria-label={`PSU ${group.name}: ${item.name}`}
                                             >
                                                 <MapPopup>
                                                     <div
@@ -564,7 +537,7 @@ export default function PublicDistributionMap() {
                                                         aria-label="Informasi PSU"
                                                     >
                                                         <div className="font-medium">
-                                                            {item.name || 'PSU'}
+                                                            {item.name}
                                                         </div>
                                                         <div className="text-xs whitespace-pre-line text-muted-foreground">
                                                             {item.description ||
@@ -575,16 +548,21 @@ export default function PublicDistributionMap() {
                                             </MapMarker>
                                         );
                                     }
-                                    if (line) {
+                                    if (item.geometry_type === 'LineString') {
+                                        const positions = parseLineString(raw);
+                                        if (!positions) return null;
                                         return (
                                             <MapPolyline
                                                 key={`psu-line-${item.id}`}
-                                                positions={line}
+                                                positions={positions}
                                                 pathOptions={{
                                                     color,
-                                                    weight: 3,
-                                                    opacity: 0.9,
+                                                    weight: 4,
+                                                    opacity: 1,
+                                                    fillOpacity: 0,
                                                 }}
+                                                color={color}
+                                                className={`stroke-4 stroke-${color} transition-all duration-300 hover:opacity-80`}
                                             >
                                                 <MapPopup>
                                                     <div
@@ -592,7 +570,7 @@ export default function PublicDistributionMap() {
                                                         aria-label="Informasi PSU"
                                                     >
                                                         <div className="font-medium">
-                                                            {item.name || 'PSU'}
+                                                            {item.name}
                                                         </div>
                                                         <div className="text-xs whitespace-pre-line text-muted-foreground">
                                                             {item.description ||
@@ -603,18 +581,22 @@ export default function PublicDistributionMap() {
                                             </MapPolyline>
                                         );
                                     }
-                                    if (poly) {
+                                    if (item.geometry_type === 'Polygon') {
+                                        const positions = parsePolygon(raw);
+                                        if (!positions) return null;
                                         return (
                                             <MapPolygon
                                                 key={`psu-poly-${item.id}`}
-                                                positions={poly}
+                                                positions={positions}
                                                 pathOptions={{
                                                     color,
                                                     fillColor: color,
                                                     weight: 2,
                                                     opacity: 0.9,
-                                                    fillOpacity: 0.15,
+                                                    fillOpacity: 0.2,
                                                 }}
+                                                color={color}
+                                                className={`cursor-pointer fill-[${color}] stroke-[${color}] stroke-2 transition-all duration-300 hover:opacity-80`}
                                             >
                                                 <MapPopup>
                                                     <div
@@ -622,7 +604,7 @@ export default function PublicDistributionMap() {
                                                         aria-label="Informasi PSU"
                                                     >
                                                         <div className="font-medium">
-                                                            {item.name || 'PSU'}
+                                                            {item.name}
                                                         </div>
                                                         <div className="text-xs whitespace-pre-line text-muted-foreground">
                                                             {item.description ||

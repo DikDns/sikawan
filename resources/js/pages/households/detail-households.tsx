@@ -25,6 +25,13 @@ interface Props {
 }
 
 export default function HouseholdDetail({ household }: Props) {
+    // Read returnTo from URL query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnTo = urlParams.get('returnTo');
+    const backUrl =
+        returnTo === 'preview' ? '/households/preview' : '/households';
+    const backLabel = returnTo === 'preview' ? 'Preview Import' : 'Data Rumah';
+
     const photos = Array.isArray(
         (household as unknown as Record<string, unknown>).photos,
     )
@@ -42,11 +49,11 @@ export default function HouseholdDetail({ household }: Props) {
                 {/* Header */}
                 <Button
                     variant="ghost"
-                    onClick={() => router.visit('/households')}
+                    onClick={() => router.visit(backUrl)}
                     className="mb-4 w-fit gap-2 text-muted-foreground"
                 >
                     <ArrowLeft className="h-4 w-4" />
-                    Data Rumah
+                    {backLabel}
                 </Button>
 
                 {/* Detail Card with Gallery + Tabs */}
