@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class CreateSuperAdminSeeder extends Seeder
 {
@@ -14,7 +14,7 @@ class CreateSuperAdminSeeder extends Seeder
             [
                 'name' => 'Super Admin',
                 'password' => bcrypt('Password123!'),
-                'email_verified_at' => now()
+                'email_verified_at' => now(),
             ]
         );
 

@@ -76,6 +76,7 @@ class ActivityLogFormatter
     private static function getEntityName(string $fqcn): string
     {
         $short = class_basename($fqcn);
+
         return self::$entityNames[$short] ?? $short;
     }
 
@@ -88,6 +89,7 @@ class ActivityLogFormatter
         if ($identifier) {
             return "Membuat {$entity} baru: {$identifier}";
         }
+
         return "Membuat {$entity} baru";
     }
 
@@ -100,21 +102,22 @@ class ActivityLogFormatter
         $fields = array_keys($changes);
 
         // Filter out timestamps and internal fields
-        $fields = array_filter($fields, fn($f) => !in_array($f, ['updated_at', 'created_at', 'id']));
+        $fields = array_filter($fields, fn ($f) => ! in_array($f, ['updated_at', 'created_at', 'id']));
 
         if (empty($fields)) {
             return "Mengubah {$entity}";
         }
 
         $readableFields = array_map(
-            fn($f) => self::$fieldNames[$f] ?? str_replace('_', ' ', $f),
+            fn ($f) => self::$fieldNames[$f] ?? str_replace('_', ' ', $f),
             array_slice($fields, 0, 3)
         );
 
-        $text = "Mengubah {$entity}: " . implode(', ', $readableFields);
+        $text = "Mengubah {$entity}: ".implode(', ', $readableFields);
         if (count($fields) > 3) {
-            $text .= ' (+' . (count($fields) - 3) . ' lainnya)';
+            $text .= ' (+'.(count($fields) - 3).' lainnya)';
         }
+
         return $text;
     }
 
@@ -127,6 +130,7 @@ class ActivityLogFormatter
         if ($identifier) {
             return "Menghapus {$entity}: {$identifier}";
         }
+
         return "Menghapus {$entity}";
     }
 
@@ -138,15 +142,17 @@ class ActivityLogFormatter
         // Priority order for identifier
         $identifierFields = ['head_name', 'name', 'email', 'title', 'code'];
         foreach ($identifierFields as $field) {
-            if (!empty($attrs[$field])) {
+            if (! empty($attrs[$field])) {
                 $value = $attrs[$field];
                 // Truncate if too long
                 if (strlen($value) > 50) {
-                    $value = substr($value, 0, 47) . '...';
+                    $value = substr($value, 0, 47).'...';
                 }
+
                 return $value;
             }
         }
+
         return null;
     }
 }

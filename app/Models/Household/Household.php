@@ -2,8 +2,8 @@
 
 namespace App\Models\Household;
 
-use App\Models\User;
 use App\Models\Area;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

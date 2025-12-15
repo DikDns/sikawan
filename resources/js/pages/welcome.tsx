@@ -3,11 +3,6 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -15,7 +10,15 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
 
-export default function Welcome() {
+interface WelcomeProps {
+    stats: {
+        kawasan: number;
+        rumah: number;
+        rtlh: number;
+    };
+}
+
+export default function Welcome({ stats }: WelcomeProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { flash } = usePage<{ flash?: any }>().props;
     const hasShownToast = React.useRef(false);
@@ -59,48 +62,84 @@ export default function Welcome() {
                 <section className="pt-16">
                     <Container className="py-8">
                         <div className="grid max-h-screen grid-cols-1 grid-rows-3 gap-3 lg:grid-cols-3 lg:grid-rows-2 lg:gap-6">
-                            {/* Kiri: Card besar untuk judul, highlight, tombol */}
-                            <div className="order-2 col-span-1 flex flex-col justify-center rounded-2xl bg-[#552C91] p-10 shadow-lg lg:order-1 lg:col-span-2">
-                                <div className="mb-6 flex items-center gap-2">
-                                    <img
-                                        src="/images/sihuma-logo.png"
-                                        alt="SIHUMA"
-                                        className="h-10 w-auto object-contain"
-                                    />
-                                </div>
-                                <h1 className="mb-4 text-3xl font-bold text-white lg:text-4xl">
-                                    Membangun{' '}
-                                    <span className="text-lime-300">
-                                        Kawasan
-                                    </span>{' '}
-                                    <br /> yang Lebih Baik.
-                                </h1>
-                                <Button
-                                    size="lg"
-                                    className="mt-6 w-fit bg-lime-300 font-semibold text-[#552C91] hover:bg-lime-400 hover:text-[#552C91]"
-                                    asChild
-                                >
-                                    <Link href="/peta-sebaran">
-                                        Jelajahi Peta
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="ml-2 h-5 w-5"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
+                            {/* Kanan / Headline: Card besar untuk judul, highlight, tombol */}
+                            <div className="relative order-2 col-span-1 flex overflow-hidden rounded-2xl bg-[#552C91] p-6 shadow-lg lg:order-1 lg:col-span-2 lg:p-10">
+                                {/* Background Patterns */}
+                                <div
+                                    className="absolute inset-0 z-0 opacity-80"
+                                    style={{
+                                        backgroundImage:
+                                            "url('/images/pattern-1.webp')",
+                                        backgroundRepeat: 'repeat',
+                                        backgroundSize: '150px',
+                                    }}
+                                />
+                                <div
+                                    className="absolute inset-0 z-0 opacity-80"
+                                    style={{
+                                        backgroundImage:
+                                            "url('/images/pattern-2.webp')",
+                                        backgroundRepeat: 'repeat',
+                                        backgroundSize: '300px',
+                                    }}
+                                />
+
+                                <div className="relative z-10 grid w-full grid-cols-1 items-center gap-6 lg:grid-cols-5 lg:gap-8">
+                                    {/* Character Icon */}
+                                    <div className="flex justify-center lg:col-span-2">
+                                        <img
+                                            src="/images/sihuma-icon.webp"
+                                            alt="SIHUMA Icon"
+                                            className="aspect-square h-18 drop-shadow-2xl lg:h-40 lg:h-64"
+                                        />
+                                    </div>
+
+                                    {/* Text Content */}
+                                    <div className="flex flex-col items-center text-center lg:col-span-3 lg:items-start lg:text-left">
+                                        <h1
+                                            className="mb-2 text-6xl font-black tracking-tight text-lime-400 lg:text-7xl"
+                                            style={{
+                                                fontFamily:
+                                                    'Poppins, sans-serif',
+                                            }}
                                         >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </Link>
-                                </Button>
+                                            sihuma
+                                        </h1>
+                                        <h2 className="mb-8 text-xl leading-tight font-bold text-white lg:text-2xl">
+                                            Membangun{' '}
+                                            <span className="text-lime-400">
+                                                Kawasan
+                                            </span>{' '}
+                                            yang Lebih Baik.
+                                        </h2>
+                                        <Button
+                                            size="lg"
+                                            className="h-12 w-full rounded-xl bg-lime-400 px-8 text-lg font-bold text-[#552C91] hover:bg-lime-500 sm:w-auto"
+                                            asChild
+                                        >
+                                            <Link href="/peta-sebaran">
+                                                Jelajahi Peta
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="ml-2 h-5 w-5"
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
+                                                >
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                                                        clipRule="evenodd"
+                                                    />
+                                                </svg>
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                             {/* Kanan atas: 1 gambar besar potrait */}
                             <div className="col-span-1 row-span-1 overflow-hidden rounded-2xl shadow-lg lg:order-2 lg:row-span-2">
                                 <img
-                                    src="/images/kawasan-3.jpg"
+                                    src="/images/kawasan-3.webp"
                                     alt="Kawasan besar"
                                     className="h-full w-full object-cover"
                                 />
@@ -109,14 +148,14 @@ export default function Welcome() {
                             <div className="order-3 col-span-1 grid grid-cols-4 gap-4 lg:col-span-2 lg:row-span-1">
                                 <div className="col-span-2 overflow-hidden rounded-2xl shadow-lg">
                                     <img
-                                        src="/images/kawasan-1.jpg"
+                                        src="/images/kawasan-1.webp"
                                         alt="Kawasan 1"
                                         className="h-full w-full object-cover"
                                     />
                                 </div>
                                 <div className="col-span-2 overflow-hidden rounded-2xl shadow-lg">
                                     <img
-                                        src="/images/kawasan-2.jpg"
+                                        src="/images/kawasan-2.webp"
                                         alt="Kawasan 2"
                                         className="h-full w-full object-cover"
                                     />
@@ -128,131 +167,95 @@ export default function Welcome() {
 
                 {/* Satu Sistem Section */}
                 <section className="bg-muted/50">
-                    <Container className="py-24">
-                        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+                    <Container className="py-16 lg:py-24">
+                        {/* Top Row: Title Left, Description Right */}
+                        <div className="mb-32 grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
                             <div>
-                                <h2 className="mb-6 text-3xl font-bold">
+                                <h2 className="text-3xl leading-tight font-black lg:text-4xl">
                                     Satu Sistem,
                                     <br />
+                                    Satu{' '}
                                     <span className="text-secondary">
-                                        Satu Data Kawasan.
+                                        Data Kawasan.
+                                    </span>
+                                    <br />
+                                    Menuju{' '}
+                                    <span className="text-secondary">
+                                        Muara Enim
+                                    </span>
+                                    <br />
+                                    <span className="text-secondary">
+                                        Layak Huni
                                     </span>
                                 </h2>
-                                <div className="space-y-4 text-base text-muted-foreground">
-                                    <p>
-                                        <span className="font-semibold text-secondary">
-                                            SIHUMA (Sistem Informasi Pemukiman
-                                            dan Kawasan)
-                                        </span>{' '}
-                                        bertujuan mendukung tata kelola kawasan
-                                        perumahan & pemukiman yang berkelanjutan
-                                        dan tertata melalui pemanfaatan
-                                        teknologi digital.
-                                    </p>
-                                    <p>
-                                        Dengan sistem berbasis data yang akurat
-                                        dan terintegrasi,{' '}
-                                        <span className="font-semibold text-secondary">
-                                            SIHUMA
-                                        </span>{' '}
-                                        membantu instansi dan masyarakat
-                                        mengakses informasi kawasan secara mudah
-                                        untuk mewujudkan lingkungan hunian yang
-                                        layak, tertib, dan sejahtera.
-                                    </p>
-                                </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-6">
-                                <HoverCard>
-                                    <HoverCardTrigger asChild>
-                                        <Card className="bg-background shadow-lg transition-all hover:scale-105">
-                                            <CardContent className="flex flex-col items-center justify-center p-6">
-                                                <span className="mb-2 text-4xl font-bold text-secondary">
-                                                    128
-                                                </span>
-                                                <span className="text-center text-sm text-muted-foreground">
-                                                    Kawasan Terdata
-                                                </span>
-                                            </CardContent>
-                                        </Card>
-                                    </HoverCardTrigger>
-                                    <HoverCardContent>
-                                        <div className="space-y-2">
-                                            <h4 className="text-sm font-semibold">
-                                                Kawasan Terdata
-                                            </h4>
-                                            <p className="text-sm text-muted-foreground">
-                                                Total kawasan yang telah
-                                                terdaftar dan terdata dalam
-                                                SIHUMA.
-                                            </p>
-                                        </div>
-                                    </HoverCardContent>
-                                </HoverCard>
-                                <HoverCard>
-                                    <HoverCardTrigger asChild>
-                                        <Card className="bg-background shadow-lg transition-all hover:scale-105">
-                                            <CardContent className="flex flex-col items-center justify-center p-6">
-                                                <span className="mb-2 text-4xl font-bold text-secondary">
-                                                    128
-                                                </span>
-                                                <span className="text-center text-sm text-muted-foreground">
-                                                    Rumah Terdata
-                                                </span>
-                                            </CardContent>
-                                        </Card>
-                                    </HoverCardTrigger>
-                                    <HoverCardContent>
-                                        <div className="space-y-2">
-                                            <h4 className="text-sm font-semibold">
-                                                Rumah Terdata
-                                            </h4>
-                                            <p className="text-sm text-muted-foreground">
-                                                Jumlah total rumah yang telah
-                                                didata dalam sistem SIHUMA.
-                                            </p>
-                                        </div>
-                                    </HoverCardContent>
-                                </HoverCard>
-                                <HoverCard>
-                                    <HoverCardTrigger asChild>
-                                        <Card className="bg-background shadow-lg transition-all hover:scale-105">
-                                            <CardContent className="flex flex-col items-center justify-center p-6">
-                                                <span className="mb-2 text-4xl font-bold text-secondary">
-                                                    20
-                                                </span>
-                                                <span className="text-center text-sm text-muted-foreground">
-                                                    RTLH
-                                                </span>
-                                            </CardContent>
-                                        </Card>
-                                    </HoverCardTrigger>
-                                    <HoverCardContent>
-                                        <div className="space-y-2">
-                                            <h4 className="text-sm font-semibold">
-                                                RTLH
-                                            </h4>
-                                            <p className="text-sm text-muted-foreground">
-                                                Rumah Tidak Layak Huni yang
-                                                teridentifikasi dan memerlukan
-                                                perbaikan.
-                                            </p>
-                                        </div>
-                                    </HoverCardContent>
-                                </HoverCard>
+                            <div className="space-y-4 text-base leading-relaxed text-muted-foreground">
+                                <p>
+                                    <span className="font-semibold text-secondary">
+                                        SIHUMA (Sistem Informasi Hunian
+                                        Masyarakat)
+                                    </span>{' '}
+                                    bertujuan mendukung tata kelola kawasan
+                                    perumahan & pemukiman yang berkelanjutan dan
+                                    tertata melalui pemanfaatan teknologi
+                                    digital.
+                                </p>
+                                <p>
+                                    Dengan sistem berbasis data yang akurat dan
+                                    terintegrasi,{' '}
+                                    <span className="font-semibold text-secondary">
+                                        SIHUMA
+                                    </span>{' '}
+                                    membantu instansi dan masyarakat mengakses
+                                    informasi kawasan secara mudah untuk
+                                    mewujudkan lingkungan hunian yang layak,
+                                    tertib, dan sejahtera.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Stats Row */}
+                        <div className="grid grid-cols-3 gap-4 lg:gap-8">
+                            <div className="flex flex-col items-center border-r border-border py-4">
+                                <span className="text-5xl font-bold text-secondary lg:text-6xl">
+                                    {stats.kawasan}
+                                </span>
+                                <span className="mt-2 text-center text-sm text-muted-foreground lg:text-base">
+                                    Kawasan Terdata
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-center border-r border-border py-4">
+                                <span className="text-5xl font-bold text-secondary lg:text-6xl">
+                                    {stats.rumah}
+                                </span>
+                                <span className="mt-2 text-center text-sm text-muted-foreground lg:text-base">
+                                    Rumah Terdata
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-center py-4">
+                                <span className="text-5xl font-bold text-secondary lg:text-6xl">
+                                    {stats.rtlh}
+                                </span>
+                                <span className="mt-2 text-center text-sm text-muted-foreground lg:text-base">
+                                    RTLH
+                                </span>
                             </div>
                         </div>
                     </Container>
                 </section>
 
                 {/* Terpadu Section */}
-                <section className="bg-secondary py-16">
+                <section className="bg-secondary py-12 lg:py-16">
                     <Container>
-                        <h2 className="text-center text-3xl font-bold text-secondary-foreground">
+                        <h2 className="text-center text-2xl font-bold text-secondary-foreground lg:text-3xl">
                             Terpadu dalam{' '}
-                            <span className="text-primary">Data</span> Terwujud
-                            dalam <span className="text-primary">Nyata</span>
+                            <span className="text-lime-400">Data</span> Terwujud
+                            dalam <span className="text-lime-400">Nyata</span>
                         </h2>
+                        <p className="mt-2 text-center text-xl font-bold text-secondary-foreground lg:text-2xl">
+                            Kawasan Hunian{' '}
+                            <span className="text-lime-400">Muara Enim</span>.
+                        </p>
                     </Container>
                 </section>
 
@@ -264,7 +267,7 @@ export default function Welcome() {
                                 <Card className="overflow-hidden shadow-lg">
                                     <AspectRatio ratio={16 / 9}>
                                         <img
-                                            src="/images/kantor.png"
+                                            src="/images/kantor.webp"
                                             alt="Kantor"
                                             className="h-full w-full object-cover"
                                         />
@@ -414,7 +417,8 @@ export default function Welcome() {
                     <Container>
                         <p className="text-center text-sm text-secondary-foreground/80">
                             ©2025 Dinas Perumahan Rakyat dan Kawasan Permukiman
-                            Kabupaten Muara Enim. All rights reserved.
+                            serta Petanahan Kabupaten Muara Enim. All rights
+                            reserved.
                         </p>
                     </Container>
                 </footer>

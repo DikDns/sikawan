@@ -15,10 +15,12 @@ class ReportExport implements FromArray
 
     public function array(): array
     {
-        if (empty($this->rows)) return [[]];
+        if (empty($this->rows)) {
+            return [[]];
+        }
 
         $headers = array_keys((array) $this->rows[0]);
-        $body = array_map(fn($row) => (array) $row, $this->rows);
+        $body = array_map(fn ($row) => (array) $row, $this->rows);
 
         return array_merge([$headers], $body);
     }

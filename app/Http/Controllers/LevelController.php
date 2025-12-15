@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class LevelController extends Controller
 {
-    private function formatLabel(string $routeName): string {
+    private function formatLabel(string $routeName): string
+    {
         $custom = [
             'dashboard' => 'Halaman Dashboard',
             'distribution-map' => 'Halaman Peta Sebaran',
@@ -62,14 +63,14 @@ class LevelController extends Controller
         $resources = array_slice($parts, 0, $count - 1);
 
         $actionMap = [
-            'index'   => 'Halaman',
-            'create'  => 'Tambah',
-            'store'   => 'Simpan',
-            'edit'    => 'Edit',
-            'update'  => 'Perbarui',
+            'index' => 'Halaman',
+            'create' => 'Tambah',
+            'store' => 'Simpan',
+            'edit' => 'Edit',
+            'update' => 'Perbarui',
             'destroy' => 'Hapus',
-            'delete'  => 'Hapus',
-            'show'    => 'Lihat',
+            'delete' => 'Hapus',
+            'show' => 'Lihat',
         ];
 
         $actionLabel = $actionMap[$last] ?? ucfirst($last);
@@ -81,7 +82,8 @@ class LevelController extends Controller
         return "{$actionLabel} {$resourceLabel}";
     }
 
-    private function groupPermissions() {
+    private function groupPermissions()
+    {
         $permissions = Permission::orderBy('name')->get();
 
         // Define custom group labels
@@ -108,13 +110,13 @@ class LevelController extends Controller
             $group = $parts[0];
 
             // Skip if not in allowed groups
-            if (!in_array($group, $allowedGroups)) {
+            if (! in_array($group, $allowedGroups)) {
                 continue;
             }
 
             $groupLabel = $customGroup[$group] ?? ucwords(str_replace(['-', '_'], ' ', $group));
 
-            if (!isset($grouped[$group])) {
+            if (! isset($grouped[$group])) {
                 $grouped[$group] = [
                     'group_name' => $groupLabel,
                     'children' => [],
@@ -139,7 +141,8 @@ class LevelController extends Controller
         return $orderedGroups;
     }
 
-    public function index() {
+    public function index()
+    {
         $roles = Role::with('permissions')->get();
         $permissionGroups = $this->groupPermissions();
 
@@ -150,6 +153,7 @@ class LevelController extends Controller
                     'name' => $group['group_name'],
                     'features' => collect($group['children'])->map(function ($child) use ($role) {
                         $can = $role->permissions->contains('id', $child['id']);
+
                         return [
                             'id' => $child['id'],
                             'name' => $child['label'],
@@ -173,7 +177,8 @@ class LevelController extends Controller
         ]);
     }
 
-    public function create() {
+    public function create()
+    {
         $permissionGroups = $this->groupPermissions();
 
         $groups = collect($permissionGroups)->map(function ($group) {
@@ -195,7 +200,8 @@ class LevelController extends Controller
         ]);
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name',
             'permission_ids' => 'required|array',
@@ -214,7 +220,8 @@ class LevelController extends Controller
             ->withSuccess('Level berhasil dibuat.');
     }
 
-    public function update(Request $request, $role_id) {
+    public function update(Request $request, $role_id)
+    {
         $request->validate([
             'name' => 'required|string|max:255',
             'permission_ids' => 'array',
@@ -236,7 +243,8 @@ class LevelController extends Controller
         return back()->withSuccess('Level berhasil diperbarui.');
     }
 
-    public function destroy(Request $request) {
+    public function destroy(Request $request)
+    {
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:roles,id',
@@ -248,15 +256,16 @@ class LevelController extends Controller
         foreach ($roles as $role) {
             if ($role->users()->exists()) {
                 $rolesInUse[] = $role->name;
+
                 continue;
             }
             $role->syncPermissions([]);
             $role->delete();
         }
 
-        if (!empty($rolesInUse)) {
+        if (! empty($rolesInUse)) {
             return back()->withErrors([
-                'delete' => 'Level berikut tidak dapat dihapus karena masih digunakan oleh pengguna: ' . implode(', ', $rolesInUse)
+                'delete' => 'Level berikut tidak dapat dihapus karena masih digunakan oleh pengguna: '.implode(', ', $rolesInUse),
             ]);
         }
 

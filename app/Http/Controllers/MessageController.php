@@ -3,19 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class MessageController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         $messages = Message::all();
+
         return Inertia::render('messages', [
             'messages' => $messages,
         ]);
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $request->validate([
             'name' => 'required|min:3|max:150|regex:/^[A-Za-zÀ-ÿ\'’\- ]+$/',
             'email' => 'required|email|string|max:150',
@@ -47,7 +50,8 @@ class MessageController extends Controller
         return redirect()->back()->withSuccess('Pesan anda berhasil dikirim!');
     }
 
-    public function destroy(Request $request) {
+    public function destroy(Request $request)
+    {
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer|exists:messages,id',
@@ -55,6 +59,6 @@ class MessageController extends Controller
 
         Message::whereIn('id', $request['ids'])->delete();
 
-        return back()->withSuccess(count($request['ids']) . ' pesan berhasil dihapus.');
+        return back()->withSuccess(count($request['ids']).' pesan berhasil dihapus.');
     }
 }

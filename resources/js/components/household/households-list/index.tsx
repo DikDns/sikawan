@@ -135,7 +135,7 @@ export default function HouseholdsList({
     };
 
     return (
-        <div className="flex h-full flex-1 flex-col gap-6 bg-background p-6">
+        <div className="flex h-full flex-1 flex-col gap-6 p-6">
             <HouseholdsHeader />
             <HouseholdsStats stats={stats} />
             <HouseholdsSearch

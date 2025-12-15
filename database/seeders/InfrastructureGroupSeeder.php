@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\InfrastructureGroup;
 use App\Models\Infrastructure;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\InfrastructureGroup;
 use Illuminate\Database\Seeder;
 
 class InfrastructureGroupSeeder extends Seeder
@@ -118,7 +117,7 @@ class InfrastructureGroupSeeder extends Seeder
 
                     Infrastructure::create([
                         'infrastructure_group_id' => $group->id,
-                        'name' => $group->name . ' #' . ($idx + 1),
+                        'name' => $group->name.' #'.($idx + 1),
                         'description' => $this->generateDescription($group->code, $idx),
                         'geometry_type' => 'Point',
                         'geometry_json' => [
@@ -149,7 +148,7 @@ class InfrastructureGroupSeeder extends Seeder
 
                     Infrastructure::create([
                         'infrastructure_group_id' => $group->id,
-                        'name' => $group->name . ' Jalur #' . ($idx + 1),
+                        'name' => $group->name.' Jalur #'.($idx + 1),
                         'description' => $this->generateDescription($group->code, $idx),
                         'geometry_type' => 'LineString',
                         'geometry_json' => [
@@ -174,7 +173,7 @@ class InfrastructureGroupSeeder extends Seeder
 
                 Infrastructure::create([
                     'infrastructure_group_id' => $group->id,
-                    'name' => $group->name . ' Area',
+                    'name' => $group->name.' Area',
                     'description' => $this->generateDescription($group->code, 0),
                     'geometry_type' => 'Polygon',
                     'geometry_json' => [

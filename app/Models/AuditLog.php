@@ -11,12 +11,15 @@ class AuditLog extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id','action','entity_type','entity_id','metadata_json','description'
+        'user_id', 'action', 'entity_type', 'entity_id', 'metadata_json', 'description',
     ];
 
     protected $casts = [
         'metadata_json' => 'array',
     ];
 
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

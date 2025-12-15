@@ -2,17 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Models\Area;
+use App\Models\Household\Assistance;
 use App\Models\Household\Household;
 use App\Models\Household\Member;
-use App\Models\Household\TechnicalData;
-use App\Models\Household\Score;
-use App\Models\Household\Assistance;
 use App\Models\Household\Photo;
-use App\Models\Area;
+use App\Models\Household\Score;
+use App\Models\Household\TechnicalData;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class HouseholdSeeder extends Seeder
 {
@@ -30,7 +30,7 @@ class HouseholdSeeder extends Seeder
         try {
             // Get first user (superadmin) as creator for seeded households
             $creator = User::first();
-            if (!$creator) {
+            if (! $creator) {
                 throw new \Exception('No user found. Please run DatabaseSeeder first to create a user.');
             }
 
@@ -219,7 +219,7 @@ class HouseholdSeeder extends Seeder
                 $surveyDate = $createdAt->copy()->subDays(rand(0, 30));
 
                 // Generate unique name
-                $headName = $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
+                $headName = $firstNames[array_rand($firstNames)].' '.$lastNames[array_rand($lastNames)];
 
                 $household = Household::create([
                     'created_by' => $creator->id,
@@ -235,7 +235,7 @@ class HouseholdSeeder extends Seeder
                     'village_name' => $location['village_name'],
                     'rt_rw' => sprintf('%03d/%03d', rand(1, 15), rand(1, 10)),
                     'survey_date' => $surveyDate,
-                    'address_text' => $streets[array_rand($streets)] . ' No. ' . rand(1, 200) . ', RT ' . sprintf('%03d', rand(1, 15)) . '/RW ' . sprintf('%03d', rand(1, 10)) . ', ' . $location['village_name'] . ', ' . $location['district_name'],
+                    'address_text' => $streets[array_rand($streets)].' No. '.rand(1, 200).', RT '.sprintf('%03d', rand(1, 15)).'/RW '.sprintf('%03d', rand(1, 10)).', '.$location['village_name'].', '.$location['district_name'],
                     'latitude' => $location['lat'] + (rand(-500, 500) / 10000),
                     'longitude' => $location['lng'] + (rand(-500, 500) / 10000),
                     'ownership_status_building' => ['OWN', 'RENT', 'OTHER'][rand(0, 2)],
@@ -243,7 +243,7 @@ class HouseholdSeeder extends Seeder
                     'building_legal_status' => ['IMB', 'NONE'][rand(0, 1)],
                     'land_legal_status' => ['SHM', 'HGB', 'SURAT_PEMERINTAH', 'PERJANJIAN', 'LAINNYA', 'TIDAK_TAHU'][rand(0, 5)],
                     'head_name' => $headName,
-                    'nik' => '1603' . str_pad($i + 1, 12, '0', STR_PAD_LEFT),
+                    'nik' => '1603'.str_pad($i + 1, 12, '0', STR_PAD_LEFT),
                     'status_mbr' => $isMBR ? 'MBR' : 'NON_MBR',
                     'kk_count' => rand(1, 2),
                     'member_total' => $memberTotal,
@@ -314,12 +314,12 @@ class HouseholdSeeder extends Seeder
                 for ($j = 0; $j < min($memberTotal, 5); $j++) {
                     $memberName = $j === 0
                         ? $headName
-                        : $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
+                        : $firstNames[array_rand($firstNames)].' '.$lastNames[array_rand($lastNames)];
 
                     Member::create([
                         'household_id' => $household->id,
                         'name' => $memberName,
-                        'nik' => '1603' . str_pad(($i * 10 + $j + 1), 12, '0', STR_PAD_LEFT),
+                        'nik' => '1603'.str_pad(($i * 10 + $j + 1), 12, '0', STR_PAD_LEFT),
                         'relationship' => $relationships[$j] ?? 'OTHER',
                         'gender' => rand(0, 1) ? 'MALE' : 'FEMALE',
                         'is_disabled' => rand(0, 10) > 8,
@@ -360,8 +360,8 @@ class HouseholdSeeder extends Seeder
                             'started_at' => $startDate,
                             'completed_at' => $isCompleted ? $startDate->copy()->addMonths(rand(3, 12)) : null,
                             'cost_amount_idr' => rand(10, 150) * 1000000,
-                            'description' => 'Bantuan untuk perbaikan ' . ['atap', 'dinding', 'lantai', 'kamar mandi', 'dapur'][rand(0, 4)],
-                            'document_path' => rand(0, 1) ? 'documents/assistance_' . uniqid() . '.pdf' : null,
+                            'description' => 'Bantuan untuk perbaikan '.['atap', 'dinding', 'lantai', 'kamar mandi', 'dapur'][rand(0, 4)],
+                            'document_path' => rand(0, 1) ? 'documents/assistance_'.uniqid().'.pdf' : null,
                         ]);
                     }
                 }
@@ -369,10 +369,10 @@ class HouseholdSeeder extends Seeder
                 // 50% chance to have photos
                 if (rand(0, 1)) {
                     $photoCount = rand(2, 5);
-                    $photoFolderRel = 'households/' . $createdAt->format('Y/m') . '/' . $household->id;
-                    $photoFolderAbs = storage_path('app/public/' . $photoFolderRel);
+                    $photoFolderRel = 'households/'.$createdAt->format('Y/m').'/'.$household->id;
+                    $photoFolderAbs = storage_path('app/public/'.$photoFolderRel);
 
-                    if (!file_exists($photoFolderAbs)) {
+                    if (! file_exists($photoFolderAbs)) {
                         mkdir($photoFolderAbs, 0755, true);
                     }
 
@@ -382,26 +382,26 @@ class HouseholdSeeder extends Seeder
                     $useRealPhotos = file_exists($seedPhotoSource);
 
                     for ($m = 0; $m < $photoCount; $m++) {
-                        $fileName = 'photo_' . ($m + 1) . '.jpg';
-                        $destPath = $photoFolderAbs . '/' . $fileName;
+                        $fileName = 'photo_'.($m + 1).'.jpg';
+                        $destPath = $photoFolderAbs.'/'.$fileName;
 
                         // Copy real photo or create placeholder
-                        if ($useRealPhotos && file_exists($seedPhotoSource . '/' . $fileName)) {
-                            copy($seedPhotoSource . '/' . $fileName, $destPath);
+                        if ($useRealPhotos && file_exists($seedPhotoSource.'/'.$fileName)) {
+                            copy($seedPhotoSource.'/'.$fileName, $destPath);
                         } else {
                             // Create a placeholder image
                             $image = imagecreatetruecolor(640, 480);
                             $bgColor = imagecolorallocate($image, rand(200, 255), rand(200, 255), rand(200, 255));
                             imagefill($image, 0, 0, $bgColor);
                             $textColor = imagecolorallocate($image, 0, 0, 0);
-                            imagestring($image, 5, 250, 220, "Placeholder Photo " . ($m + 1), $textColor);
+                            imagestring($image, 5, 250, 220, 'Placeholder Photo '.($m + 1), $textColor);
                             imagejpeg($image, $destPath);
                             imagedestroy($image);
                         }
 
                         Photo::create([
                             'household_id' => $household->id,
-                            'file_path' => $photoFolderRel . '/' . $fileName,
+                            'file_path' => $photoFolderRel.'/'.$fileName,
                             'caption' => ['Tampak Depan', 'Tampak Samping', 'Ruang Tamu', 'Kamar Tidur', 'Dapur', 'Kamar Mandi'][$m % 6],
                             'order_index' => $m + 1,
                         ]);
@@ -419,7 +419,7 @@ class HouseholdSeeder extends Seeder
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->command->error('Error seeding households: ' . $e->getMessage());
+            $this->command->error('Error seeding households: '.$e->getMessage());
             throw $e;
         }
     }

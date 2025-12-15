@@ -48,7 +48,7 @@ class AreaGroupController extends Controller
         ]);
 
         return redirect()->route('areas')
-            ->with('success', 'Kawasan berhasil dibuat (ID: ' . $group->id . ').');
+            ->with('success', 'Kawasan berhasil dibuat (ID: '.$group->id.').');
     }
 
     /**
@@ -59,7 +59,7 @@ class AreaGroupController extends Controller
         $group = AreaGroup::findOrFail($id);
 
         return Inertia::render('areas/edit', [
-          'group' => $group
+            'group' => $group,
         ]);
     }
 
@@ -95,7 +95,7 @@ class AreaGroupController extends Controller
         ]);
 
         return redirect()->route('areas')
-            ->with('success', 'Kawasan berhasil diperbarui (ID: ' . $group->id . ').');
+            ->with('success', 'Kawasan berhasil diperbarui (ID: '.$group->id.').');
     }
 
     /**

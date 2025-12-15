@@ -19,12 +19,12 @@ export default function PublicNavbar({
                             {/* Government Logos */}
                             <div className="flex items-center gap-3">
                                 <img
-                                    src="/images/muara-enim-logo.png"
+                                    src="/images/muara-enim-logo.webp"
                                     alt="Kabupaten Muara Enim"
                                     className="h-10 w-auto object-contain"
                                 />
                                 <img
-                                    src="/images/disperkimtan-logo.png"
+                                    src="/images/disperkimtan-logo.webp"
                                     alt="Disperkimtan"
                                     className="h-10 w-auto object-contain"
                                 />

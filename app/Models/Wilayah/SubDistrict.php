@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class SubDistrict extends Model
 {
     protected $connection = 'wilayah';
+
     protected $table = 'sub_districts';
+
     protected $primaryKey = 'sub_district_code';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = ['sub_district_code', 'sub_district_name', 'sub_district_city_code'];

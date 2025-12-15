@@ -299,7 +299,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   )
 }
 
-function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+function SidebarInset({ className, children, ...props }: React.ComponentProps<"main">) {
   return (
     <main
       data-slot="sidebar-inset"
@@ -309,7 +309,29 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
         className
       )}
       {...props}
-    />
+    >
+      {/* Pattern Background Overlays */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.03]"
+        style={{
+          backgroundImage: "url('/images/pattern-1.webp')",
+          backgroundRepeat: 'repeat',
+          backgroundSize: '150px',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.03]"
+        style={{
+          backgroundImage: "url('/images/pattern-2.webp')",
+          backgroundRepeat: 'repeat',
+          backgroundSize: '300px',
+        }}
+      />
+      {/* Content */}
+      <div className="relative z-10 flex flex-1 flex-col">
+        {children}
+      </div>
+    </main>
   )
 }
 
