@@ -142,8 +142,11 @@ docker exec sikawan-app rm /var/www/html/storage/.seeded
 docker compose restart
 
 # ⚠️ FULL RESET (deletes database and storage, fresh start)
+# NOTE: Must delete from HOST, not inside container (volume is busy)
 docker compose down
-docker compose run --rm -e RESET_APP=true app
+rm -f data/database.sqlite
+rm -rf data/storage
+touch data/database.sqlite
 docker compose up -d
 
 # Reset superadmin password without full reset
