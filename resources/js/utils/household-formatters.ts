@@ -4,7 +4,6 @@
 
 import {
     BUILDING_LEGAL_STATUS_OPTIONS,
-    HOUSEHOLD_STATUS_OPTIONS,
     INCOME_OPTIONS,
     LAND_LEGAL_STATUS_OPTIONS,
     MAIN_OCCUPATION_OPTIONS,
@@ -91,12 +90,6 @@ export const getMainOccupationLabel = (occupation: string | null): string => {
     const option = MAIN_OCCUPATION_OPTIONS.find(
         (opt) => opt.value === occupation,
     );
-    return option?.label || '-';
-};
-
-export const getHouseholdStatusLabel = (status: string | null): string => {
-    if (!status) return '-';
-    const option = HOUSEHOLD_STATUS_OPTIONS.find((opt) => opt.value === status);
     return option?.label || '-';
 };
 

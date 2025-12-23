@@ -32,7 +32,6 @@ export interface HouseholdEditData {
         headOfHouseholdName?: string;
         mainOccupation?: string;
         income?: string;
-        householdStatus?: string;
         numberOfHouseholds?: number;
         maleMembers?: number;
         femaleMembers?: number;

@@ -3,6 +3,7 @@ import { send } from '@/routes/verification';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 
 import DeleteUser from '@/components/delete-user';
 import HeadingSmall from '@/components/heading-small';
@@ -29,6 +30,7 @@ export default function Profile({
     status?: string;
 }) {
     const { auth } = usePage<SharedData>().props;
+    const [deleteUserOpen, setDeleteUserOpen] = useState(false);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -141,7 +143,24 @@ export default function Profile({
                     </Form>
                 </div>
 
-                <DeleteUser />
+                <div className="space-y-6 border-t pt-6">
+                    <HeadingSmall
+                        title="Delete Account"
+                        description="Permanently delete your account."
+                    />
+                    <Button
+                        variant="destructive"
+                        onClick={() => setDeleteUserOpen(true)}
+                    >
+                        Delete Account
+                    </Button>
+                </div>
+
+                <DeleteUser
+                    open={deleteUserOpen}
+                    onOpenChange={setDeleteUserOpen}
+                    userId={auth.user.id}
+                />
             </SettingsLayout>
         </AppLayout>
     );

@@ -1,18 +1,11 @@
 export default function AppLogo() {
     return (
-        <>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-md">
-                <img
-                    src="/images/sikawan-logo.png"
-                    alt="SIHUMA Logo"
-                    className="size-8 object-contain"
-                />
-            </div>
-            <div className="ml-1 grid flex-1 text-left text-sm">
-                <span className="mb-0.5 truncate leading-tight font-semibold">
-                    SIHUMA
-                </span>
-            </div>
-        </>
+        <div className="flex items-center gap-2">
+            <img
+                src="/images/sihuma-logo-dark.webp"
+                alt="SIHUMA Logo"
+                className="h-20 w-auto object-contain"
+            />
+        </div>
     );
 }

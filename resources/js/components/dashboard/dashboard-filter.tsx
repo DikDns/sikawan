@@ -13,7 +13,7 @@ import { router } from '@inertiajs/react';
 import { Filter, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const MUARA_ENIM_REGENCY_ID = '1606';
+const MUARA_ENIM_REGENCY_ID = '1603';
 
 interface DashboardFilterProps {
     years: string[];

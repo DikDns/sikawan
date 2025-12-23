@@ -72,11 +72,6 @@ export function validateGeneralInfo(data: GeneralInfoData): ValidationResult {
         errors.headOfHouseholdName = 'Nama Kepala Keluarga harus diisi';
     }
 
-    // Required: Household status (MBR/NON_MBR)
-    if (!data.householdStatus) {
-        errors.householdStatus = 'Status MBR harus diisi';
-    }
-
     const isValid = Object.keys(errors).length === 0;
 
     return { isValid, errors };
@@ -99,7 +94,6 @@ export function getRequiredFieldsStatus(data: GeneralInfoData): {
         'landLegalStatus',
         'nik',
         'headOfHouseholdName',
-        'householdStatus',
     ];
 
     const filled = requiredFields.filter((field) => {

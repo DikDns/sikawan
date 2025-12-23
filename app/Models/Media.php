@@ -10,7 +10,7 @@ class Media extends Model
     use HasFactory;
 
     protected $fillable = [
-        'owner_type','owner_id','path','type','meta_json'
+        'owner_type', 'owner_id', 'path', 'type', 'meta_json',
     ];
 
     protected $casts = [

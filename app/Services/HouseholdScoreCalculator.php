@@ -14,7 +14,7 @@ class HouseholdScoreCalculator
     {
         $technicalData = $household->technicalData;
 
-        if (!$technicalData) {
+        if (! $technicalData) {
             throw new \Exception('Technical data not found for household');
         }
 

@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 class SingleSheetExport implements FromArray, WithTitle
 {
     protected $title;
+
     protected $rows;
 
     public function __construct($title, $rows)

@@ -44,11 +44,11 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 interface InfrastructureItem {
-    name: string;
-    infrastructure_count: number;
-    type: string;
-    category: string;
-    created_at: string;
+    name?: string | null;
+    infrastructure_count?: number;
+    type?: string;
+    category?: string | null;
+    created_at?: string | null;
 }
 
 const InfrastructureBarChart = forwardRef<
@@ -60,6 +60,7 @@ const InfrastructureBarChart = forwardRef<
     const today = dayjs();
 
     const filteredData = infrastructures.filter((item) => {
+        if (!item.created_at) return true; // Keep if no date and no filter? Or just use date
         const date = dayjs(item.created_at);
 
         if (startDate && date.isBefore(startDate, 'day')) return false;
@@ -69,14 +70,14 @@ const InfrastructureBarChart = forwardRef<
     });
 
     const chartData = filteredData.map((item) => ({
-        name: item.name,
-        count: item.infrastructure_count,
-        type: item.type,
-        category: item.category,
+        name: item.name || 'Unknown',
+        count: item.infrastructure_count ?? 0,
+        type: item.type || 'Unknown',
+        category: item.category || 'Unknown',
     }));
 
     const totalPSU = filteredData.reduce(
-        (sum, i) => sum + i.infrastructure_count,
+        (sum, i) => sum + (i.infrastructure_count ?? 0),
         0,
     );
 

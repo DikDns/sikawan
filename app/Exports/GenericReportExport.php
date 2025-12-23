@@ -18,15 +18,15 @@ class GenericReportExport implements WithMultipleSheets
         $sheets = [];
 
         if (isset($this->data['houses']) || isset($this->data['psu']) || isset($this->data['areas'])) {
-            if (!empty($this->data['houses'])) {
+            if (! empty($this->data['houses'])) {
                 $sheets[] = new SingleSheetExport('Rumah', $this->data['houses']);
             }
 
-            if (!empty($this->data['psu'])) {
+            if (! empty($this->data['psu'])) {
                 $sheets[] = new SingleSheetExport('PSU', $this->data['psu']);
             }
 
-            if (!empty($this->data['areas'])) {
+            if (! empty($this->data['areas'])) {
                 $sheets[] = new SingleSheetExport('Kawasan', $this->data['areas']);
             }
 

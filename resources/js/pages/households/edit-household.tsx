@@ -115,6 +115,14 @@ const STEPS = [
 ];
 
 export default function EditHousehold({ household }: Props) {
+    // Read returnTo from URL query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnTo = urlParams.get('returnTo');
+    const backUrl =
+        returnTo === 'preview'
+            ? '/households/preview'
+            : `/households/${household.id}`;
+
     const [currentStep, setCurrentStep] = useState(1);
     const [isSaving, setIsSaving] = useState(false);
     const {
@@ -166,7 +174,6 @@ export default function EditHousehold({ household }: Props) {
             headOfHouseholdName: household.head_name,
             mainOccupation: household.main_occupation,
             income: household.monthly_income_idr,
-            householdStatus: household.status_mbr,
             numberOfHouseholds: household.kk_count,
             maleMembers: household.male_count,
             femaleMembers: household.female_count,
@@ -342,7 +349,7 @@ export default function EditHousehold({ household }: Props) {
                 {
                     onSuccess: () => {
                         toast.success('Data rumah berhasil diperbarui');
-                        router.visit(`/households/${household.id}`);
+                        router.visit(backUrl);
                     },
                     onError: (errors) => {
                         console.error('Error saving:', errors);
@@ -365,7 +372,7 @@ export default function EditHousehold({ household }: Props) {
     };
 
     const handleClose = () => {
-        router.visit(`/households`);
+        router.visit(backUrl);
     };
 
     const handlePhotosChange = (newPhotos: PhotoFile[]) => {

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\AuditLog;
+use App\Models\User;
 
 class AuditLogPolicy
 {
@@ -12,12 +12,12 @@ class AuditLogPolicy
         return $user->hasRole('superadmin');
     }
 
-    public function view(User $user, AuditLog $log = null): bool
+    public function view(User $user, ?AuditLog $log = null): bool
     {
         return $user->hasRole('superadmin');
     }
 
-    public function delete(User $user, AuditLog $log = null): bool
+    public function delete(User $user, ?AuditLog $log = null): bool
     {
         return $user->hasRole('superadmin');
     }

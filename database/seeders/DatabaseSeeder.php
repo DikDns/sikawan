@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -18,21 +17,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
         ]);
 
-        // Create superadmin user
-        $user = User::firstOrCreate(
-            ['email' => 'superadmin@sikawan.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => 'password',
-                'email_verified_at' => now(),
-            ]
-        );
-        $user->assignRole('superadmin');
-
-        // Seed main data
-        // Order matters: AreaGroupSeeder creates Areas first,
-        // then HouseholdSeeder can link households to areas
         $this->call([
+            CreateSuperAdminSeeder::class,
             AreaGroupSeeder::class,
             InfrastructureGroupSeeder::class,
             HouseholdSeeder::class,

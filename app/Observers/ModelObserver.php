@@ -2,9 +2,9 @@
 
 namespace App\Observers;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Models\AuditLog;
 use App\Helpers\ActivityLogFormatter;
+use App\Models\AuditLog;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class ModelObserver
@@ -12,7 +12,7 @@ class ModelObserver
     protected function makeLog(string $action, Model $model, array $meta): void
     {
         // Skip logging for seeder operations (no authenticated user)
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return;
         }
 
@@ -26,7 +26,8 @@ class ModelObserver
                 'metadata_json' => $meta,
                 'description' => $description,
             ]);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
     }
 
     public function created(Model $model): void

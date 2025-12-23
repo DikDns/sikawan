@@ -12,9 +12,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import {
+    EDUCATION_FACILITY_LOCATION_OPTIONS,
     FACILITY_LOCATION_OPTIONS,
     HEALTH_FACILITY_USED_OPTIONS,
-    HOUSEHOLD_STATUS_OPTIONS,
     MAIN_OCCUPATION_OPTIONS,
 } from '../constants';
 import type { GeneralInfoData } from '../types';
@@ -112,32 +112,6 @@ export function HouseholdDataSection({
                 </Field>
 
                 <Field className="w-full">
-                    <FieldLabel>Status Rumah Tangga</FieldLabel>
-                    <FieldContent>
-                        <Select
-                            value={formData.householdStatus || ''}
-                            onValueChange={(value) =>
-                                updateField('householdStatus', value)
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Pilih Status Rumah Tangga" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {HOUSEHOLD_STATUS_OPTIONS.map((option) => (
-                                    <SelectItem
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </FieldContent>
-                </Field>
-
-                <Field className="w-full">
                     <FieldLabel>Jumlah KK</FieldLabel>
                     <FieldContent>
                         <Input
@@ -230,14 +204,16 @@ export function HouseholdDataSection({
                                 <SelectValue placeholder="Pilih Lokasi Fasilitas" />
                             </SelectTrigger>
                             <SelectContent>
-                                {FACILITY_LOCATION_OPTIONS.map((option) => (
-                                    <SelectItem
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
+                                {EDUCATION_FACILITY_LOCATION_OPTIONS.map(
+                                    (option) => (
+                                        <SelectItem
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {option.label}
+                                        </SelectItem>
+                                    ),
+                                )}
                             </SelectContent>
                         </Select>
                     </FieldContent>

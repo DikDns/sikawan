@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\Report;
+use Illuminate\Database\Seeder;
 
 class ReportSeeder extends Seeder
 {
@@ -38,7 +37,7 @@ class ReportSeeder extends Seeder
             ],
         ];
 
-        foreach($reports as $report) {
+        foreach ($reports as $report) {
             Report::create($report);
         }
     }

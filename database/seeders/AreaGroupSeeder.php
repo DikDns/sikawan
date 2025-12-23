@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\AreaGroup;
 use App\Models\Area;
+use App\Models\AreaGroup;
 use Illuminate\Database\Seeder;
 
 class AreaGroupSeeder extends Seeder
@@ -147,7 +147,9 @@ class AreaGroupSeeder extends Seeder
         $areasCreated = 0;
 
         foreach ($shuffledDistricts as $districtIndex => $district) {
-            if ($areasCreated >= $areaCount) break;
+            if ($areasCreated >= $areaCount) {
+                break;
+            }
 
             // Pick a random village from this district
             $villageIndex = ($groupIndex + $districtIndex) % count($district['villages']);
@@ -162,8 +164,8 @@ class AreaGroupSeeder extends Seeder
             $baseLng = $village['baseLng'] + $offsetLng;
 
             $areaData = [
-                'name' => $group->name . ' - ' . $village['name'],
-                'description' => 'Kawasan ' . strtolower($group->name) . ' di Desa ' . $village['name'] . ', Kec. ' . $district['district_name'],
+                'name' => $group->name.' - '.$village['name'],
+                'description' => 'Kawasan '.strtolower($group->name).' di Desa '.$village['name'].', Kec. '.$district['district_name'],
                 'province_id' => '16',
                 'province_name' => 'SUMATERA SELATAN',
                 'regency_id' => '1603',

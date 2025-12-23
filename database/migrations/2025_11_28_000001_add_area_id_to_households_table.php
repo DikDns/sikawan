@@ -6,18 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-  public function up(): void
-  {
-    Schema::table('households', function (Blueprint $table) {
-      $table->foreignId('area_id')->nullable()->constrained('areas')->nullOnDelete();
-    });
-  }
+    public function up(): void
+    {
+        Schema::table('households', function (Blueprint $table) {
+            $table->foreignId('area_id')->nullable()->constrained('areas')->nullOnDelete();
+        });
+    }
 
-  public function down(): void
-  {
-    Schema::table('households', function (Blueprint $table) {
-      $table->dropForeign(['area_id']);
-      $table->dropColumn('area_id');
-    });
-  }
+    public function down(): void
+    {
+        Schema::table('households', function (Blueprint $table) {
+            $table->dropForeign(['area_id']);
+            $table->dropColumn('area_id');
+        });
+    }
 };

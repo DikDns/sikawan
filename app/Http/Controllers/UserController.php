@@ -2,30 +2,34 @@
 
 namespace App\Http\Controllers;
 
-use Inertia\Inertia;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
-
-use App\Models\User;
 
 class UserController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         $users = User::with('roles')->get();
+
         return Inertia::render('users', [
             'users' => $users,
         ]);
     }
 
-    public function create() {
+    public function create()
+    {
         $roles = Role::all();
+
         return Inertia::render('users/create-user', [
             'roles' => $roles,
         ]);
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $request->validate([
             'name' => 'required|min:3|max:255|regex:/^[A-Za-zÀ-ÿ\'’\- ]+$/',
             'email' => 'required|email|string|max:255|unique:users,email',
@@ -68,23 +72,28 @@ class UserController extends Controller
         return redirect()->route('users')->withSuccess('Pengguna berhasil ditambahkan.');
     }
 
-    public function show($user_id) {
+    public function show($user_id)
+    {
         $user = User::with('roles')->findOrFail($user_id);
+
         return Inertia::render('users/view-user', [
             'user' => $user,
         ]);
     }
 
-    public function edit($user_id) {
+    public function edit($user_id)
+    {
         $user = User::with('roles')->findOrFail($user_id);
         $roles = Role::all();
+
         return Inertia::render('users/edit-user', [
             'user' => $user,
             'roles' => $roles,
         ]);
     }
 
-    public function update(Request $request, $user_id) {
+    public function update(Request $request, $user_id)
+    {
         $user = User::findOrFail($user_id);
 
         $request->validate([
@@ -120,10 +129,11 @@ class UserController extends Controller
 
         $user->syncRoles([$role]);
 
-        return redirect()->route('users')->withSuccess('Pengguna dengan ID '. $user->id. ' berhasil di update!');
+        return redirect()->route('users')->withSuccess('Pengguna dengan ID '.$user->id.' berhasil di update!');
     }
 
-    public function destroy(Request $request) {
+    public function destroy(Request $request)
+    {
         $user = User::findOrFail($request->id);
 
         if ($user->hasRole('superadmin')) {

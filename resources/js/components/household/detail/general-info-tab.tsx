@@ -3,7 +3,6 @@ import { type HouseholdDetail } from '@/types/household';
 import {
     formatIncome,
     getBuildingLegalStatusLabel,
-    getHouseholdStatusLabel,
     getLandLegalStatusLabel,
     getMainOccupationLabel,
     getOwnershipLabel,
@@ -108,12 +107,6 @@ export default function GeneralInfoTab({ household }: GeneralInfoTabProps) {
                         {
                             label: 'Penghasilan',
                             value: formatIncome(household.monthly_income_idr),
-                        },
-                        {
-                            label: 'Status Rumah Tangga',
-                            value: getHouseholdStatusLabel(
-                                household.status_mbr,
-                            ),
                         },
                         {
                             label: 'Jumlah KK',

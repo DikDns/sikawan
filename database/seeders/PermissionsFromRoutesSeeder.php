@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Models\Permission;
@@ -15,7 +14,7 @@ class PermissionsFromRoutesSeeder extends Seeder
     public function run(): void
     {
         $routes = collect(Route::getRoutes())
-            ->filter(fn($route) => in_array('GET', $route->methods()))
+            ->filter(fn ($route) => in_array('GET', $route->methods()))
             ->pluck('action.as')
             ->filter()
             ->unique();
@@ -46,8 +45,26 @@ class PermissionsFromRoutesSeeder extends Seeder
                 'api.wilayah.sub-districts',
                 'api.wilayah.villages',
                 'logs',
+                'households.preview.publish',
+                'households.preview',
+                'households.import.store',
+                'households.import',
+                'households.validateDraft',
+                'households.draft.get',
+                'households.draft.save',
+                'households.preview.publish',
+                'households.preview',
+                'households.import.store',
+                'households.import',
+                'reports.excel-preview',
+                'reports.pdf-store',
+                'reports.pdf-preview',
+                'reports.preview',
+                'infrastructure.assistances.index',
             ];
-            if (in_array($routeName, $exclude)) continue;
+            if (in_array($routeName, $exclude)) {
+                continue;
+            }
             Permission::firstOrCreate(['name' => $routeName]);
         }
 

@@ -1,6 +1,6 @@
 import { type HouseholdListItem, type HouseholdStats } from '@/types/household';
 import { router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import HouseholdsHeader from './households-header';
 import HouseholdsSearch from './households-search';
 import HouseholdsStats from './households-stats';
@@ -11,37 +11,48 @@ interface AreaOption {
     label: string;
 }
 
+interface PaginationInfo {
+    currentPage: number;
+    lastPage: number;
+    perPage: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+}
+
 interface Props {
     households: HouseholdListItem[];
+    pagination: PaginationInfo;
     stats: HouseholdStats;
     approvalCount: number;
     rejectedCount: number;
     areas?: AreaOption[];
     filters?: {
         habitability_status?: string;
-        province_id?: string;
-        regency_id?: string;
         district_id?: string;
         village_id?: string;
         area_id?: string;
+        search?: string;
+        sort_by?: string;
+        sort_order?: string;
     };
 }
 
 export default function HouseholdsList({
     households,
+    pagination,
     stats,
     approvalCount,
     rejectedCount,
     filters,
     areas,
 }: Props) {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [householdToDelete, setHouseholdToDelete] = useState<number | null>(
         null,
     );
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Server-side filter/sort/search handler
     const handleFilterChange = (newValues: Record<string, string | null>) => {
         const updatedFilters: Record<string, string | null> = {
             ...filters,
@@ -61,37 +72,45 @@ export default function HouseholdsList({
         });
     };
 
-    const filteredHouseholds = useMemo(() => {
-        return households.filter((household) => {
-            const matchesSearch =
-                household.head_name
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                household.address_text
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                household.id.toString().includes(searchQuery);
-
-            return matchesSearch;
-        });
-    }, [searchQuery, households]);
-
-    const handleSelectAll = (checked: boolean) => {
-        if (checked) {
-            setSelectedIds(filteredHouseholds.map((h) => h.id));
-        } else {
-            setSelectedIds([]);
-        }
+    // Server-side search handler (debounced in search component)
+    const handleSearchChange = (value: string) => {
+        handleFilterChange({ search: value || null });
     };
 
-    const handleSelectOne = (id: number, checked: boolean) => {
-        if (checked) {
-            setSelectedIds([...selectedIds, id]);
-        } else {
-            setSelectedIds(
-                selectedIds.filter((selectedId) => selectedId !== id),
-            );
+    // Handle column sorting
+    const handleSort = (column: string) => {
+        const currentSortBy = filters?.sort_by || 'id';
+        const currentSortOrder = filters?.sort_order || 'desc';
+
+        let newSortOrder = 'asc';
+        if (currentSortBy === column) {
+            newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
         }
+
+        handleFilterChange({
+            sort_by: column,
+            sort_order: newSortOrder,
+        });
+    };
+
+    // Handle pagination with page number
+    const handlePageChange = (page: number) => {
+        const updatedFilters: Record<string, string | null> = {
+            ...filters,
+            page: String(page),
+        };
+
+        // Remove null/undefined values
+        Object.keys(updatedFilters).forEach((key) => {
+            if (!updatedFilters[key]) {
+                delete updatedFilters[key];
+            }
+        });
+
+        router.get('/households', updatedFilters as Record<string, string>, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const handleDeleteClick = (id: number) => {
@@ -120,29 +139,28 @@ export default function HouseholdsList({
     };
 
     return (
-        <div className="flex h-full flex-1 flex-col gap-6 bg-background p-6">
-            <HouseholdsHeader
-                approvalCount={approvalCount}
-                rejectedCount={rejectedCount}
-            />
+        <div className="flex h-full flex-1 flex-col gap-6 p-6">
+            <HouseholdsHeader />
             <HouseholdsStats stats={stats} />
             <HouseholdsSearch
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
+                searchQuery={filters?.search || ''}
+                onSearchChange={handleSearchChange}
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 areas={areas}
             />
             <HouseholdsTable
-                households={filteredHouseholds}
-                selectedIds={selectedIds}
+                households={households}
                 householdToDelete={householdToDelete}
                 isDeleting={isDeleting}
-                onSelectAll={handleSelectAll}
-                onSelectOne={handleSelectOne}
                 onDeleteClick={handleDeleteClick}
                 onDeleteConfirm={handleDeleteConfirm}
                 onDeleteCancel={handleDeleteCancel}
+                sortBy={filters?.sort_by || 'id'}
+                sortOrder={(filters?.sort_order as 'asc' | 'desc') || 'desc'}
+                onSort={handleSort}
+                pagination={pagination}
+                onPageChange={handlePageChange}
             />
         </div>
     );

@@ -7,7 +7,6 @@ import {
     SidebarFooter,
     SidebarHeader,
     SidebarMenu,
-    SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import {
@@ -21,7 +20,6 @@ import {
 } from '@/routes';
 import { type NavItem } from '@/types';
 import { useCan } from '@/utils/permissions';
-import { Link } from '@inertiajs/react';
 import {
     FileText,
     Home,
@@ -29,10 +27,10 @@ import {
     LayoutGrid,
     MapPin,
     MessageSquare,
+    ScrollText,
     Shield,
     Users,
     Wrench,
-    ScrollText,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
@@ -108,11 +106,7 @@ export function AppSidebar() {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
+                        <AppLogo />
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>

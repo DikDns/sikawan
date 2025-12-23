@@ -1,6 +1,26 @@
 #!/bin/bash
 set -e
 
+# Check for reset flag (set RESET_APP=true to trigger full reset)
+if [ "$RESET_APP" = "true" ]; then
+    echo "⚠️  RESET_APP flag detected. Performing full reset..."
+
+    # Remove database
+    rm -f /var/www/html/database/database.sqlite
+
+    # Remove seeded flag
+    rm -f /var/www/html/storage/.seeded
+
+    # Clear storage (but preserve directory structure)
+    rm -rf /var/www/html/storage/framework/sessions/*
+    rm -rf /var/www/html/storage/framework/views/*
+    rm -rf /var/www/html/storage/framework/cache/*
+    rm -rf /var/www/html/storage/logs/*
+    rm -rf /var/www/html/storage/app/public/*
+
+    echo "✅ Reset complete. Fresh database and storage will be created."
+fi
+
 # Ensure storage directories exist with proper permissions
 mkdir -p /var/www/html/storage/framework/{sessions,views,cache}
 mkdir -p /var/www/html/storage/logs
@@ -52,8 +72,8 @@ if [ ! -f /var/www/html/storage/.seeded ]; then
     # Create superadmin user via tinker
     php artisan tinker --execute="
         \$user = \\App\\Models\\User::firstOrCreate(
-            ['email' => 'superadmin@sikawan.com'],
-            ['name' => 'Super Admin', 'password' => bcrypt('password'), 'email_verified_at' => now()]
+            ['email' => 'superadmin@sihuma.muaraenim.site'],
+            ['name' => 'Super Admin', 'password' => bcrypt('Password123!'), 'email_verified_at' => now()]
         );
         \$user->assignRole('superadmin');
         echo 'Superadmin user created/verified.';

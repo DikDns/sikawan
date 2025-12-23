@@ -8,98 +8,98 @@ use Inertia\Inertia;
 
 class InfrastructureGroupController extends Controller
 {
-  public function index(Request $request)
-  {
-    $groups = InfrastructureGroup::withCount('infrastructures')
-      ->orderBy('name')
-      ->get()
-      ->map(function ($group) {
-        return [
-          'id' => $group->id,
-          'code' => $group->code,
-          'name' => $group->name,
-          'category' => $group->category,
-          'type' => $group->type,
-          'legend_color_hex' => $group->legend_color_hex,
-          'legend_icon' => $group->legend_icon,
-          'description' => $group->description,
-          'infrastructure_count' => $group->infrastructures_count,
+    public function index(Request $request)
+    {
+        $groups = InfrastructureGroup::withCount('infrastructures')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($group) {
+                return [
+                    'id' => $group->id,
+                    'code' => $group->code,
+                    'name' => $group->name,
+                    'category' => $group->category,
+                    'type' => $group->type,
+                    'legend_color_hex' => $group->legend_color_hex,
+                    'legend_icon' => $group->legend_icon,
+                    'description' => $group->description,
+                    'infrastructure_count' => $group->infrastructures_count,
+                ];
+            });
+
+        $stats = [
+            'totalGroups' => $groups->count(),
         ];
-      });
 
-    $stats = [
-      'totalGroups' => $groups->count(),
-    ];
+        return Inertia::render('infrastructure', [
+            'groups' => $groups,
+            'stats' => $stats,
+        ]);
+    }
 
-    return Inertia::render('infrastructure', [
-      'groups' => $groups,
-      'stats' => $stats,
-    ]);
-  }
+    public function store(Request $request)
+    {
+        $request->merge(['code' => strtoupper($request->code)]);
+        $request->validate([
+            'code' => ['required', 'string', 'unique:infrastructure_groups,code'],
+            'name' => ['required', 'string'],
+            'category' => ['required', 'string', 'in:Kesehatan,Pendidikan,Listrik,Air Bersih,Drainase,Sanitasi,Sampah,Jalan,Lainnya'],
+            'type' => ['required', 'string', 'in:Marker,Polyline,Polygon'],
+            'legend_color_hex' => ['nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
+            'legend_icon' => ['nullable', 'string', 'in:hospital,graduation-cap,zap,droplet,trash-2,building-2'],
+            'description' => ['nullable', 'string'],
+        ]);
 
-  public function store(Request $request)
-  {
-    $request->merge(['code' => strtoupper($request->code)]);
-    $request->validate([
-      'code' => ['required', 'string', 'unique:infrastructure_groups,code'],
-      'name' => ['required', 'string',],
-      'category' => ['required', 'string', 'in:Kesehatan,Pendidikan,Listrik,Air Bersih,Drainase,Sanitasi,Sampah,Jalan,Lainnya'],
-      'type' => ['required', 'string', 'in:Marker,Polyline,Polygon'],
-      'legend_color_hex' => ['nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
-      'legend_icon' => ['nullable', 'string', 'in:hospital,graduation-cap,zap,droplet,trash-2,building-2'],
-      'description' => ['nullable', 'string'],
-    ]);
+        InfrastructureGroup::create([
+            'code' => $request->code,
+            'name' => $request->name,
+            'category' => $request->category,
+            'type' => $request->type,
+            'legend_color_hex' => $request->legend_color_hex,
+            'legend_icon' => $request->legend_icon,
+            'description' => $request->description,
+            'infrastructure_count' => 0,
+        ]);
 
-    InfrastructureGroup::create([
-      'code' => $request->code,
-      'name' => $request->name,
-      'category' => $request->category,
-      'type' => $request->type,
-      'legend_color_hex' => $request->legend_color_hex,
-      'legend_icon' => $request->legend_icon,
-      'description' => $request->description,
-      'infrastructure_count' => 0,
-    ]);
+        return redirect()->route('infrastructure')
+            ->with('success', 'Kelompok PSU berhasil ditambahkan');
+    }
 
-    return redirect()->route('infrastructure')
-      ->with('success', 'Kelompok PSU berhasil ditambahkan');
-  }
+    public function update(Request $request, $id)
+    {
+        $request->merge(['code' => strtoupper($request->code)]);
 
-  public function update(Request $request, $id)
-  {
-    $request->merge(['code' => strtoupper($request->code)]);
+        $request->validate([
+            'code' => ['required', 'string', 'unique:infrastructure_groups,code,'.$id],
+            'name' => ['required', 'string'],
+            'category' => ['required', 'string', 'in:Kesehatan,Pendidikan,Listrik,Air Bersih,Drainase,Sanitasi,Sampah,Jalan,Lainnya'],
+            'type' => ['required', 'string', 'in:Marker,Polyline,Polygon'],
+            'legend_color_hex' => ['nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
+            'legend_icon' => ['nullable', 'string', 'in:hospital,graduation-cap,zap,droplet,trash-2,building-2'],
+            'description' => ['nullable', 'string'],
+        ]);
 
-    $request->validate([
-      'code' => ['required', 'string', 'unique:infrastructure_groups,code,' . $id],
-      'name' => ['required', 'string',],
-      'category' => ['required', 'string', 'in:Kesehatan,Pendidikan,Listrik,Air Bersih,Drainase,Sanitasi,Sampah,Jalan,Lainnya'],
-      'type' => ['required', 'string', 'in:Marker,Polyline,Polygon'],
-      'legend_color_hex' => ['nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
-      'legend_icon' => ['nullable', 'string', 'in:hospital,graduation-cap,zap,droplet,trash-2,building-2'],
-      'description' => ['nullable', 'string'],
-    ]);
+        $group = InfrastructureGroup::findOrFail($id);
+        $group->update([
+            'code' => $request->code,
+            'name' => $request->name,
+            'category' => $request->category,
+            'type' => $request->type,
+            'legend_color_hex' => $request->legend_color_hex,
+            'legend_icon' => $request->legend_icon,
+            'description' => $request->description,
+        ]);
 
-    $group = InfrastructureGroup::findOrFail($id);
-    $group->update([
-      'code' =>     $request->code,
-      'name' => $request->name,
-      'category' => $request->category,
-      'type' => $request->type,
-      'legend_color_hex' => $request->legend_color_hex,
-      'legend_icon' => $request->legend_icon,
-      'description' => $request->description,
-    ]);
+        return redirect()->route('infrastructure')
+            ->with('success', 'Kelompok PSU berhasil diperbarui');
+    }
 
-    return redirect()->route('infrastructure')
-      ->with('success', 'Kelompok PSU berhasil diperbarui');
-  }
+    public function destroy(Request $request, $id)
+    {
+        $group = InfrastructureGroup::findOrFail($id);
+        $group->delete();
 
-  public function destroy(Request $request, $id)
-  {
-    $group = InfrastructureGroup::findOrFail($id);
-    $group->delete();
-
-    return redirect()->route('infrastructure')
-      ->with('success', 'Kelompok PSU berhasil dihapus');
-  }
+        return redirect()->route('infrastructure')
+            ->with('success', 'Kelompok PSU berhasil dihapus');
+    }
 }
