@@ -520,15 +520,12 @@ export default function SuperadminLogs() {
                                                                                                                 }
                                                                                                             </span>
                                                                                                             <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
-                                                                                                                {typeof value ===
-                                                                                                                'object'
-                                                                                                                    ? JSON.stringify(
-                                                                                                                          value,
-                                                                                                                      )
-                                                                                                                    : String(
-                                                                                                                          value ??
-                                                                                                                              '-',
-                                                                                                                      )}
+                                                                                                                {typeof value === 'string' &&
+                                                                                                                    !isNaN(Date.parse(value))
+                                                                                                                        ? formatDateTime(value)
+                                                                                                                        : typeof value === 'object'
+                                                                                                                            ? JSON.stringify(value)
+                                                                                                                            : String(value ?? '-')}
                                                                                                             </span>
                                                                                                         </div>
                                                                                                     ),
@@ -566,15 +563,12 @@ export default function SuperadminLogs() {
                                                                                                                 }
                                                                                                             </span>
                                                                                                             <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
-                                                                                                                {typeof value ===
-                                                                                                                'object'
-                                                                                                                    ? JSON.stringify(
-                                                                                                                          value,
-                                                                                                                      )
-                                                                                                                    : String(
-                                                                                                                          value ??
-                                                                                                                              '-',
-                                                                                                                      )}
+                                                                                                                {typeof value === 'string' &&
+                                                                                                                    !isNaN(Date.parse(value))
+                                                                                                                        ? formatDateTime(value)
+                                                                                                                        : typeof value === 'object'
+                                                                                                                            ? JSON.stringify(value)
+                                                                                                                            : String(value ?? '-')}
                                                                                                             </span>
                                                                                                         </div>
                                                                                                     ),

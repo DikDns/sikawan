@@ -39,6 +39,7 @@ export default function Welcome() {
         e.preventDefault();
 
         post('/messages/store', {
+            preserveScroll: true,
             onSuccess: () => reset(),
         });
     };
@@ -90,46 +91,79 @@ export default function Welcome() {
                 <section className="pt-16">
                     <Container className="py-8">
                         <div className="grid max-h-screen grid-cols-1 grid-rows-3 gap-3 lg:grid-cols-3 lg:grid-rows-2 lg:gap-6">
-                            {/* Kiri: Card besar untuk judul, highlight, tombol */}
-                            <div className="order-2 col-span-1 flex flex-col justify-center rounded-2xl bg-[#552C91] p-10 shadow-lg lg:order-1 lg:col-span-2">
-                                <div className="mb-6 flex items-center gap-2">
-                                    <img
-                                        src="/images/sikawan-logo.png"
-                                        alt="SIHUMA"
-                                        className="h-8 w-8"
-                                    />
-                                    <span className="text-lg font-extrabold tracking-wide text-lime-300">
-                                        SIHUMA
-                                    </span>
-                                </div>
-                                <h1 className="mb-4 text-3xl font-bold text-white lg:text-4xl">
-                                    Membangun{' '}
-                                    <span className="text-lime-300">
-                                        Kawasan
-                                    </span>{' '}
-                                    <br /> yang Lebih Baik.
-                                </h1>
-                                <Button
-                                    size="lg"
-                                    className="mt-6 w-fit bg-lime-300 font-semibold text-[#552C91] hover:bg-lime-400 hover:text-[#552C91]"
-                                    asChild
-                                >
-                                    <Link href="/peta-sebaran">
-                                        Jelajahi Peta
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="ml-2 h-5 w-5"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
+                            {/* Kanan / Headline: Card besar untuk judul, highlight, tombol */}
+                            <div className="relative order-2 col-span-1 flex overflow-hidden rounded-2xl bg-[#552C91] p-6 shadow-lg lg:order-1 lg:col-span-2 lg:p-10">
+                                {/* Background Patterns */}
+                                <div
+                                    className="absolute inset-0 z-0 opacity-80"
+                                    style={{
+                                        backgroundImage:
+                                            "url('/images/pattern-1.webp')",
+                                        backgroundRepeat: 'repeat',
+                                        backgroundSize: '150px',
+                                    }}
+                                />
+                                <div
+                                    className="absolute inset-0 z-0 opacity-80"
+                                    style={{
+                                        backgroundImage:
+                                            "url('/images/pattern-2.webp')",
+                                        backgroundRepeat: 'repeat',
+                                        backgroundSize: '300px',
+                                    }}
+                                />
+
+                                <div className="relative z-10 grid w-full grid-cols-1 items-center gap-6 lg:grid-cols-5 lg:gap-8">
+                                    {/* Character Icon */}
+                                    <div className="flex justify-center lg:col-span-2">
+                                        <img
+                                            src="/images/sihuma-icon.webp"
+                                            alt="SIHUMA Icon"
+                                            className="aspect-square h-18 drop-shadow-2xl lg:h-64"
+                                        />
+                                    </div>
+
+                                    {/* Text Content */}
+                                    <div className="flex flex-col items-center text-center lg:col-span-3 lg:items-start lg:text-left">
+                                        <h1
+                                            className="mb-2 text-6xl font-black tracking-tight text-lime-400 lg:text-7xl"
+                                            style={{
+                                                fontFamily:
+                                                    'Poppins, sans-serif',
+                                            }}
                                         >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </Link>
-                                </Button>
+                                            sihuma
+                                        </h1>
+                                        <h2 className="mb-8 text-xl leading-tight font-bold text-white lg:text-2xl">
+                                            Membangun{' '}
+                                            <span className="text-lime-400">
+                                                Kawasan
+                                            </span>{' '}
+                                            yang Lebih Baik.
+                                        </h2>
+                                        <Button
+                                            size="lg"
+                                            className="h-12 w-full rounded-xl bg-lime-400 px-8 text-lg font-bold text-[#552C91] hover:bg-lime-500 sm:w-auto"
+                                            asChild
+                                        >
+                                            <Link href="/peta-sebaran">
+                                                Jelajahi Peta
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="ml-2 h-5 w-5"
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
+                                                >
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                                                        clipRule="evenodd"
+                                                    />
+                                                </svg>
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                             {/* Kanan atas: 1 gambar besar potrait */}
                             <div className="col-span-1 row-span-1 overflow-hidden rounded-2xl shadow-lg lg:order-2 lg:row-span-2">

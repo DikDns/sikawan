@@ -62,7 +62,7 @@ export interface DashboardProps {
     availableYears: string[];
     selectedEconomicYear: string | null;
     selectedRegionYear: string | null;
-    areaSummaryRows: { name: string; rumah: number }[];
+    areaSummaryRows: { name: string; rumah: number; luas_m2: number }[];
     regionStats: {
         region: { name: string; houses: string };
         data: { label: string; value: number; color: string }[];

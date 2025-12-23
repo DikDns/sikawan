@@ -244,12 +244,16 @@ class DashboardController extends Controller
         $this->applyFilters($q, $economicYear, $district, $village)
       ]);
 
-      $areaSummaryRows = $areaSummaryQuery
-        ->orderByDesc('households_count')
-        ->limit(10)
-        ->get()
-        ->map(fn($a) => ['name' => $a->name, 'rumah' => $a->households_count])
-        ->toArray();
+            $areaSummaryRows = $areaSummaryQuery
+                ->orderByDesc('households_count')
+                ->limit(10)
+                ->get()
+                ->map(fn ($a) => [
+                    'name' => $a->name,
+                    'rumah' => $a->households_count,
+                    'luas_m2' => (int) $a->area_total_m2,
+                    ])
+                ->toArray();
 
       $availableYears = Household::selectRaw('DISTINCT strftime("%Y", created_at) as year')
         ->whereNotNull('created_at')

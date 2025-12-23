@@ -190,14 +190,17 @@ export default function Message({ messages }: { messages: any[] }) {
                             </div>
                         ) : (
                             <div className="divide-y">
-                                <div className="flex items-center py-2 px-2">
-                                    <Checkbox
-                                        checked={allSelected}
-                                        onCheckedChange={toggleSelectAll}
-                                    />
-                                    <span className="ml-2 text-sm text-muted-foreground">
-                                        Pilih Semua
-                                    </span>
+                                <div className="flex items-center px-4 py-2 text-xs font-semibold uppercase text-muted-foreground">
+                                    <div className="flex items-center gap-3 w-[35%]">
+                                        <Checkbox
+                                            checked={allSelected}
+                                            onCheckedChange={toggleSelectAll}
+                                        />
+                                        <span>Nama & Email</span>
+                                    </div>
+                                    <div className="w-[40%]">Subjek</div>
+                                    <div className="w-[15%] text-center">Tanggal Masuk</div>
+                                    <div className="w-[10%] text-right">Aksi</div>
                                 </div>
                                 {filteredData.map((msg) => (
                                     <div
@@ -209,7 +212,7 @@ export default function Message({ messages }: { messages: any[] }) {
                                         }`}
                                         onClick={() => handleViewMessage(msg.id)}
                                     >
-                                        <div className="flex items-start gap-3 w-1/3">
+                                        <div className="flex items-start gap-3 w-[35%]">
                                             <Checkbox
                                                 className="mt-2"
                                                 checked={selectedMessages.includes(
@@ -224,16 +227,33 @@ export default function Message({ messages }: { messages: any[] }) {
                                                 <span className="font-semibold text-sm">
                                                     {msg.name}
                                                 </span>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-muted-foreground">
                                                     {msg.email}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="w-1/2 truncate text-sm text-gray-700">
+                                        <div className="w-[40%] truncate text-sm text-foreground">
                                             {msg.subject}
                                         </div>
-                                        <div className="w-20 text-right text-xs text-gray-500">
+                                        <div className="w-[15%] text-center text-xs text-muted-foreground">
                                             {formatDate(msg.created_at)}
+                                        </div>
+                                        <div className="w-[10%] flex justify-end">
+                                            <Button
+                                                variant="link"
+                                                size="sm"
+                                                className="hover:cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedMessages([msg.id]);
+                                                    setDeleteDialog({
+                                                        open: true,
+                                                        ids: [msg.id],
+                                                    });
+                                                }}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
