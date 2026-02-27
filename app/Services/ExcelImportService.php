@@ -95,26 +95,31 @@ class ExcelImportService
         }, $filepath, null, $readerType);
 
         if (! isset($sheets[self::SHEET_A1])) {
-            throw new \Exception('Sheet A.1 (Index '.self::SHEET_A1.') not found.');
+            throw new \Exception('Sheet A.1 (Index ' . self::SHEET_A1 . ') not found.');
         }
 
-        // Parse region from Cover sheet (Index 0) first, fallback to Index 1
-        $regionData = $this->parseRegionHeader($sheets[0] ?? []);
-        // If region names are formulas, try extracting from A.1 header (Rows 3-10)
-        if (str_starts_with($regionData['province_name'] ?? '', '=')) {
-            $regionData = $this->parseRegionHeader($sheets[self::SHEET_A1] ?? [], true);
+        // Load via PhpSpreadsheet directly to get correctly evaluated formula values
+        // for the region header (cross-sheet formulas like =Cover!F17).
+        // Excel::toArray() does NOT evaluate cross-sheet formulas, so we must use
+        // getCalculatedValue() from PhpSpreadsheet for the header rows.
+        $psReader = match ($readerType) {
+            \Maatwebsite\Excel\Excel::XLS  => new \PhpOffice\PhpSpreadsheet\Reader\Xls(),
+            default                         => new \PhpOffice\PhpSpreadsheet\Reader\Xlsx(),
+        };
+        $psReader->setReadDataOnly(false); // Need formula evaluation
+        // Suppress iconv encoding warnings from legacy .xls files
+        try {
+            set_error_handler(fn() => true); // suppress PHP warnings
+            $spreadsheet = $psReader->load($filepath);
+            restore_error_handler();
+        } catch (\Throwable $e) {
+            restore_error_handler();
+            // If PhpSpreadsheet fails to load (e.g. corrupt .xls), region will be empty
+            $spreadsheet = null;
         }
-
-        // Survey date is at Sheet 1 (A. DP-RT), Row 7 (index 7), Col D (index 3)
-        // Value format: ": 17 Juni 2025"
-        if (empty($regionData['survey_date']) && isset($sheets[1][7][3])) {
-            $dateValue = trim($sheets[1][7][3] ?? '');
-            // Strip leading colon and spaces
-            if (str_starts_with($dateValue, ':')) {
-                $dateValue = trim(substr($dateValue, 1));
-            }
-            $regionData['survey_date'] = $this->parseIndonesianDate($dateValue);
-        }
+        $regionData = $spreadsheet
+            ? $this->parseRegionFromA1Sheet($spreadsheet)
+            : array_fill_keys(['province_id', 'province_name', 'regency_id', 'regency_name', 'district_id', 'district_name', 'village_id', 'village_name', 'rt_rw', 'survey_date'], null);
 
         $results = [
             'region' => $regionData,
@@ -219,7 +224,7 @@ class ExcelImportService
 
                     $summary['imported']++;
                 } catch (\Exception $e) {
-                    $summary['errors'][] = "Row {$entry['row_index']}: ".$e->getMessage();
+                    $summary['errors'][] = "Row {$entry['row_index']}: " . $e->getMessage();
                     $summary['skipped']++;
                 }
             }
@@ -232,59 +237,112 @@ class ExcelImportService
         return $summary;
     }
 
-    private function parseRegionHeader(array $rows, bool $useAltSearch = false): array
+    /**
+     * Parse region data from A.1 sheet header rows 4–9 (Excel row numbers).
+     *
+     * Uses PhpSpreadsheet getCalculatedValue() which correctly evaluates cross-sheet
+     * formulas (e.g. =Cover!F17, ='A. DP-RT'!D8).
+     *
+     * Layout:
+     *   Row 4: D4 → Provinsi
+     *   Row 5: D5 → Kab/Kota
+     *   Row 6: D6 → Kecamatan
+     *   Row 7: D7 → Kelurahan/Desa
+     *   Row 8: D8 → RT/RW
+     *   Row 9: D9 → Tanggal Pendataan
+     */
+    private function parseRegionFromA1Sheet(\PhpOffice\PhpSpreadsheet\Spreadsheet $spreadsheet): array
     {
         $data = [
-            'province_id' => null, 'province_name' => null,
-            'regency_id' => null, 'regency_name' => null,
-            'district_id' => null, 'district_name' => null,
-            'village_id' => null, 'village_name' => null,
-            'rt_rw' => null,
-            'survey_date' => null,
+            'province_id'   => null,
+            'province_name' => null,
+            'regency_id'    => null,
+            'regency_name'  => null,
+            'district_id'   => null,
+            'district_name' => null,
+            'village_id'    => null,
+            'village_name'  => null,
+            'rt_rw'         => null,
+            'survey_date'   => null,
         ];
 
-        foreach ($rows as $row) {
-            if (empty($row)) {
+        $a1Sheet = $spreadsheet->getSheet(self::SHEET_A1);
+
+        // Excel row => field
+        $rowMap = [
+            4 => 'province',
+            5 => 'regency',
+            6 => 'district',
+            7 => 'village',
+            8 => 'rt_rw',
+            9 => 'survey_date',
+        ];
+
+        foreach ($rowMap as $excelRow => $field) {
+            // Column D = column index 4 (1-based in PhpSpreadsheet)
+            $cell = $a1Sheet->getCellByColumnAndRow(4, $excelRow);
+            $raw  = $cell->getCalculatedValue(); // evaluates =Cover!F17 etc.
+
+            if ($raw === null || $raw === '') {
                 continue;
             }
-            // Cover sheet uses Column 2 for key, Column 4 for value
-            $key = strtolower(trim($row[2] ?? ''));
-            $value = trim($row[4] ?? '');
-            // Strip leading ": " from value
-            if (str_starts_with($value, ':')) {
-                $value = trim(substr($value, 1));
+
+            // Text values: strip leading ": " (older .xls format stores ": Sumatera selatan")
+            if (is_string($raw)) {
+                $value = trim($raw);
+                if (str_starts_with($value, ':')) {
+                    $value = trim(substr($value, 1));
+                }
+            } else {
+                $value = $raw;
             }
 
-            if (str_contains($key, 'provinsi')) {
-                $data['province_name'] = $value;
-                $p = Province::whereRaw('LOWER(province_name) LIKE ?', ['%'.strtolower($value).'%'])->first();
-                if ($p) {
-                    $data['province_id'] = $p->province_code;
-                }
-            } elseif (str_contains($key, 'kab/kota') || str_contains($key, 'kabupaten')) {
-                $data['regency_name'] = $value;
-                $c = City::whereRaw('LOWER(city_name) LIKE ?', ['%'.strtolower($value).'%'])->first();
-                if ($c) {
-                    $data['regency_id'] = $c->city_code;
-                }
-            } elseif (str_contains($key, 'kecamatan')) {
-                $data['district_name'] = $value;
-                $d = SubDistrict::whereRaw('LOWER(sub_district_name) LIKE ?', ['%'.strtolower($value).'%'])->first();
-                if ($d) {
-                    $data['district_id'] = $d->sub_district_code;
-                }
-            } elseif (str_contains($key, 'kelurahan') || str_contains($key, 'desa')) {
-                $data['village_name'] = $value;
-                $v = Village::whereRaw('LOWER(village_name) LIKE ?', ['%'.strtolower($value).'%'])->first();
-                if ($v) {
-                    $data['village_id'] = $v->village_code;
-                }
-            } elseif (str_contains($key, 'rt/rw') || str_contains($key, 'rt')) {
-                // Parse RT/RW format like "RT.02 RW.02" or "RT 02 RW 02" to "02/02"
-                $data['rt_rw'] = $this->parseRtRw($value);
-            } elseif (str_contains($key, 'tanggal')) {
-                // Parse date like "17 Juni 2025"
-                $data['survey_date'] = $this->parseIndonesianDate($value);
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            switch ($field) {
+                case 'province':
+                    $data['province_name'] = (string) $value;
+                    $p = Province::whereRaw('LOWER(province_name) LIKE ?', ['%' . strtolower($value) . '%'])->first();
+                    if ($p) $data['province_id'] = $p->province_code;
+                    break;
+
+                case 'regency':
+                    $data['regency_name'] = (string) $value;
+                    $c = City::whereRaw('LOWER(city_name) LIKE ?', ['%' . strtolower($value) . '%'])->first();
+                    if ($c) $data['regency_id'] = $c->city_code;
+                    break;
+
+                case 'district':
+                    $data['district_name'] = (string) $value;
+                    $d = SubDistrict::whereRaw('LOWER(sub_district_name) LIKE ?', ['%' . strtolower($value) . '%'])->first();
+                    if ($d) $data['district_id'] = $d->sub_district_code;
+                    break;
+
+                case 'village':
+                    $data['village_name'] = (string) $value;
+                    $v = Village::whereRaw('LOWER(village_name) LIKE ?', ['%' . strtolower($value) . '%'])->first();
+                    if ($v) $data['village_id'] = $v->village_code;
+                    break;
+
+                case 'rt_rw':
+                    $data['rt_rw'] = $this->parseRtRw((string) $value);
+                    break;
+
+                case 'survey_date':
+                    // getCalculatedValue() may return:
+                    //   - int/float: Excel date serial  (e.g. 45825)
+                    //   - string: Indonesian-format text (e.g. ": 17 Juni 2025")
+                    if (is_numeric($value)) {
+                        $data['survey_date'] = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value)
+                            ->format('Y-m-d');
+                    } else {
+                        // Strip ': ' prefix if present in text date
+                        $dateStr = ltrim((string) $value, ': ');
+                        $data['survey_date'] = $this->parseIndonesianDate(trim($dateStr));
+                    }
+                    break;
             }
         }
 
@@ -325,9 +383,18 @@ class ExcelImportService
         }
 
         $months = [
-            'januari' => 1, 'februari' => 2, 'maret' => 3, 'april' => 4,
-            'mei' => 5, 'juni' => 6, 'juli' => 7, 'agustus' => 8,
-            'september' => 9, 'oktober' => 10, 'november' => 11, 'desember' => 12,
+            'januari' => 1,
+            'februari' => 2,
+            'maret' => 3,
+            'april' => 4,
+            'mei' => 5,
+            'juni' => 6,
+            'juli' => 7,
+            'agustus' => 8,
+            'september' => 9,
+            'oktober' => 10,
+            'november' => 11,
+            'desember' => 12,
         ];
 
         // Match pattern like "17 Juni 2025"
@@ -367,7 +434,8 @@ class ExcelImportService
             'kk_count' => (int) ($rowA6_1[18] ?? 1),
             'male_count' => (int) ($rowA6_1[19] ?? 0),
             'female_count' => (int) ($rowA6_1[20] ?? 0),
-            'member_total' => (int) ($rowA6_1[21] ?? 0),
+            // member_total computed from male+female — col[21] is a formula in newer .xlsx files
+            'member_total' => (int) ($rowA6_1[19] ?? 0) + (int) ($rowA6_1[20] ?? 0),
             'disabled_count' => (int) ($rowA6_1[22] ?? 0),
             'health_facility_used' => $this->mapFromColumns($rowA6_2, $this->healthFacilityMap),
             'health_facility_location' => ! empty($rowA6_2[9]) ? 'Dalam Kelurahan/Kecamatan' : (! empty($rowA6_2[10]) ? 'Luar Kelurahan/Kecamatan' : null),
