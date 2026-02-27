@@ -7,7 +7,7 @@ export interface AreaSummaryRow {
 export function AreaSummaryTable({ rows }: { rows?: AreaSummaryRow[] }) {
     const data = rows && rows.length > 0 ? rows : [];
 
-    console.log(typeof data[0].luas_m2, data[0].luas_m2);
+    console.log(typeof data[0]?.luas_m2, data[0]?.luas_m2);
 
     const formatArea = (m2: number) => {
         if (!m2 || m2 <= 0) return '-';
@@ -58,7 +58,7 @@ export function AreaSummaryTable({ rows }: { rows?: AreaSummaryRow[] }) {
                                         {row.name}
                                     </td>
                                     <td className="px-4 py-3 text-center text-sm text-foreground">
-                                        {formatArea(row.luas_m2)}
+                                        {formatArea(row?.luas_m2)}
                                     </td>
                                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
                                         {row.rumah}

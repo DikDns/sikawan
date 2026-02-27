@@ -24,8 +24,6 @@ interface Props {
     households: HouseholdListItem[];
     pagination: PaginationInfo;
     stats: HouseholdStats;
-    approvalCount: number;
-    rejectedCount: number;
     areas?: AreaOption[];
     filters?: {
         habitability_status?: string;
@@ -42,8 +40,6 @@ export default function HouseholdsList({
     households,
     pagination,
     stats,
-    approvalCount,
-    rejectedCount,
     filters,
     areas,
 }: Props) {
