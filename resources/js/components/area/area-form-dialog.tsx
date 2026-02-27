@@ -1,3 +1,4 @@
+import turfArea from '@turf/area';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,8 +15,8 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Textarea } from '@/components/ui/textarea';
 import { useWilayah } from '@/hooks/use-wilayah';
 import { csrfFetch, handleCsrfError } from '@/lib/csrf';
-import { Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { Calculator, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 export interface Area {
@@ -42,6 +43,20 @@ export interface AreaFormDialogProps {
     onSuccess: () => void;
 }
 
+// Calculate area in m² from a GeoJSON polygon geometry
+function calculateAreaFromGeometry(geometry: unknown): number | null {
+    if (!geometry || typeof geometry !== 'object') return null;
+    try {
+        const geo = geometry as Record<string, unknown>;
+        // Support both Feature and Geometry directly
+        const geoJson = geo.type === 'Feature' ? geo : { type: 'Feature', geometry: geo, properties: {} };
+        const m2 = turfArea(geoJson as unknown as Parameters<typeof turfArea>[0]);
+        return m2 > 0 ? Math.round(m2 * 100) / 100 : null;
+    } catch {
+        return null;
+    }
+}
+
 export function AreaFormDialog({
     open,
     onOpenChange,
@@ -50,6 +65,7 @@ export function AreaFormDialog({
     onSuccess,
 }: AreaFormDialogProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAreaAutoCalculated, setIsAreaAutoCalculated] = useState(false);
     const wilayah = useWilayah();
 
     // Get initial form data
@@ -155,6 +171,24 @@ export function AreaFormDialog({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.district_id]);
+
+    // Auto-calculate area when geometry changes
+    useEffect(() => {
+        const calculated = calculateAreaFromGeometry(formData.geometry_json);
+        if (calculated !== null) {
+            setFormData((prev) => ({ ...prev, area_total_m2: String(calculated) }));
+            setIsAreaAutoCalculated(true);
+        } else {
+            setIsAreaAutoCalculated(false);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.geometry_json]);
+
+    const areaInHectares = useMemo(() => {
+        const m2 = Number(formData.area_total_m2);
+        if (!m2 || isNaN(m2)) return null;
+        return Math.round((m2 / 10000) * 100) / 100;
+    }, [formData.area_total_m2]);
 
     const handleDistrictChange = useCallback(
         (value: string) => {
@@ -368,7 +402,15 @@ export function AreaFormDialog({
 
                         <div className="grid gap-4 sm:grid-cols-1">
                             <Field>
-                                <FieldLabel>Luas Area (m²)</FieldLabel>
+                                <div className="flex items-center gap-2">
+                                    <FieldLabel>Luas Area (m²)</FieldLabel>
+                                    {isAreaAutoCalculated && (
+                                        <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                                            <Calculator className="h-3 w-3" />
+                                            Otomatis
+                                        </span>
+                                    )}
+                                </div>
                                 <Input
                                     type="number"
                                     min="0"
@@ -381,7 +423,14 @@ export function AreaFormDialog({
                                         })
                                     }
                                     placeholder="Contoh: 50000"
+                                    readOnly={isAreaAutoCalculated}
+                                    className={isAreaAutoCalculated ? 'bg-muted text-muted-foreground cursor-default' : ''}
                                 />
+                                {isAreaAutoCalculated && areaInHectares !== null && (
+                                    <p className="text-xs text-muted-foreground">
+                                        ≈ {areaInHectares.toLocaleString('id-ID')} hektar — terhitung otomatis dari titik koordinat
+                                    </p>
+                                )}
                             </Field>
                         </div>
 
