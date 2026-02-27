@@ -58,7 +58,11 @@ export default function HouseholdDetail({ household }: Props) {
 
         setIsDeleting(true);
         try {
-            router.delete(`/households/${householdToDelete}`, {
+            const deleteUrl = returnTo
+                ? `/households/${householdToDelete}?returnTo=${returnTo}`
+                : `/households/${householdToDelete}`;
+
+            router.delete(deleteUrl, {
                 preserveState: true,
                 preserveScroll: true,
             });
@@ -91,7 +95,11 @@ export default function HouseholdDetail({ household }: Props) {
                     <div className="flex items-center gap-2">
                         <Button
                             variant="default"
-                            onClick={() => router.visit(`/households/${household.id}/edit`)}
+                            onClick={() =>
+                                router.visit(
+                                    `/households/${household.id}/edit${returnTo ? `?returnTo=${returnTo}` : ''}`,
+                                )
+                            }
                         >
                             <Pencil className="h-4 w-4" />
                             Edit
