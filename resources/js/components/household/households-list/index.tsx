@@ -24,6 +24,8 @@ interface Props {
     households: HouseholdListItem[];
     pagination: PaginationInfo;
     stats: HouseholdStats;
+    approvalCount?: number;
+    rejectedCount?: number;
     areas?: AreaOption[];
     filters?: {
         habitability_status?: string;

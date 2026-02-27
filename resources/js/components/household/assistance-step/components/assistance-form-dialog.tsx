@@ -20,7 +20,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { ASSISTANCE_STATUSES, ASSISTANCE_TYPES } from '@/constants/assistance';
 import { csrfFetch, getMetaToken } from '@/lib/csrf';
-import { FileUp, Loader2, Upload } from 'lucide-react';
+import { FileUp, Loader2, Upload, ImagePlus, X, ImageIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { AssistanceFormDialogProps } from '../types';
@@ -65,6 +65,10 @@ export function AssistanceFormDialog({
               };
     };
 
+    const photoInputRef = useRef<HTMLInputElement>(null);
+    const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+    const [photosToRemove, setPhotosToRemove] = useState<string[]>([]);
+
     // Form state
     const [formData, setFormData] = useState(getInitialFormData);
 
@@ -74,6 +78,8 @@ export function AssistanceFormDialog({
         prevAssistanceId.current = assistance?.id;
         setFormData(getInitialFormData());
         setSelectedFile(null);
+        setSelectedPhotos([]);
+        setPhotosToRemove([]);
     }
 
     // Reset form when dialog closes
@@ -81,6 +87,8 @@ export function AssistanceFormDialog({
         if (!open) {
             setFormData(getInitialFormData());
             setSelectedFile(null);
+            setSelectedPhotos([]);
+            setPhotosToRemove([]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
@@ -99,6 +107,38 @@ export function AssistanceFormDialog({
             }
             setSelectedFile(file);
         }
+    };
+
+    const handlePhotoSelect = () => {
+        photoInputRef.current?.click();
+    };
+
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        const validFiles = files.filter((file) => {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error(`Ukuran file ${file.name} maksimal 5MB`);
+                return false;
+            }
+            return true;
+        });
+
+        const existingCount = (assistance?.photo_paths?.length || 0) - photosToRemove.length;
+        if (validFiles.length + selectedPhotos.length + existingCount > 10) {
+            toast.error('Maksimal total 10 foto');
+            return;
+        }
+
+        setSelectedPhotos((prev) => [...prev, ...validFiles]);
+        if (photoInputRef.current) photoInputRef.current.value = ''; // Reset input
+    };
+
+    const removeSelectedPhoto = (index: number) => {
+        setSelectedPhotos((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const removeExistingPhoto = (path: string) => {
+        setPhotosToRemove((prev) => [...prev, path]);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -129,6 +169,13 @@ export function AssistanceFormDialog({
             if (formData.description)
                 formPayload.append('description', formData.description);
             if (selectedFile) formPayload.append('document', selectedFile);
+            
+            selectedPhotos.forEach((photo) => {
+                formPayload.append('photos[]', photo);
+            });
+            photosToRemove.forEach((path) => {
+                formPayload.append('remove_photo_paths[]', path);
+            });
 
             const url = assistance
                 ? `/households/${householdId}/assistances/${assistance.id}`
@@ -388,6 +435,94 @@ export function AssistanceFormDialog({
                                 )}
                                 <p className="text-xs text-muted-foreground">
                                     Format: PDF, DOC, DOCX (Maks. 5MB)
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Foto Bantuan</Label>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                                    {/* Existing Photos */}
+                                    {assistance?.photo_paths
+                                        ?.filter((path) => !photosToRemove.includes(path))
+                                        .map((path, index) => {
+                                            const isImage = path.match(/\.(jpg|jpeg|png|webp|gif)$/i);
+                                            return (
+                                                <div key={`existing-${index}`} className="group relative aspect-square overflow-hidden rounded-md border bg-muted/30 flex items-center justify-center">
+                                                    {isImage ? (
+                                                        <img
+                                                            src={`/storage/${path}`}
+                                                            alt={`Foto ${index + 1}`}
+                                                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                                            onError={(e) => {
+                                                                const parent = e.currentTarget.parentElement;
+                                                                if (parent) {
+                                                                    e.currentTarget.style.display = 'none';
+                                                                    const fallback = document.createElement('div');
+                                                                    fallback.className = 'flex flex-col items-center gap-2 text-muted-foreground';
+                                                                    fallback.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-off h-8 w-8"><line x1="2" x2="22" y1="2" y2="22"/><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"/><line x1="13.5" x2="6" y1="13.5" y2="21"/><line x1="18" x2="21" y1="12" y2="15"/><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.05-.22 1.41-.59"/><path d="M21 15V5a2 2 0 0 0-2-2H9"/></svg><span class="text-[10px] break-all px-2 text-center">${path.split('/').pop()}</span>`;
+                                                                    parent.appendChild(fallback);
+                                                                }
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="flex flex-col items-center gap-2 text-muted-foreground p-2">
+                                                            <FileUp className="h-8 w-8" />
+                                                            <span className="text-[10px] break-all text-center">{path.split('/').pop()}</span>
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeExistingPhoto(path)}
+                                                        className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/70 group-hover:opacity-100 z-10"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+
+                                    {/* Selected Photos */}
+                                    {selectedPhotos.map((photo, index) => (
+                                        <div key={`selected-${index}`} className="group relative aspect-square overflow-hidden rounded-md border">
+                                            <img
+                                                src={URL.createObjectURL(photo)}
+                                                alt={`Foto baru ${index + 1}`}
+                                                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSelectedPhoto(index)}
+                                                className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/70 group-hover:opacity-100 z-10"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    {/* Upload Button visible if less than 10 total */}
+                                    {(((assistance?.photo_paths?.length || 0) - photosToRemove.length) + selectedPhotos.length) < 10 && (
+                                        <button
+                                            type="button"
+                                            onClick={handlePhotoSelect}
+                                            className="flex aspect-square flex-col items-center justify-center gap-2 rounded-md border border-dashed bg-muted/50 text-muted-foreground transition-colors hover:bg-muted"
+                                        >
+                                            <ImagePlus className="h-6 w-6" />
+                                            <span className="text-xs font-medium">Tambah Foto</span>
+                                        </button>
+                                    )}
+                                </div>
+                                <input
+                                    ref={photoInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handlePhotoChange}
+                                    className="hidden"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Format: JPG, PNG, WEBP (Maks. 5MB/foto, maksimal 10 foto)
                                 </p>
                             </div>
                         </div>

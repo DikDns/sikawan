@@ -23,12 +23,14 @@ class Assistance extends Model
         'cost_amount_idr',
         'description',
         'document_path',
+        'photo_paths',
     ];
 
     protected $casts = [
         'started_at' => 'date',
         'completed_at' => 'date',
         'cost_amount_idr' => 'integer',
+        'photo_paths' => 'array',
     ];
 
     public function household(): BelongsTo

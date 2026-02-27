@@ -52,12 +52,22 @@ class AssistanceController extends Controller
             'cost_amount_idr' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
             'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120', // 5MB max
+            'photos' => 'nullable|array|max:10',
+            'photos.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120', // 5MB each
         ]);
 
         // Handle document upload
         $documentPath = null;
         if ($request->hasFile('document')) {
             $documentPath = $request->file('document')->store('assistance-documents', 'public');
+        }
+
+        // Handle multiple photo uploads
+        $photoPaths = [];
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $photoPaths[] = $photo->store('assistance-photos', 'public');
+            }
         }
 
         $assistance = $household->assistances()->create([
@@ -70,6 +80,7 @@ class AssistanceController extends Controller
             'cost_amount_idr' => $validated['cost_amount_idr'] ?? null,
             'description' => $validated['description'] ?? null,
             'document_path' => $documentPath,
+            'photo_paths' => !empty($photoPaths) ? $photoPaths : null,
         ]);
 
         return response()->json([
@@ -102,6 +113,10 @@ class AssistanceController extends Controller
             'cost_amount_idr' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
             'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+            'photos' => 'nullable|array|max:10',
+            'photos.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+            'remove_photo_paths' => 'nullable|array',
+            'remove_photo_paths.*' => 'nullable|string',
         ]);
 
         // Handle document upload
@@ -111,6 +126,25 @@ class AssistanceController extends Controller
                 Storage::disk('public')->delete($assistance->document_path);
             }
             $validated['document_path'] = $request->file('document')->store('assistance-documents', 'public');
+        }
+
+        // Handle new photo uploads — merge with existing, then remove requested
+        $existingPhotos = $assistance->photo_paths ?? [];
+
+        // Remove photos flagged for deletion
+        $toRemove = $validated['remove_photo_paths'] ?? [];
+        foreach ($toRemove as $path) {
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+            $existingPhotos = array_values(array_filter($existingPhotos, fn($p) => $p !== $path));
+        }
+
+        // Append new photos
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $existingPhotos[] = $photo->store('assistance-photos', 'public');
+            }
         }
 
         $assistance->update([
@@ -123,6 +157,7 @@ class AssistanceController extends Controller
             'cost_amount_idr' => $validated['cost_amount_idr'] ?? null,
             'description' => $validated['description'] ?? null,
             'document_path' => $validated['document_path'] ?? $assistance->document_path,
+            'photo_paths' => !empty($existingPhotos) ? array_values($existingPhotos) : null,
         ]);
 
         return response()->json([
@@ -176,6 +211,13 @@ class AssistanceController extends Controller
         // Delete document if exists
         if ($assistance->document_path && Storage::disk('public')->exists($assistance->document_path)) {
             Storage::disk('public')->delete($assistance->document_path);
+        }
+
+        // Delete all photos if any
+        foreach (($assistance->photo_paths ?? []) as $photoPath) {
+            if (Storage::disk('public')->exists($photoPath)) {
+                Storage::disk('public')->delete($photoPath);
+            }
         }
 
         $assistance->delete();

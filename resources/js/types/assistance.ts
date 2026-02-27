@@ -13,6 +13,7 @@ export interface Assistance {
     cost_amount_idr?: number;
     description?: string;
     document_path?: string;
+    photo_paths?: string[];
     created_at: string;
     updated_at: string;
 }
