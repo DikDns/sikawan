@@ -123,9 +123,12 @@ function getMetadataEntries(
 }
 
 // Helper to render a single metadata value
-function renderMetadataValue(value: unknown): string {
+function renderMetadataValue(value: unknown, formatDateTime?: (s: string) => string): string {
     if (value === null || value === undefined) return '-';
     if (typeof value === 'boolean') return value ? 'Ya' : 'Tidak';
+    if (typeof value === 'string' && formatDateTime && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:/.test(value)) {
+        return formatDateTime(value);
+    }
     if (typeof value === 'object') {
         try {
             return JSON.stringify(value, null, 2);
@@ -520,12 +523,10 @@ export default function SuperadminLogs() {
                                                                                                                 }
                                                                                                             </span>
                                                                                                             <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
-                                                                                                                {typeof value === 'string' &&
-                                                                                                                    !isNaN(Date.parse(value))
-                                                                                                                        ? formatDateTime(value)
-                                                                                                                        : typeof value === 'object'
-                                                                                                                            ? JSON.stringify(value)
-                                                                                                                            : String(value ?? '-')}
+                                                                                                                {renderMetadataValue(
+                                                                                                                    value,
+                                                                                                                    formatDateTime,
+                                                                                                                )}
                                                                                                             </span>
                                                                                                         </div>
                                                                                                     ),
@@ -563,12 +564,10 @@ export default function SuperadminLogs() {
                                                                                                                 }
                                                                                                             </span>
                                                                                                             <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
-                                                                                                                {typeof value === 'string' &&
-                                                                                                                    !isNaN(Date.parse(value))
-                                                                                                                        ? formatDateTime(value)
-                                                                                                                        : typeof value === 'object'
-                                                                                                                            ? JSON.stringify(value)
-                                                                                                                            : String(value ?? '-')}
+                                                                                                                {renderMetadataValue(
+                                                                                                                    value,
+                                                                                                                    formatDateTime,
+                                                                                                                )}
                                                                                                             </span>
                                                                                                         </div>
                                                                                                     ),
@@ -617,6 +616,7 @@ export default function SuperadminLogs() {
                                                                                                             <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
                                                                                                                 {renderMetadataValue(
                                                                                                                     value,
+                                                                                                                    formatDateTime,
                                                                                                                 )}
                                                                                                             </span>
                                                                                                         </div>
@@ -672,6 +672,7 @@ export default function SuperadminLogs() {
                                                                                                             <span className="rounded bg-white/50 px-2 py-1 break-all dark:bg-black/20">
                                                                                                                 {renderMetadataValue(
                                                                                                                     value,
+                                                                                                                    formatDateTime,
                                                                                                                 )}
                                                                                                             </span>
                                                                                                         </div>
