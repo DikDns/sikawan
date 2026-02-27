@@ -28,6 +28,7 @@ class AreaController extends Controller
                 'code' => $group->code,
                 'name' => $group->name,
                 'description' => $group->description,
+                'is_slum' => $group->is_slum,
                 'legend_color_hex' => $group->legend_color_hex,
                 'legend_icon' => $group->legend_icon,
                 'areas_count' => $group->areas()->count(),
@@ -61,6 +62,7 @@ class AreaController extends Controller
             'code' => $areaGroup->code,
             'name' => $areaGroup->name,
             'description' => $areaGroup->description,
+            'is_slum' => $areaGroup->is_slum,
             'legend_color_hex' => $areaGroup->legend_color_hex,
             'legend_icon' => $areaGroup->legend_icon,
             'geometry_json' => $areaGroup->geometry_json,
@@ -206,8 +208,8 @@ class AreaController extends Controller
                     ];
                 });
 
-            $status = Cache::get('area-sync-status-'.$area->id, 'unknown');
-            $last = Cache::get('area-sync-last-'.$area->id);
+            $status = Cache::get('area-sync-status-' . $area->id, 'unknown');
+            $last = Cache::get('area-sync-last-' . $area->id);
 
             return response()->json([
                 'data' => $rows,
@@ -240,7 +242,6 @@ class AreaController extends Controller
             'district_name' => 'nullable|string|max:150',
             'village_id' => 'nullable|string|max:10',
             'village_name' => 'nullable|string|max:150',
-            'is_slum' => 'nullable|boolean',
             'area_total_m2' => 'nullable|numeric|min:0',
         ]);
 
@@ -258,7 +259,8 @@ class AreaController extends Controller
             'district_name' => $request->district_name,
             'village_id' => $request->village_id,
             'village_name' => $request->village_name,
-            'is_slum' => $request->boolean('is_slum'),
+            // Inherit is_slum from the parent group — not from request
+            'is_slum' => $areaGroup->is_slum,
             'area_total_m2' => $request->area_total_m2,
         ]);
 
@@ -300,12 +302,14 @@ class AreaController extends Controller
             'district_name' => 'nullable|string|max:150',
             'village_id' => 'nullable|string|max:10',
             'village_name' => 'nullable|string|max:150',
-            'is_slum' => 'nullable|boolean',
             'area_total_m2' => 'nullable|numeric|min:0',
         ]);
 
         $area = Area::where('area_group_id', $areaGroupId)
             ->findOrFail($areaId);
+
+        // Re-inherit is_slum from parent group on update too
+        $areaGroup = AreaGroup::findOrFail($areaGroupId);
 
         $area->update([
             'name' => $request->name,
@@ -319,7 +323,7 @@ class AreaController extends Controller
             'district_name' => $request->district_name,
             'village_id' => $request->village_id,
             'village_name' => $request->village_name,
-            'is_slum' => $request->boolean('is_slum'),
+            'is_slum' => $areaGroup->is_slum,
             'area_total_m2' => $request->area_total_m2,
         ]);
 

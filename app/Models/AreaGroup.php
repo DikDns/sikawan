@@ -14,6 +14,7 @@ class AreaGroup extends Model
         'code',
         'name',
         'description',
+        'is_slum',
         'legend_color_hex',
         'legend_icon',
         'geometry_json',
@@ -22,6 +23,7 @@ class AreaGroup extends Model
     ];
 
     protected $casts = [
+        'is_slum' => 'boolean',
         'geometry_json' => 'array',
         'centroid_lat' => 'decimal:6',
         'centroid_lng' => 'decimal:6',

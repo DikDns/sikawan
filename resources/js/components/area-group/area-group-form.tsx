@@ -7,6 +7,8 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -16,6 +18,7 @@ export type AreaGroup = {
     code: string;
     name: string;
     description?: string | null;
+    is_slum: boolean;
     legend_color_hex: string;
     legend_icon?: string | null;
 };
@@ -31,6 +34,7 @@ const defaults: AreaGroup = {
     code: '',
     name: '',
     description: '',
+    is_slum: false,
     legend_color_hex: '#8B5CF6', // default to violet-500
     legend_icon: '',
 };
@@ -172,6 +176,27 @@ export const AreaGroupForm = ({ mode, initial }: Props) => {
                                 }
                             />
                         </FieldContent>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>Kawasan Kumuh</FieldLabel>
+                        <div className="flex items-center space-x-2 pt-2">
+                            <Switch
+                                id="is_slum"
+                                checked={data.is_slum}
+                                onCheckedChange={(checked) =>
+                                    setData('is_slum', checked)
+                                }
+                            />
+                            <Label
+                                htmlFor="is_slum"
+                                className="text-sm text-muted-foreground"
+                            >
+                                {data.is_slum
+                                    ? 'Ya, ini kawasan kumuh'
+                                    : 'Bukan kawasan kumuh'}
+                            </Label>
+                        </div>
                     </Field>
                 </CardContent>
             </Card>

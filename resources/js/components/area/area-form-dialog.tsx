@@ -10,9 +10,7 @@ import {
 import { Field, FieldLabel } from '@/components/ui/field';
 import { GeometryEditor } from '@/components/ui/geometry-editor';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useWilayah } from '@/hooks/use-wilayah';
 import { csrfFetch, handleCsrfError } from '@/lib/csrf';
@@ -33,7 +31,6 @@ export interface Area {
     district_name?: string | null;
     village_id?: string | null;
     village_name?: string | null;
-    is_slum?: boolean;
     area_total_m2?: number | null;
 }
 
@@ -77,7 +74,6 @@ export function AreaFormDialog({
                   village_id: area.village_id || '',
                   village_name: area.village_name || '',
                   geometry_json: area.geometry_json || null,
-                  is_slum: Boolean(area.is_slum),
                   area_total_m2: area.area_total_m2 ?? '',
               }
             : {
@@ -93,7 +89,6 @@ export function AreaFormDialog({
                   village_id: '',
                   village_name: '',
                   geometry_json: null,
-                  is_slum: false,
                   area_total_m2: '',
               };
     };
@@ -248,13 +243,11 @@ export function AreaFormDialog({
                 district_name?: string | null;
                 village_id?: string;
                 village_name?: string | null;
-                is_slum: boolean;
                 area_total_m2?: number | null;
             } = {
                 name: formData.name,
                 description: formData.description || null,
                 geometry_json: formData.geometry_json,
-                is_slum: formData.is_slum,
                 area_total_m2: formData.area_total_m2
                     ? Number(formData.area_total_m2)
                     : null,
@@ -324,9 +317,6 @@ export function AreaFormDialog({
         }
     };
 
-    console.log('is_slum', formData.is_slum);
-    console.log('area   ', area);
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
@@ -376,7 +366,7 @@ export function AreaFormDialog({
                             />
                         </Field>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4 sm:grid-cols-1">
                             <Field>
                                 <FieldLabel>Luas Area (m²)</FieldLabel>
                                 <Input
@@ -392,29 +382,6 @@ export function AreaFormDialog({
                                     }
                                     placeholder="Contoh: 50000"
                                 />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Kawasan Kumuh</FieldLabel>
-                                <div className="flex items-center space-x-2 pt-2">
-                                    <Switch
-                                        id="is_slum"
-                                        checked={formData.is_slum}
-                                        onCheckedChange={(checked) =>
-                                            setFormData({
-                                                ...formData,
-                                                is_slum: checked,
-                                            })
-                                        }
-                                    />
-                                    <Label
-                                        htmlFor="is_slum"
-                                        className="text-sm text-muted-foreground"
-                                    >
-                                        {formData.is_slum
-                                            ? 'Ya, ini kawasan kumuh'
-                                            : 'Bukan kawasan kumuh'}
-                                    </Label>
-                                </div>
                             </Field>
                         </div>
 

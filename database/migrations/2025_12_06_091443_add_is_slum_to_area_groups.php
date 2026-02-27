@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('area_groups', function (Blueprint $table) {
-            //
+            $table->boolean('is_slum')->default(false)->after('description');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('area_groups', function (Blueprint $table) {
-            //
+            $table->dropColumn('is_slum');
         });
     }
 };

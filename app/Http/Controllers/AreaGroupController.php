@@ -29,6 +29,7 @@ class AreaGroupController extends Controller
             'code' => ['required', 'string', 'max:50', Rule::unique('area_groups', 'code')],
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
+            'is_slum' => ['nullable', 'boolean'],
             'legend_color_hex' => ['required', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
             'legend_icon' => ['nullable', 'string', 'max:150'],
             'geometry_json' => ['nullable', 'array'],
@@ -40,6 +41,7 @@ class AreaGroupController extends Controller
             'code' => $request->code,
             'name' => $request->name,
             'description' => $request->description,
+            'is_slum' => $request->boolean('is_slum'),
             'legend_color_hex' => $request->legend_color_hex,
             'legend_icon' => $request->legend_icon,
             'geometry_json' => $request->geometry_json,
@@ -48,7 +50,7 @@ class AreaGroupController extends Controller
         ]);
 
         return redirect()->route('areas')
-            ->with('success', 'Kawasan berhasil dibuat (ID: '.$group->id.').');
+            ->with('success', 'Kawasan berhasil dibuat (ID: ' . $group->id . ').');
     }
 
     /**
@@ -75,6 +77,7 @@ class AreaGroupController extends Controller
             'code' => ['required', 'string', 'max:50', Rule::unique('area_groups', 'code')->ignore($id)],
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
+            'is_slum' => ['nullable', 'boolean'],
             'legend_color_hex' => ['required', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
             'legend_icon' => ['nullable', 'string', 'max:150'],
             'geometry_json' => ['nullable', 'array'],
@@ -87,6 +90,7 @@ class AreaGroupController extends Controller
             'code' => $request->code,
             'name' => $request->name,
             'description' => $request->description,
+            'is_slum' => $request->boolean('is_slum'),
             'legend_color_hex' => $request->legend_color_hex,
             'legend_icon' => $request->legend_icon,
             'geometry_json' => $request->geometry_json,
@@ -95,7 +99,7 @@ class AreaGroupController extends Controller
         ]);
 
         return redirect()->route('areas')
-            ->with('success', 'Kawasan berhasil diperbarui (ID: '.$group->id.').');
+            ->with('success', 'Kawasan berhasil diperbarui (ID: ' . $group->id . ').');
     }
 
     /**
