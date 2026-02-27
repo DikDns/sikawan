@@ -57,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('households/import', [App\Http\Controllers\HouseholdController::class, 'importStore'])->name('households.import.store');
     Route::get('households/preview', [App\Http\Controllers\HouseholdController::class, 'previewIndex'])->name('households.preview');
     Route::post('households/preview/publish', [App\Http\Controllers\HouseholdController::class, 'publishAll'])->name('households.preview.publish');
+    Route::delete('households/preview/delete-all', [App\Http\Controllers\HouseholdController::class, 'deleteAllDrafts'])->name('households.preview.deleteAll');
 
     // Draft Routes (must be before {id} route to avoid route conflict)
     Route::post('households/draft', [App\Http\Controllers\HouseholdController::class, 'saveDraft'])->name('households.draft.save');

@@ -1408,4 +1408,42 @@ class HouseholdController extends Controller
             );
         }
     }
+
+    public function deleteAllDrafts(Request $request)
+    {
+        $drafts = Household::where('is_draft', true)->get();
+        $count = $drafts->count();
+
+        if ($count === 0) {
+            return redirect()->route('households.preview')->with('error', 'Tidak ada data draft untuk dihapus.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($drafts as $household) {
+                // Delete related photos from storage
+                foreach ($household->photos as $photo) {
+                    if ($photo->file_path && Storage::disk('public')->exists($photo->file_path)) {
+                        Storage::disk('public')->delete($photo->file_path);
+                    }
+                }
+
+                $household->delete();
+            }
+
+            DB::commit();
+
+            return redirect()->route('households.preview')->with('success',
+                "Berhasil menghapus $count data draft rumah tangga."
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Delete All Drafts Error: '.$e->getMessage());
+
+            return redirect()->route('households.preview')->with('error',
+                'Gagal menghapus data: '.$e->getMessage()
+            );
+        }
+    }
 }

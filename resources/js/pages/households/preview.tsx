@@ -78,6 +78,8 @@ interface Props {
 
 export default function HouseholdPreview({ households, stats }: Props) {
     const [isPublishing, setIsPublishing] = useState(false);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
+    const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [householdToDelete, setHouseholdToDelete] =
@@ -99,6 +101,16 @@ export default function HouseholdPreview({ households, stats }: Props) {
                 onFinish: () => setIsPublishing(false),
             },
         );
+    };
+
+    const handleDeleteAll = () => {
+        setIsDeletingAll(true);
+        router.delete('/households/preview/delete-all', {
+            onFinish: () => {
+                setIsDeletingAll(false);
+                setDeleteAllDialogOpen(false);
+            },
+        });
     };
 
     const handleDeleteClick = (household: PreviewHousehold) => {
@@ -187,6 +199,47 @@ export default function HouseholdPreview({ households, stats }: Props) {
                             <Upload className="mr-2 h-4 w-4" />
                             Import Baru
                         </Button>
+                        {stats.total > 0 && (
+                            <AlertDialog
+                                open={deleteAllDialogOpen}
+                                onOpenChange={setDeleteAllDialogOpen}
+                            >
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={isDeletingAll}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        {isDeletingAll
+                                            ? 'Menghapus...'
+                                            : 'Hapus Semua'}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Hapus semua data preview?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            {stats.total} data rumah tangga akan
+                                            dihapus permanen dan tidak dapat
+                                            dikembalikan.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                            Batal
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleDeleteAll}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                            Ya, Hapus Semua
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
                         {stats.total > 0 && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
