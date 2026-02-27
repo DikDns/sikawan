@@ -125,7 +125,7 @@ export default function AreaDetail({
 
     // Handle layer creation from map
     const handleLayerCreated = useCallback(
-        async (geometry: unknown, layerNumber: number) => {
+        async (geometry: unknown, layerNumber: number, areaM2?: number | null) => {
             // Generate default name
             const defaultName = `${areaGroup.name} ${layerNumber}`;
 
@@ -144,6 +144,7 @@ export default function AreaDetail({
                     name: defaultName,
                     description: null,
                     geometry_json: geometry,
+                    area_total_m2: areaM2 ?? null,
                 };
 
                 const response = await csrfFetch(
@@ -426,61 +427,61 @@ export default function AreaDetail({
                     )}
                 </div>
 
-                <div className="gap-4 md:flex md:flex-row md:items-stretch">
-                    <Card className="md:w-1/3">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                            <CardTitle>
-                                Daftar Kawasan ({areasState.length})
-                            </CardTitle>
-                            <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => {
-                                    setEditingArea(null);
-                                    setIsDialogOpen(true);
-                                }}
-                            >
-                                <Plus className="mr-1 size-4" />
-                                Tambah
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            <ScrollArea className="h-[350px]">
-                                <AreaFeatureList
-                                    areas={areasState}
-                                    selectedAreaId={selectedAreaId}
-                                    onAreaSelect={handleAreaSelect}
-                                    onAreaEdit={handleAreaEditDetail}
-                                />
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
+                    <div className="gap-4 md:flex md:flex-row md:items-start">
+                        <Card className="md:w-1/3 shrink-0">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                                <CardTitle>
+                                    Daftar Kawasan ({areasState.length})
+                                </CardTitle>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => {
+                                        setEditingArea(null);
+                                        setIsDialogOpen(true);
+                                    }}
+                                >
+                                    <Plus className="mr-1 size-4" />
+                                    Tambah
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                <ScrollArea className="min-h-[450px] h-[calc(100vh-320px)] max-h-[710px]">
+                                    <AreaFeatureList
+                                        areas={areasState}
+                                        selectedAreaId={selectedAreaId}
+                                        onAreaSelect={handleAreaSelect}
+                                        onAreaEdit={handleAreaEditDetail}
+                                    />
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
 
-                    <Card className="mt-4 md:mt-0 md:flex-1">
-                        <CardHeader>
-                            <CardTitle>Peta Kawasan</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-[400px] rounded-md border">
-                                <AreaMapDisplay
-                                    features={mapFeatures}
-                                    defaultColor={areaGroup.legend_color_hex}
-                                    className="h-full w-full"
-                                    resolvedLayerIds={resolvedLayerIds}
-                                    onLayerCreated={handleLayerCreated}
-                                    onLayerDeleted={useCallback(
-                                        (id: number) => {
-                                            void handleAreaDelete(id);
-                                        },
-                                        [handleAreaDelete],
-                                    )}
-                                    onLayerEdited={handleLayerEdited}
-                                    households={households}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        <Card className="mt-4 md:mt-0 md:flex-1">
+                            <CardHeader>
+                                <CardTitle>Peta Kawasan</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0 pb-4 px-4">
+                                <div className="min-h-[450px] h-[calc(100vh-320px)] max-h-[700px] rounded-md border overflow-hidden">
+                                    <AreaMapDisplay
+                                        features={mapFeatures}
+                                        defaultColor={areaGroup.legend_color_hex}
+                                        className="h-full w-full"
+                                        resolvedLayerIds={resolvedLayerIds}
+                                        onLayerCreated={handleLayerCreated}
+                                        onLayerDeleted={useCallback(
+                                            (id: number) => {
+                                                void handleAreaDelete(id);
+                                            },
+                                            [handleAreaDelete],
+                                        )}
+                                        onLayerEdited={handleLayerEdited}
+                                        households={households}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
                 <Card>
                     <CardHeader>

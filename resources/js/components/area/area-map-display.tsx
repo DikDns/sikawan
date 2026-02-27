@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // This file uses dynamic Leaflet layer properties that require 'any' type assertions
+import turfArea from '@turf/area';
 import { Badge } from '@/components/ui/badge';
 import {
     DEFAULT_CENTER,
@@ -19,7 +20,7 @@ import {
 import { type HouseholdForMap } from '@/pages/areas/detail';
 import { usePage } from '@inertiajs/react';
 import type { LatLngExpression } from 'leaflet';
-import { Home } from 'lucide-react';
+import { Calculator, Home } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Area as AreaDetail } from './area-feature-list';
 
@@ -38,7 +39,7 @@ export interface AreaMapDisplayProps {
     className?: string;
     center?: LatLngExpression;
     zoom?: number;
-    onLayerCreated?: (geometry: unknown, layerNumber: number) => void;
+    onLayerCreated?: (geometry: unknown, layerNumber: number, areaM2?: number | null) => void;
     onLayerDeleted?: (id: number) => void;
     onLayerEdited?: (id: number, geometry: unknown) => void;
     // Mapping from temporary client layer number to server-assigned ID
@@ -73,6 +74,22 @@ export function AreaMapDisplay({
     const pendingCreateTimeoutsRef = useRef<Record<number, number>>({});
     const pendingCreateGeometryRef = useRef<Record<number, unknown>>({});
     const CREATE_DEBOUNCE_MS = 250;
+    const pendingCreateAreaRef = useRef<Record<number, number | null>>({});
+
+    // Calculate area in m² from a GeoJSON geometry object
+    const calcAreaM2 = useCallback((geometry: unknown): number | null => {
+        if (!geometry || typeof geometry !== 'object') return null;
+        try {
+            const geo = geometry as Record<string, unknown>;
+            const geoJson = geo.type === 'Feature'
+                ? geo
+                : { type: 'Feature', geometry: geo, properties: {} };
+            const m2 = turfArea(geoJson as unknown as Parameters<typeof turfArea>[0]);
+            return m2 > 0 ? Math.round(m2 * 100) / 100 : null;
+        } catch {
+            return null;
+        }
+    }, []);
 
     // Calculate center from features if not provided
     const validCentroids = useMemo(
@@ -435,7 +452,24 @@ export function AreaMapDisplay({
                         }
 
                         // Attach default tooltip/popup for newly created layer
-                        attachInfoUI(layer, `Area baru #${tempId}`);
+                        // Calculate area for polygon/rectangle
+                        let areaM2: number | null = null;
+                        if (layer instanceof L.Rectangle) {
+                            const b = layer.getBounds();
+                            const rectGeom = {
+                                type: 'Polygon',
+                                coordinates: [[[b.getWest(), b.getSouth()], [b.getEast(), b.getSouth()], [b.getEast(), b.getNorth()], [b.getWest(), b.getNorth()], [b.getWest(), b.getSouth()]]],
+                            };
+                            areaM2 = calcAreaM2(rectGeom);
+                        } else if (layer instanceof L.Polygon) {
+                            areaM2 = calcAreaM2(geometry);
+                        }
+                        pendingCreateAreaRef.current[tempId] = areaM2;
+
+                        const areaLabel = areaM2
+                            ? `${(areaM2 / 10000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} Ha`
+                            : null;
+                        attachInfoUI(layer, areaLabel ? `Area baru #${tempId} · ${areaLabel}` : `Area baru #${tempId}`);
 
                         // Debounce dispatch to prevent duplicate POSTs
                         pendingCreateGeometryRef.current[tempId] = geometry;
@@ -449,6 +483,7 @@ export function AreaMapDisplay({
                                 // Use latest geometry for this tempId
                                 const geom =
                                     pendingCreateGeometryRef.current[tempId!];
+                                const area = pendingCreateAreaRef.current[tempId!] ?? undefined;
                                 delete pendingCreateTimeoutsRef.current[
                                     tempId!
                                 ];
@@ -457,7 +492,7 @@ export function AreaMapDisplay({
                                     '[AreaMapDisplay] created: debounced dispatch for tempId',
                                     tempId,
                                 );
-                                onLayerCreated(geom, tempId!);
+                                onLayerCreated(geom, tempId!, area);
                             }, CREATE_DEBOUNCE_MS);
                     }
                 });

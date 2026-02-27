@@ -33,6 +33,7 @@ export interface Area {
     village_id?: string | null;
     village_name?: string | null;
     area_total_m2?: number | null;
+    is_slum?: boolean;
 }
 
 export interface AreaFormDialogProps {
